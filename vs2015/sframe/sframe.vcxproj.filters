@@ -1,0 +1,228 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="conf">
+      <UniqueIdentifier>{0b301558-47db-4873-b199-9320ff760813}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="net">
+      <UniqueIdentifier>{13c13cd0-32a3-45cf-aea2-06fc25f5d58e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="serv">
+      <UniqueIdentifier>{5d791ee9-f637-489c-9a6f-ff6de4fa000f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{474ba2e9-a8f2-4745-83a1-f2c18e2a90ba}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\sframe\conf\ConfigDef.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\ConfigSet.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\ConfigStringParser.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\csv.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\JsonLoader.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\JsonReader.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\Table.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\TableLoader.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\TableReader.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\win\Initialize.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\win\IoService_Win.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\win\IoUnit.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\win\TcpAcceptor_Win.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\win\TcpSocket_Win.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\Error.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\IoService.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\net.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\SendBuffer.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\SocketAddr.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\TcpAcceptor.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\net\TcpSocket.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\Message.h">
+      <Filter>serv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\MessageDecoder.h">
+      <Filter>serv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\ProxyService.h">
+      <Filter>serv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\ProxyServiceMsg.h">
+      <Filter>serv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\Service.h">
+      <Filter>serv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\ServiceDispatcher.h">
+      <Filter>serv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\ServiceListener.h">
+      <Filter>serv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\ServiceSession.h">
+      <Filter>serv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\BitPanel.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\Buffer.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\Convert.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\Delegate.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\FileHelper.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\json11.hpp">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\Lock.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\Log.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\md5.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\ObjectPool.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\RandomHelper.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\RingQueue.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\Serialization.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\ShmChunk.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\Singleton.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\StringHelper.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\TimeHelper.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\Timer.h">
+      <Filter>util</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp">
+      <Filter>conf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\conf\csv.cpp">
+      <Filter>conf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\conf\Table.cpp">
+      <Filter>conf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\net\win\Initialize.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\net\win\IoService_Win.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\net\win\TcpAcceptor_Win.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\net\win\TcpSocket_Win.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\net\SendBuffer.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\net\SocketAddr.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\serv\ProxyService.cpp">
+      <Filter>serv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\serv\Service.cpp">
+      <Filter>serv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\serv\ServiceDispatcher.cpp">
+      <Filter>serv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\serv\ServiceListener.cpp">
+      <Filter>serv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\serv\ServiceSession.cpp">
+      <Filter>serv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\FileHelper.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\json11.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\Log.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\md5.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\ObjectPool.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\RandomHelper.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\ShmChunk.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\StringHelper.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
