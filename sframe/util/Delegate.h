@@ -4,37 +4,9 @@
 
 #include <assert.h>
 #include <memory.h>
+#include "TupleHelper.h"
 
 namespace sframe {
-
-
-// 简单Tuple实现
-template<typename... Elements>
-class Tuple;
-
-template<typename Head, typename... Tail>
-class Tuple < Head, Tail... >
-{
-public:
-
-	typename std::decay<Head>::type & GetHead()
-	{
-		return _head;
-	}
-
-	Tuple<Tail...> & GetTail()
-	{
-		return _tail;
-	}
-
-private:
-	typename std::decay<Head>::type _head;
-	Tuple<Tail...> _tail;
-};
-
-template<>
-class Tuple<>
-{};
 
 // Delegate类型
 enum DelegateType 
@@ -71,27 +43,26 @@ public:
 
 	bool Call(Decoder_Type& decoder)
 	{
-		Tuple<Args_Type...> args;
-		return this->CallTuple(decoder, args);
-	}
-
-private:
-	template<typename... Head, typename... Tail>
-	inline bool CallTuple(Decoder_Type& s, Tuple<Tail...>& t, Head&&... head)
-	{
-		return this->CallTuple(s, t.GetTail(), std::forward<Head>(head)..., t.GetHead());
-	}
-
-	template<typename... Args_T>
-	inline bool CallTuple(Decoder_Type& s, Tuple<>& t, Args_T&&... args)
-	{
-		if (!s.Decode(args...))
+		std::tuple<typename std::decay<Args_Type>::type ...> args_tuple;
+		std::tuple<typename std::decay<Args_Type>::type ...> * p_args_tuple = nullptr;
+		if (!decoder.Decode(&p_args_tuple, args_tuple))
 		{
-			assert(false);
 			return false;
 		}
-		this->_func(std::forward<Args_T>(args)...);
+
+		if (p_args_tuple == nullptr)
+		{
+			p_args_tuple = &args_tuple;
+		}
+
+		UnfoldTuple(this, *p_args_tuple);
 		return true;
+	}
+
+	template<typename... Args>
+	void DoUnfoldTuple(Args&&... args)
+	{
+		this->_func(std::forward<Args>(args)...);
 	}
 
 private:
@@ -127,35 +98,33 @@ public:
 	bool Call(Decoder_Type& decoder)
 	{
 		assert(_obj);
-		_cur_obj = _obj;
-		Tuple<Args_Type...> args;
-		return this->CallTuple(decoder, args);
+		return CallWithObject(_obj, decoder);
 	}
 
 	bool CallWithObject(Object_Type * obj, Decoder_Type& decoder)
 	{
 		_cur_obj = obj;
-		Tuple<Args_Type...> args;
-		return this->CallTuple(decoder, args);
-	}
 
-private:
-	template<typename... Head, typename... Tail>
-	inline bool CallTuple(Decoder_Type& s, Tuple<Tail...>& t, Head&&... head)
-	{
-		return this->CallTuple(s, t.GetTail(), std::forward<Head>(head)..., t.GetHead());
-	}
-
-	template<typename... Args_T>
-	inline bool CallTuple(Decoder_Type& s, Tuple<>& t, Args_T&&... args)
-	{
-		if (!s.Decode(args...))
+		std::tuple<typename std::decay<Args_Type>::type ...> args_tuple;
+		std::tuple<typename std::decay<Args_Type>::type ...> * p_args_tuple = nullptr;
+		if (!decoder.Decode(&p_args_tuple, args_tuple))
 		{
-			assert(false);
 			return false;
 		}
-		(_cur_obj->*_func)(std::forward<Args_T>(args)...);
+
+		if (p_args_tuple == nullptr)
+		{
+			p_args_tuple = &args_tuple;
+		}
+
+		UnfoldTuple(this, *p_args_tuple);
 		return true;
+	}
+
+	template<typename... Args>
+	void DoUnfoldTuple(Args&&... args)
+	{
+		(_cur_obj->*_func)(std::forward<Args>(args)...);
 	}
 
 private:

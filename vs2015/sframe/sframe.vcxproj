@@ -66,6 +66,7 @@
     <ClInclude Include="..\..\sframe\util\StringHelper.h" />
     <ClInclude Include="..\..\sframe\util\TimeHelper.h" />
     <ClInclude Include="..\..\sframe\util\Timer.h" />
+    <ClInclude Include="..\..\sframe\util\TupleHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp" />

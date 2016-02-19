@@ -6,40 +6,37 @@
 
 namespace sframe {
 
-// std::tuple 展开帮助类
-template<typename... Args>
-class TupleUnfold
+
+template<std::size_t N>
+struct UnfoldHelper
 {
-public:
-	template<typename Receiver>
-	static void Unfold(Receiver & recver, tuple<Args...> & t)
+	template<typename Obj, typename Tuple, typename... Tail>
+	static auto Unfold(Obj * obj, Tuple & t, Tail&&... tail)
+		-> decltype(UnfoldHelper<N - 1>::Unfold(obj, t, std::get<N - 1>(t), tail...))
 	{
-		UnfoldHelper<tuple_size<tuple<Args...>>::value>::Unfold(recver, t);
+		return UnfoldHelper<N - 1>::Unfold(obj, t, std::get<N - 1>(t), tail...);
 	}
-
-private:
-
-	template<std::size_t N>
-	struct UnfoldHelper
-	{
-		template<typename Receiver, typename... Tail>
-		static void Unfold(Receiver & recver, tuple<Args...> & t, Tail&&... tail)
-		{
-			UnfoldHelper<N - 1>::Unfold(recver, t, get<N - 1>(t), tail...);
-		}
-	};
-
-
-	template<>
-	struct UnfoldHelper<0>
-	{
-		template<typename Receiver, typename... Tail>
-		static void Unfold(Receiver & recver, tuple<Args...> & t, Tail&&... tail)
-		{
-			recver.Receive(std::forward<Tail>(tail)...);
-		}
-	};
 };
+
+
+template<>
+struct UnfoldHelper<0>
+{
+	template<typename Obj, typename Tuple, typename... Tail>
+	static auto Unfold(Obj * obj, Tuple & t, Tail&&... tail)
+		-> decltype(obj->DoUnfoldTuple(std::forward<Tail>(tail)...))
+	{
+		return obj->DoUnfoldTuple(std::forward<Tail>(tail)...);
+	}
+};
+
+// 展开std::tuple
+template<typename Obj, typename Tuple>
+inline auto UnfoldTuple(Obj * obj, Tuple & t)
+	-> decltype(UnfoldHelper<std::tuple_size<Tuple>::value>::Unfold(obj, t))
+{
+	return UnfoldHelper<std::tuple_size<Tuple>::value>::Unfold(obj, t);
+}
 
 }
 

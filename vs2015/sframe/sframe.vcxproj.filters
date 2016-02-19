@@ -156,6 +156,9 @@
     <ClInclude Include="..\..\sframe\util\Timer.h">
       <Filter>util</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\sframe\util\TupleHelper.h">
+      <Filter>util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp">

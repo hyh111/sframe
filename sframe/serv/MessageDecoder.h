@@ -4,6 +4,7 @@
 
 #include "Message.h"
 #include "../util/Serialization.h"
+#include "../util/TupleHelper.h"
 
 namespace sframe {
 
@@ -17,18 +18,18 @@ public:
 	}
 
 	template<typename... Args>
-	bool Decode(Args&... args)
+	bool Decode(std::tuple<Args...> ** p_args_tuple, std::tuple<Args...> & args_tuple)
 	{
 		MessageType msg_type = _msg->GetType();
-
 		assert(msg_type == kMsgType_InsideServiceMessage);
+
 		InsideServiceMessage<Args...> * msg = dynamic_cast<InsideServiceMessage<Args...>*>(_msg);
 		if (msg == nullptr)
 		{
 			return false;
 		}
 
-		std::tie(args...) = msg->GetData();
+		(*p_args_tuple) = &msg->GetData();
 
 		return true;
 	}
@@ -47,12 +48,16 @@ public:
 	}
 
 	template<typename... Args>
-	bool Decode(Args&... args)
+	bool Decode(std::tuple<Args...> ** p_args_tuple, std::tuple<Args...> & args_tuple)
 	{
-		MessageType msg_type = _msg->GetType();
-
-		assert(msg_type == kMsgType_NetServiceMessage);
+		assert(_msg->GetType() == kMsgType_NetServiceMessage);
 		
+		return UnfoldTuple(this, args_tuple);
+	}
+
+	template<typename... Args>
+	bool DoUnfoldTuple(Args&&... args)
+	{
 		NetServiceMessage * msg = dynamic_cast<NetServiceMessage*>(_msg);
 		if (msg == nullptr)
 		{
