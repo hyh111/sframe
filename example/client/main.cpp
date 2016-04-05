@@ -21,7 +21,7 @@ int main()
 {
 	SET_LOG_DIR("./client_log");
 
-	if (!ConfigManager::Instance().Load("./client_data"))
+	if (!ConfigManager::Instance().Initialize("./client_data"))
 	{
 		LOG_ERROR << "load config error" << ENDL;
 		return -1;
@@ -34,11 +34,11 @@ int main()
 	}
 
 	std::thread t(Exec);
-	//getchar();
-	while (true) 
+	getchar();
+	/*while (true)
 	{
 		sframe::TimeHelper::ThreadSleep(2000);
-	}
+	}*/
 
 	ClientManager::Instance().Close();
 	g_running = false;

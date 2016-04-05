@@ -2,7 +2,7 @@
 #include "ClientConfig.h"
 #include "conf/TableReader.h"
 
-FILL_TABLECONFIG(ClientConfig)
+void Table_FillObject(TableReader & tbl, ClientConfig & obj)
 {
 	TABLE_FILLFIELD(client_id);
 	TABLE_FILLFIELD(server_ip);

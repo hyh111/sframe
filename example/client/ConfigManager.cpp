@@ -6,9 +6,7 @@
 
 using namespace sframe;
 
-bool ConfigManager::LoadAll()
+void ConfigManager::RegistAllConfig()
 {
-	auto client_config = LoadMap<TableLoader<CSV>, ClientConfig::KeyType, ClientConfig>();
-
-	return client_config != nullptr;
+	RegistMapConfig<TableLoader<CSV>, ClientConfig::KeyType, ClientConfig>();
 }

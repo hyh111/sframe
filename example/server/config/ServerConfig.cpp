@@ -7,7 +7,7 @@
 
 using namespace sframe;
 
-FILL_JSONCONFIG(ServerInfo)
+void Json_FillObject(const json11::Json & json, ServerInfo & obj)
 {
 	JSON_FILLFIELD_INDEX(0, ip);
 	JSON_FILLFIELD_INDEX(1, port);
@@ -36,7 +36,7 @@ bool ServerConfig::Load(const std::string & filename)
 	return true;
 }
 
-FILL_JSONCONFIG(ServerConfig)
+void Json_FillObject(const json11::Json & json, ServerConfig & obj)
 {
 	JSON_FILLFIELD_WITH_DEFAULT(res_path, std::string("./res"));
 	JSON_FILLFIELD_WITH_DEFAULT(thread_num, 2);

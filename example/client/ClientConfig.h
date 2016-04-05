@@ -10,10 +10,8 @@
 #include "conf/ConfigDef.h"
 #include "ConfigType.h"
 
-TABLECONFIG(ClientConfig)
+TABLE_CONFIG(ClientConfig, "client_config.csv", kConfigType_ClientConfig)
 {
-	CONFIGINFO(kConfigType_ClientConfig, "client_config.csv");
-
 	typedef int32_t KeyType;
 
 	KeyType GetKey() const

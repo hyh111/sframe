@@ -4,28 +4,48 @@
 
 namespace json11 { class Json; }
 
-#define JSONCONFIG(S) \
+template<typename T_Config>
+struct ConfigInfoHelper
+{
+};
+
+#define JSON_OBJECT(S) \
 	struct S; \
 	void Json_FillObject(const json11::Json & json, S & obj); \
 	struct S
 
-#define FILL_JSONCONFIG(S) void Json_FillObject(const json11::Json & json, S & obj)
+#define JSON_CONFIG(S, file_name, config_id) \
+	struct S; \
+	template<> \
+	struct ConfigInfoHelper<S> \
+	{ \
+		static const char * GetFileName() {return file_name;} \
+		static int GetConfigId() {return config_id;}\
+	};\
+	void Json_FillObject(const json11::Json & json, S & obj); \
+	struct S
 
 class TableReader;
 
-#define TABLECONFIG(S) \
+#define TABLE_OBJECT(S) \
 	struct S; \
 	void Table_FillObject(TableReader & tbl, S & obj); \
 	struct S
 
-#define FILL_TABLECONFIG(S) void Table_FillObject(TableReader & tbl, S & obj)
+#define TABLE_CONFIG(S, file_name, config_id) \
+	struct S; \
+	template<> \
+	struct ConfigInfoHelper<S> \
+	{ \
+		static const char * GetFileName() {return file_name;} \
+		static int GetConfigId() {return config_id;}\
+	};\
+	void Table_FillObject(TableReader & tbl, S & obj); \
+	struct S
 
-#define CONFIGINFO(id, filename) \
-	static const char * GetFileName() {return filename;} \
-	static const int kConfigId = id
 
-#define GET_CONFIGID(T) T::kConfigId
+#define GET_CONFIGID(T) ConfigInfoHelper<T>::GetConfigId()
 
-#define GET_CONFIGFILENAME(T) T::GetFileName()
+#define GET_CONFIGFILENAME(T) ConfigInfoHelper<T>::GetFileName()
 
 #endif

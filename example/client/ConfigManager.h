@@ -14,7 +14,7 @@ public:
 	ConfigManager() : ConfigSet(kConfigType_Max) {}
 
 private:
-	bool LoadAll() override;
+	void RegistAllConfig() override;
 
 };
 

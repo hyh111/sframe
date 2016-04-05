@@ -8,14 +8,14 @@
 #include "conf/ConfigDef.h"
 #include "util/Singleton.h"
 
-JSONCONFIG(ServerInfo)
+JSON_OBJECT(ServerInfo)
 {
 	std::string ip;
 	uint16_t port;
 	std::string key;
 };
 
-JSONCONFIG(ServerConfig) : public sframe::singleton<ServerConfig>
+JSON_OBJECT(ServerConfig) : public sframe::singleton<ServerConfig>
 {
 	bool Load(const std::string & filename);
 

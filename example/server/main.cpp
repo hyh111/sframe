@@ -100,11 +100,11 @@ int main(int argc, char * argv[])
 		return -1;
 	}
 
-	//getchar();
-	while (true)
-	{
-		//sframe::TimeHelper::ThreadSleep(2000);
-	}
+	getchar();
+	//while (true)
+	//{
+	//	//sframe::TimeHelper::ThreadSleep(2000);
+	//}
 
 	ServiceDispatcher::Instance().Stop();
 
