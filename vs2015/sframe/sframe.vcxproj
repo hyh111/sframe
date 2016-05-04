@@ -40,13 +40,13 @@
     <ClInclude Include="..\..\sframe\net\win\IoUnit.h" />
     <ClInclude Include="..\..\sframe\net\win\TcpAcceptor_Win.h" />
     <ClInclude Include="..\..\sframe\net\win\TcpSocket_Win.h" />
+    <ClInclude Include="..\..\sframe\serv\Listener.h" />
     <ClInclude Include="..\..\sframe\serv\Message.h" />
     <ClInclude Include="..\..\sframe\serv\MessageDecoder.h" />
     <ClInclude Include="..\..\sframe\serv\ProxyService.h" />
     <ClInclude Include="..\..\sframe\serv\ProxyServiceMsg.h" />
     <ClInclude Include="..\..\sframe\serv\Service.h" />
     <ClInclude Include="..\..\sframe\serv\ServiceDispatcher.h" />
-    <ClInclude Include="..\..\sframe\serv\ServiceListener.h" />
     <ClInclude Include="..\..\sframe\serv\ServiceSession.h" />
     <ClInclude Include="..\..\sframe\util\BitPanel.h" />
     <ClInclude Include="..\..\sframe\util\Buffer.h" />
@@ -78,10 +78,10 @@
     <ClCompile Include="..\..\sframe\net\win\IoService_Win.cpp" />
     <ClCompile Include="..\..\sframe\net\win\TcpAcceptor_Win.cpp" />
     <ClCompile Include="..\..\sframe\net\win\TcpSocket_Win.cpp" />
+    <ClCompile Include="..\..\sframe\serv\Listener.cpp" />
     <ClCompile Include="..\..\sframe\serv\ProxyService.cpp" />
     <ClCompile Include="..\..\sframe\serv\Service.cpp" />
     <ClCompile Include="..\..\sframe\serv\ServiceDispatcher.cpp" />
-    <ClCompile Include="..\..\sframe\serv\ServiceListener.cpp" />
     <ClCompile Include="..\..\sframe\serv\ServiceSession.cpp" />
     <ClCompile Include="..\..\sframe\util\FileHelper.cpp" />
     <ClCompile Include="..\..\sframe\util\json11.cpp" />

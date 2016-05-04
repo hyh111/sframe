@@ -7,12 +7,9 @@ namespace sframe {
 // 代理服务消息号
 enum ProxyServiceMsgId
 {
-	kProxyServiceMsgId_SendToRemoteService = 1,
-	kProxyServiceMsgId_AddNewSession,
-	kProxyServiceMsgId_SessionClosed,
+	kProxyServiceMsgId_SessionClosed = 1,
 	kProxyServiceMsgId_SessionConnectCompleted,
 	kProxyServiceMsgId_SessionRecvData,
-	kProxyServiceMsgId_ServiceListenerClosed,
 };
 
 }

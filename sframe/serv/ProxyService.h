@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <queue>
 #include "ServiceSession.h"
-#include "ServiceListener.h"
 #include "Service.h"
 #include "../util/Timer.h"
 #include "ProxyServiceMsg.h"
@@ -26,16 +25,18 @@ public:
 
 	void Init() override;
 
-	void OnStart() override;
-
 	void OnDestroy() override;
 
 	bool IsDestroyCompleted() const override;
 
-	void SetListenAddr(const std::string & ipv4, uint16_t port, const std::string & key);
-
 	// 处理周期定时器
 	void OnCycleTimer() override;
+
+	// 新连接到来
+	void OnNewConnection(const std::shared_ptr<sframe::TcpSocket> & sock) override;
+
+	// 代理服务消息
+	void OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessage> & msg) override;
 
 	// 注册会话
 	// 返回会话ID（大于0的整数），否则为失败
@@ -65,20 +66,13 @@ private:
 
 private:
 
-	void OnMsg_SendToRemoteService(int32_t sid, std::shared_ptr<std::vector<char>> & data);
-
-	void OnMsg_AddNewSession(std::shared_ptr<sframe::TcpSocket> & sock);
-
 	void OnMsg_SessionClosed(int32_t session_id);
 
 	void OnMsg_SessionRecvData(int32_t session_id, const std::shared_ptr<std::vector<char>> & data);
 
 	void OnMsg_SessionConnectCompleted(int32_t session_id, bool success);
 
-	void OnMsg_ServiceListenerClosed();
-
 private:
-	ServiceListener * _listener;
 	ServiceSession * _session[kMaxSessionNumber + 1];
 	std::queue<int32_t> _session_id_queue;
 	int32_t _session_num;
@@ -92,7 +86,7 @@ private:
 		SessionInfo() : session_id(0) {}
 
 		int32_t session_id;
-		std::vector<std::shared_ptr<std::vector<char>>> msg_cache;
+		std::vector<std::shared_ptr<ProxyServiceMessage>> msg_cache;
 	};
 
 	std::unordered_map<int32_t, SessionInfo> _sid_to_sessioninfo;        // 服务ID到会话信息的映射

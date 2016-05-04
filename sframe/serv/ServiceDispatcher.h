@@ -18,6 +18,8 @@ namespace sframe{
 
 class IoService;
 class Service;
+class Listener;
+class ConnDistributeStrategy;
 
 // 服务调度器
 class ServiceDispatcher : public singleton<ServiceDispatcher>, public noncopyable
@@ -63,32 +65,10 @@ public:
 	template<typename... T_Args>
 	void SendNetServiceMsg(int32_t src_sid, int32_t dest_sid, uint16_t msg_id, T_Args&... args)
 	{
-		uint16_t msg_size = 0;
-		int32_t total_streang_length = AutoGetSize(msg_size, src_sid, dest_sid, msg_id, args...);
-		std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>(total_streang_length, 0);
-		char * buf = &((*data)[0]);
-
-		StreamWriter writer(buf + sizeof(msg_size), total_streang_length - sizeof(msg_size));
-		if (!AutoEncode(writer, src_sid, dest_sid, msg_id, args...))
-		{
-			assert(false);
-			return;
-		}
-
-		msg_size = (uint16_t)writer.GetStreamLength();
-		StreamWriter msg_size_writer(buf, sizeof(msg_size));
-		if (!AutoEncode(msg_size_writer, msg_size))
-		{
-			assert(false);
-			return;
-		}
-
-		std::shared_ptr<InsideServiceMessage<int32_t, std::shared_ptr<std::vector<char>>>> msg =
-			std::make_shared<InsideServiceMessage<int32_t, std::shared_ptr<std::vector<char>>>>(dest_sid, data);
+		std::shared_ptr<ProxyServiceMessageT<T_Args...>> msg = std::make_shared<ProxyServiceMessageT<T_Args...>>(args...);
 		msg->src_sid = src_sid;
-		msg->dest_sid = 0;
-		msg->msg_id = kProxyServiceMsgId_SendToRemoteService;
-
+		msg->dest_sid = dest_sid;
+		msg->msg_id = msg_id;
 		SendMsg(0, msg);
 	}
 
@@ -120,8 +100,14 @@ public:
 		return _local_sid;
 	}
 
-	// 设置监听地址(供远程服务器连接的地址)
-	void SetListenAddr(const std::string & ipv4, uint16_t port, const std::string & key = "");
+	// 设置远程服务监听地址
+	void SetServiceListenAddr(const std::string & ipv4, uint16_t port, const std::string & key = "");
+
+	// 设置自定义监听地址
+	void SetCustomListenAddr(const std::string & ipv4, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy = nullptr);
+
+	// 设置自定义监听地址
+	void SetCustomListenAddr(const std::string & ipv4, uint16_t port, int32_t handle_service);
 
     // 开始
     bool Start(int32_t thread_num);
@@ -176,7 +162,8 @@ private:
     bool _running;                                // 是否正在运行
     std::vector<std::thread*> _threads;           // 所有线程
 	std::shared_ptr<IoService> _ioservice;                       // IO服务指针
-	RingQueue<int32_t, kMaxServiceId> _dispach_service_queue;   // 服务调度队列
+	RingQueue<int32_t, kMaxServiceId> _dispach_service_queue;    // 服务调度队列
+	std::vector<Listener*> _listeners;            // 监听器
 
 	// 周期定时器
 	struct CycleTimer
@@ -194,6 +181,11 @@ private:
 	std::vector<CycleTimer> _cycle_timers;        // 周期定时器列表
 	std::atomic_bool _checking_timer;             // 是否正在检查周期定时器
 };
+
+static ServiceDispatcher & GetServiceDispatcher()
+{
+	return ServiceDispatcher::Instance();
+}
 
 }
 

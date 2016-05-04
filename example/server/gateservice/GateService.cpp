@@ -2,16 +2,12 @@
 #include <assert.h>
 #include "serv/ServiceDispatcher.h"
 #include "GateService.h"
-#include "ClientManager.h"
 #include "util/Log.h"
 #include "util/RandomHelper.h"
 
 // 初始化（创建服务成功后调用，此时还未开始运行）
 void GateService::Init()
 {
-	ClientManager::Instance().UpdateGateServiceInfo(GetServiceId(), 0);
-
-	RegistInsideServiceMessageHandler(kGateMsg_NewSession, &GateService::OnMsg_NewSession, this);
 	RegistInsideServiceMessageHandler(kGateMsg_SessionClosed, &GateService::OnMsg_SessionClosed, this);
 	RegistInsideServiceMessageHandler(kGateMsg_SessionRecvData, &GateService::OnMsg_SessionRecvData, this);
 
@@ -19,10 +15,23 @@ void GateService::Init()
 	RegistServiceMessageHandler(kGateMsg_SendToClient, &GateService::OnMsg_SendToClient, this);
 }
 
-// 销毁
-void GateService::OnDestroy()
+// 新连接到来
+void GateService::OnNewConnection(const std::shared_ptr<sframe::TcpSocket> & sock)
 {
-	_accept_new_session = false;
+	int32_t work_service = ChooseWorkService();
+	if (work_service <= 0)
+	{
+		sock->Close();
+		return;
+	}
+
+	assert(work_service <= sframe::ServiceDispatcher::kMaxServiceId);
+
+	int32_t sessionid = _new_session_id++;
+	std::shared_ptr<ClientSession> session = std::make_shared<ClientSession>(this, sessionid, sock);
+	session->EnterWorkService(work_service);
+	_sessions.insert(std::make_pair(sessionid, session));
+	LOG_INFO << "GateService:" << GetServiceId() << " ClientSession " << sessionid << " builded, an in" << work_service << ENDL;
 }
 
 int32_t GateService::ChooseWorkService()
@@ -44,30 +53,6 @@ int32_t GateService::ChooseWorkService()
 	}
 
 	return -1;
-}
-
-void GateService::OnMsg_NewSession(const std::shared_ptr<sframe::TcpSocket> & sock)
-{
-	if (!_accept_new_session)
-	{
-		sock->Close();
-		return;
-	}
-
-	int32_t work_service = ChooseWorkService();
-	if (work_service <= 0)
-	{
-		sock->Close();
-		return;
-	}
-
-	assert(work_service <= sframe::ServiceDispatcher::kMaxServiceId);
-
-	int32_t sessionid = _new_session_id++;
-	std::shared_ptr<ClientSession> session = std::make_shared<ClientSession>(this, sessionid, sock);
-	session->EnterWorkService(work_service);
-	_sessions.insert(std::make_pair(sessionid, session));
-	LOG_INFO << "GateService:" << GetServiceId() << " ClientSession " << sessionid << " builded, an in" << work_service << ENDL;
 }
 
 void GateService::OnMsg_SessionClosed(const std::shared_ptr<ClientSession> & session)

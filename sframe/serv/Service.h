@@ -10,6 +10,7 @@
 #include "../util/Delegate.h"
 #include "../util/Singleton.h"
 #include "ServiceDispatcher.h"
+#include "../net/net.h"
 
 namespace sframe{
 
@@ -69,8 +70,14 @@ public:
 	// 处理销毁
 	virtual void OnDestroy() {}
 
+	// 代理服务消息
+	virtual void OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessage> & msg) {}
+
 	// 服务接入
 	virtual void OnServiceJoin(const std::unordered_set<int32_t> & sid_set, bool is_remote) {}
+
+	// 新连接到来
+	virtual void OnNewConnection(const std::shared_ptr<sframe::TcpSocket> & sock) {}
 
 	// 是否销毁完成
 	virtual bool IsDestroyCompleted() const

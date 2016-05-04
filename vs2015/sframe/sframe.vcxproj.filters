@@ -96,9 +96,6 @@
     <ClInclude Include="..\..\sframe\serv\ServiceDispatcher.h">
       <Filter>serv</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\sframe\serv\ServiceListener.h">
-      <Filter>serv</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\sframe\serv\ServiceSession.h">
       <Filter>serv</Filter>
     </ClInclude>
@@ -159,6 +156,9 @@
     <ClInclude Include="..\..\sframe\util\TupleHelper.h">
       <Filter>util</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\Listener.h">
+      <Filter>serv</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp">
@@ -197,9 +197,6 @@
     <ClCompile Include="..\..\sframe\serv\ServiceDispatcher.cpp">
       <Filter>serv</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sframe\serv\ServiceListener.cpp">
-      <Filter>serv</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\sframe\serv\ServiceSession.cpp">
       <Filter>serv</Filter>
     </ClCompile>
@@ -226,6 +223,9 @@
     </ClCompile>
     <ClCompile Include="..\..\sframe\util\StringHelper.cpp">
       <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\serv\Listener.cpp">
+      <Filter>serv</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

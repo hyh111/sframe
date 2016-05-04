@@ -29,7 +29,7 @@ public:
 public:
 	ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port, const std::string & remote_key);
 
-	ServiceSession(int32_t id, ProxyService * proxy_service, std::shared_ptr<TcpSocket> & sock);
+	ServiceSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<TcpSocket> & sock);
 
 	~ServiceSession(){}
 

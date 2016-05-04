@@ -145,7 +145,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\example\server\config\ServerConfig.cpp" />
-    <ClCompile Include="..\..\example\server\gateservice\ClientManager.cpp" />
     <ClCompile Include="..\..\example\server\gateservice\ClientSession.cpp" />
     <ClCompile Include="..\..\example\server\gateservice\GateService.cpp" />
     <ClCompile Include="..\..\example\server\main.cpp" />
@@ -156,7 +155,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\example\server\config\ServerConfig.h" />
     <ClInclude Include="..\..\example\server\config\ServiceDef.h" />
-    <ClInclude Include="..\..\example\server\gateservice\ClientManager.h" />
     <ClInclude Include="..\..\example\server\gateservice\ClientSession.h" />
     <ClInclude Include="..\..\example\server\gateservice\GateService.h" />
     <ClInclude Include="..\..\example\server\ssproto\SSMsg.h" />

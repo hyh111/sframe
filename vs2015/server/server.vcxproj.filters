@@ -19,9 +19,6 @@
     <ClCompile Include="..\..\example\server\config\ServerConfig.cpp">
       <Filter>config</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\example\server\gateservice\ClientManager.cpp">
-      <Filter>gateservice</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\example\server\gateservice\ClientSession.cpp">
       <Filter>gateservice</Filter>
     </ClCompile>
@@ -44,9 +41,6 @@
     </ClInclude>
     <ClInclude Include="..\..\example\server\config\ServiceDef.h">
       <Filter>config</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\example\server\gateservice\ClientManager.h">
-      <Filter>gateservice</Filter>
     </ClInclude>
     <ClInclude Include="..\..\example\server\gateservice\ClientSession.h">
       <Filter>gateservice</Filter>

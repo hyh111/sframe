@@ -92,6 +92,13 @@ void Service::Process()
 			}
 			break;
 
+			case sframe::kMsgType_ProxyServiceMessage:
+			{
+				auto proxy_service_msg = std::static_pointer_cast<ProxyServiceMessage>(msg);
+				OnProxyServiceMessage(proxy_service_msg);
+			}
+			break;
+
 			case sframe::kMsgType_StartServiceMessage:
 			{
 				this->OnStart();
@@ -108,6 +115,13 @@ void Service::Process()
 			{
 				auto join_msg = std::static_pointer_cast<ServiceJoinMessage>(msg);
 				this->OnServiceJoin(join_msg->service, join_msg->is_remote);
+			}
+			break;
+
+			case sframe::kMsgType_NewConnectionMessage:
+			{
+				auto new_conn_msg = std::static_pointer_cast<NewConnectionMessage>(msg);
+				this->OnNewConnection(new_conn_msg->GetSocket());
 			}
 			break;
 		}

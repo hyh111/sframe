@@ -15,7 +15,7 @@ ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const s
 	assert(!remote_ip.empty() && proxy_service);
 }
 
-ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, std::shared_ptr<sframe::TcpSocket> & sock)
+ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<sframe::TcpSocket> & sock)
 	: _session_id(id), _socket(sock), _state(kSessionState_WaitAuth), _proxy_service(proxy_service), _reconnect(false)
 {
 	assert(sock != nullptr && proxy_service);

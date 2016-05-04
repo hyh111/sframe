@@ -11,7 +11,6 @@
 #include "config/ServerConfig.h"
 #include "serv/ServiceDispatcher.h"
 #include "gateservice/GateService.h"
-#include "gateservice/ClientManager.h"
 #include "workservice/WorkService.h"
 #include "util/Log.h"
 #include "util/TimeHelper.h"
@@ -20,6 +19,8 @@ using namespace sframe;
 
 bool Start()
 {
+	std::set<int32_t> local_gate_service;
+
 	// 注册本地服务
 	for (int32_t sid : ServerConfig::Instance().local_service)
 	{
@@ -28,6 +29,7 @@ bool Start()
 		if (sid >= kSID_GateServiceBegin && sid <= kSID_GateServiceEnd)
 		{
 			service = ServiceDispatcher::Instance().RegistService<GateService>(sid);
+			local_gate_service.insert(sid);
 		}
 		else if (sid >= kSID_WorkServiceBegin && sid <= kSID_WorkServiceEnd)
 		{
@@ -53,23 +55,24 @@ bool Start()
 
 	if (!ServerConfig::Instance().service_listen.ip.empty())
 	{
-		ServiceDispatcher::Instance().SetListenAddr(
+		ServiceDispatcher::Instance().SetServiceListenAddr(
 			ServerConfig::Instance().service_listen.ip,
 			ServerConfig::Instance().service_listen.port,
 			ServerConfig::Instance().service_listen.key);
 	}
 
-	
+	if (!ServerConfig::Instance().client_listen.ip.empty() && !local_gate_service.empty())
+	{
+		ServiceDispatcher::Instance().SetCustomListenAddr(
+			ServerConfig::Instance().client_listen.ip, 
+			ServerConfig::Instance().client_listen.port,
+			local_gate_service);
+	}
 
 	if (!ServiceDispatcher::Instance().Start(ServerConfig::Instance().thread_num))
 	{
 		LOG_ERROR << "start server failure" << ENDL;
 		return false;
-	}
-
-	if (!ServerConfig::Instance().client_listen.ip.empty())
-	{
-		ClientManager::Instance().Start(ServerConfig::Instance().client_listen.ip, ServerConfig::Instance().client_listen.port);
 	}
 
 	return true;

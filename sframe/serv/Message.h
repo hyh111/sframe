@@ -10,6 +10,8 @@
 #include <atomic>
 #include <tuple>
 #include <memory>
+#include "../util/TupleHelper.h"
+#include "../util/Serialization.h"
 
 namespace sframe{
 
@@ -20,8 +22,10 @@ enum MessageType : int32_t
 	kMsgType_StartServiceMessage,     // 启动服务消息
 	kMsgType_DestroyServiceMessage,   // 销毁服务消息
 	kMsgType_ServiceJoinMessage,      // 服务接入消息
+	kMsgType_NewConnectionMessage,    // 新连接消息
 	kMsgType_NetServiceMessage,       // 网络服务间消息
 	kMsgType_InsideServiceMessage,    // 内部服务间消息
+	kMsgType_ProxyServiceMessage,     // 代理服务消息
 };
 
 // 消息基类
@@ -125,6 +129,69 @@ private:
 	std::tuple<Data_Type...> _data;
 };
 
+// 代理服务消息
+class ProxyServiceMessage : public ServiceMessage
+{
+public:
+	ProxyServiceMessage() {}
+
+	// 获取消息类型
+	MessageType GetType() const override
+	{
+		return kMsgType_ProxyServiceMessage;
+	}
+
+	// 序列化
+	virtual bool Serialize(char * buf, int32_t * len) = 0;
+};
+
+// 具体的代理服务消息
+template<typename... Data_Type>
+class ProxyServiceMessageT : public ProxyServiceMessage
+{
+public:
+	ProxyServiceMessageT(Data_Type&... datas) : _data(datas...) {}
+
+	// 序列化
+	bool Serialize(char * buf, int32_t * len) override
+	{
+		if (buf == nullptr || len == nullptr || (*len) < 0)
+		{
+			return false;
+		}
+
+		_buf = buf;
+		_len = len;
+
+		return UnfoldTuple(this, _data);
+	}
+
+	template<typename... Args>
+	bool DoUnfoldTuple(Args&&... args)
+	{
+		assert(_buf && _len && (*_len) >= 0);
+		uint16_t msg_size = 0;
+		StreamWriter writer(_buf + sizeof(msg_size), (uint32_t)(*_len) - sizeof(msg_size));
+		if (!AutoEncode(writer, src_sid, dest_sid, msg_id, args...))
+		{
+			return false;
+		}
+
+		msg_size = (uint16_t)writer.GetStreamLength();
+		msg_size = HTON_16(msg_size);
+		memcpy(_buf, (void*)&msg_size, sizeof(msg_size));
+
+		(*_len) = (int32_t)writer.GetStreamLength() + (int32_t)sizeof(msg_size);
+
+		return true;
+	}
+
+private:
+	std::tuple<Data_Type...> _data;
+	char * _buf;
+	int32_t * _len;
+};
+
 // 启动服务消息
 class StartServiceMessage : public Message
 {
@@ -163,6 +230,30 @@ public:
 public:
 	std::unordered_set<int32_t> service;
 	bool is_remote;  // 是否为远程服务
+};
+
+class TcpSocket;
+
+// 接收到新连接消息
+class NewConnectionMessage : public Message
+{
+public:
+	NewConnectionMessage(const std::shared_ptr<TcpSocket> & sock) : _sock(sock) {}
+	virtual ~NewConnectionMessage() {}
+
+	// 获取消息类型
+	MessageType GetType() const
+	{
+		return kMsgType_NewConnectionMessage;
+	}
+
+	const std::shared_ptr<TcpSocket> & GetSocket()
+	{
+		return _sock;
+	}
+
+private:
+	std::shared_ptr<TcpSocket> _sock;
 };
 
 }

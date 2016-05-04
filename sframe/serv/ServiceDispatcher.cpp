@@ -3,11 +3,10 @@
 #include "ServiceDispatcher.h"
 #include "Service.h"
 #include "ProxyService.h"
+#include "Listener.h"
 #include "../util/TimeHelper.h"
 #include "../util/Log.h"
 
-using namespace sframe;
-using namespace sframe;
 using namespace sframe;
 
 // 业务线程函数
@@ -109,11 +108,48 @@ void ServiceDispatcher::SendMsg(int32_t sid, const std::shared_ptr<Message> & ms
 	}
 }
 
-// 设置监听地址(供远程服务器连接的地址)
-void ServiceDispatcher::SetListenAddr(const std::string & ipv4, uint16_t port, const std::string & key)
+// 设置远程服务监听地址
+void ServiceDispatcher::SetServiceListenAddr(const std::string & ipv4, uint16_t port, const std::string & key)
 {
 	RepareProxyServer();
-	((ProxyService*)_services[0])->SetListenAddr(ipv4, port, key);
+	((ProxyService*)_services[0])->SetLocalAuthKey(key);
+	Listener * listener = new Listener(ipv4, port, 0);
+	assert(listener);
+	_listeners.push_back(listener);
+}
+
+// 设置自定义监听地址
+void ServiceDispatcher::SetCustomListenAddr(const std::string & ipv4, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy)
+{
+	if (handle_services.empty())
+	{
+		return;
+	}
+
+	for (auto it = handle_services.begin(); it != handle_services.end(); it++)
+	{
+		if (*it <= 0)
+		{
+			return;
+		}
+	}
+
+	Listener * listener = new Listener(ipv4, port, handle_services, distribute_strategy);
+	assert(listener);
+	_listeners.push_back(listener);
+}
+
+// 设置自定义监听地址
+void ServiceDispatcher::SetCustomListenAddr(const std::string & ipv4, uint16_t port, int32_t handle_service)
+{
+	if (handle_service <= 0)
+	{
+		return;
+	}
+
+	Listener * listener = new Listener(ipv4, port, handle_service);
+	assert(listener);
+	_listeners.push_back(listener);
 }
 
 // 开始
@@ -138,6 +174,12 @@ bool ServiceDispatcher::Start(int32_t thread_num)
 	}
 
     _running = true;
+
+	// 开启所有监听器
+	for (auto it = _listeners.begin(); it < _listeners.end(); it++)
+	{
+		(*it)->Start();
+	}
 
 	// 通知所有服务开始
 	std::unordered_set<int32_t> usable_service;
@@ -167,6 +209,19 @@ bool ServiceDispatcher::Start(int32_t thread_num)
 // 停止
 void ServiceDispatcher::Stop()
 {
+	// 停止所有监听器
+	for (auto it = _listeners.begin(); it < _listeners.end(); it++)
+	{
+		(*it)->Stop();
+	}
+	for (auto it = _listeners.begin(); it < _listeners.end(); it++)
+	{
+		while ((*it)->IsRunning())
+		{
+			TimeHelper::ThreadSleep(1);
+		}
+	}
+
 	// 给所有服务发送销毁消息
 	std::shared_ptr<Message> destroy_msg = std::make_shared<DestroyServiceMessage>();
 	for (int i = 0; i <= _max_sid; i++)
