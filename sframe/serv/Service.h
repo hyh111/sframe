@@ -55,7 +55,7 @@ private:
 class Service : public noncopyable
 {
 public:
-	static const int32_t kDefaultMaxWaitDestroyTime = 100000;
+	static const int32_t kDefaultMaxWaitDestroyTime = 100000;   // 毫秒
 
 public:
 	// 初始化（创建服务成功后调用，此时还未开始运行）
@@ -64,38 +64,23 @@ public:
 	// 处理周期定时器
 	virtual void OnCycleTimer() {}
 
-	// 处理开始（此时已经开始运行）
-	virtual void OnStart() {}
-
 	// 处理销毁
 	virtual void OnDestroy() {}
 
 	// 代理服务消息
 	virtual void OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessage> & msg) {}
 
-	// 服务接入
-	virtual void OnServiceJoin(const std::unordered_set<int32_t> & sid_set, bool is_remote) {}
+	// 服务断开（仅与本服务发生过消息往来的服务断开时，才会有通知）
+	virtual void OnServiceLost(const std::vector<int32_t> & services) {}
 
 	// 新连接到来
-	virtual void OnNewConnection(const std::shared_ptr<sframe::TcpSocket> & sock) {}
+	virtual void OnNewConnection(const ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock) {}
 
 	// 是否销毁完成
-	virtual bool IsDestroyCompleted() const
-	{
-		return true;
-	}
-
-	// 是否关心指定服务的接入
-	virtual bool IsCareServiceJoin(int32_t sid) const
-	{
-		return false;
-	}
+	virtual bool IsDestroyCompleted() const { return true; }
 
 	// 获取服务的循环定时器周期，重写此方法返回大于0的值(ms)设置循环周期
-	virtual int32_t GetCyclePeriod() const
-	{
-		return 0;
-	}
+	virtual int32_t GetCyclePeriod() const { return 0; }
 
 public:
     Service() : _sid(0), _msg_queue(this), _last_sid(0), _cur_time(0) {}

@@ -8,15 +8,15 @@
 
 using namespace sframe;
 
-ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port, const std::string & remote_key)
+ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port)
 	: _session_id(id), _remote_ip(remote_ip), _remote_port(remote_port), _proxy_service(proxy_service), 
-	_state(kSessionState_WaitConnect),  _remote_key(remote_key),  _reconnect(true)
+	_state(kSessionState_WaitConnect),  _reconnect(true)
 {
 	assert(!remote_ip.empty() && proxy_service);
 }
 
 ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<sframe::TcpSocket> & sock)
-	: _session_id(id), _socket(sock), _state(kSessionState_WaitAuth), _proxy_service(proxy_service), _reconnect(false)
+	: _session_id(id), _socket(sock), _state(kSessionState_Running), _proxy_service(proxy_service), _reconnect(false)
 {
 	assert(sock != nullptr && proxy_service);
 }
@@ -24,8 +24,10 @@ ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const s
 
 void ServiceSession::Init()
 {
-	if (_socket == nullptr)
+	if (!_socket)
 	{
+		_socket = sframe::TcpSocket::Create(ServiceDispatcher::Instance().GetIoService());
+		_socket->SetMonitor(this);
 		StartConnectTimer(0);
 	}
 	else
@@ -50,7 +52,8 @@ void ServiceSession::Close()
 
 	if (send_close)
 	{
-		std::shared_ptr<InsideServiceMessage<int32_t>> msg = std::make_shared<InsideServiceMessage<int32_t>>(_session_id);
+		bool by_self = true;
+		std::shared_ptr<InsideServiceMessage<bool, int32_t>> msg = std::make_shared<InsideServiceMessage<bool, int32_t>>(by_self, _session_id);
 		msg->dest_sid = 0;
 		msg->src_sid = 0;
 		msg->msg_id = kProxyServiceMsgId_SessionClosed;
@@ -66,8 +69,10 @@ bool ServiceSession::TryFree()
 		return true;
 	}
 
-	_socket.reset();
 	_state = kSessionState_WaitConnect;
+	// 全新创建一个socket
+	_socket = sframe::TcpSocket::Create(ServiceDispatcher::Instance().GetIoService());
+	_socket->SetMonitor(this);
 	// 开启连接定时器
 	StartConnectTimer(kReconnectInterval);
 
@@ -79,60 +84,58 @@ void ServiceSession::DoConnectCompleted(bool success)
 {
 	if (!success)
 	{
-		_socket.reset();
+		// 新创建一个socket
+		_socket = sframe::TcpSocket::Create(ServiceDispatcher::Instance().GetIoService());
+		_socket->SetMonitor(this);
 		_state = kSessionState_WaitConnect;
 		// 开启连接定时器
 		StartConnectTimer(kReconnectInterval);
 		return;
 	}
 
-	_state = kSessionState_Authing;
-	// 发送验证信息
-	bool sendresult = SendAuthMessage();
-	if (!sendresult)
+	// 开始会话
+	_state = ServiceSession::kSessionState_Running;
+	assert(_socket->IsOpen());
+
+	// 之前缓存的数据立即发送出去
+	char data[65536];
+	int32_t len = 65536;
+	for (auto & msg : _msg_cache)
 	{
-		assert(false);
-		_socket->Close();
+		if (msg->Serialize(data, &len))
+		{
+			_socket->Send(data, len);
+		}
+		else
+		{
+			LOG_ERROR << "Serialize mesage error" << std::endl;
+		}
 	}
-}
-
-// 接受数据
-void ServiceSession::DoRecvData(std::vector<char> & data)
-{
-	// 空为心跳包
-	if (data.empty())
-	{
-		return;
-	}
-
-	switch (_state)
-	{
-	case kSessionState_Running:
-		ReceiveData_Running(data);
-		break;
-
-	case ServiceSession::kSessionState_WaitAuth:
-		ReceiveData_WaitAuth(data);
-		break;
-
-	case ServiceSession::kSessionState_Authing:
-		ReceiveData_Authing(data);
-		break;
-
-	default:
-		assert(false);
-		break;
-	}
+	_msg_cache.clear();
 }
 
 // 发送数据
-void ServiceSession::SendData(const char * data, int32_t len)
+void ServiceSession::SendData(const std::shared_ptr<ProxyServiceMessage> & msg)
 {
-	if (_state == kSessionState_Running)
+	if (_state != ServiceSession::kSessionState_Running)
 	{
-		assert(_socket != nullptr);
+		// 缓存下来
+		_msg_cache.push_back(msg);
+	}
+	else
+	{
+		assert(_socket);
 		// 直接发送
-		_socket->Send(data, len);
+		char data[65536];
+		int32_t len = 65536;
+		if (msg->Serialize(data, &len))
+		{
+			_socket->Send(data, len);
+		}
+		else
+		{
+			LOG_ERROR << "Serialize mesage error" << std::endl;
+		}
 	}
 }
 
@@ -140,7 +143,7 @@ void ServiceSession::SendData(const char * data, int32_t len)
 // 返回剩余多少数据
 int32_t ServiceSession::OnReceived(char * data, int32_t len)
 {
-	assert(data && len > 0 && (_state == kSessionState_Running || _state == kSessionState_Authing || _state == kSessionState_WaitAuth));
+	assert(data && len > 0 && _state == kSessionState_Running);
 
 	char * p = data;
 	int32_t surplus = len;
@@ -186,7 +189,7 @@ void ServiceSession::OnClosed(bool by_self, sframe::Error err)
 		LOG_INFO << "Connection with server(" << SocketAddrText(_socket->GetRemoteAddress()).Text() << ") closed" << ENDL;
 	}
 
-	std::shared_ptr<InsideServiceMessage<int32_t>> msg = std::make_shared<InsideServiceMessage<int32_t>>(_session_id);
+	std::shared_ptr<InsideServiceMessage<bool, int32_t>> msg = std::make_shared<InsideServiceMessage<bool, int32_t>>(by_self, _session_id);
 	msg->dest_sid = 0;
 	msg->src_sid = 0;
 	msg->msg_id = kProxyServiceMsgId_SessionClosed;
@@ -217,181 +220,6 @@ void ServiceSession::OnConnected(sframe::Error err)
 	}
 }
 
-// 运行状态接收数据处理
-void ServiceSession::ReceiveData_Running(std::vector<char> & data)
-{
-	// 读取头部
-	int32_t src_sid = 0;
-	int32_t dest_sid = 0;
-	uint16_t msg_id = 0;
-	char * p = &data[0];
-	uint32_t len = (uint32_t)data.size();
-	StreamReader reader(p, len);
-	if (AutoDecode(reader, src_sid, dest_sid, msg_id))
-	{
-		if (dest_sid > 0)
-		{
-			int32_t data_len = (int32_t)len - (int32_t)reader.GetReadedLength();
-			assert(data_len >= 0);
-			std::shared_ptr<NetServiceMessage> msg = std::make_shared<NetServiceMessage>();
-			msg->dest_sid = dest_sid;
-			msg->src_sid = src_sid;
-			msg->msg_id = msg_id;
-			msg->data = std::move(data);
-			// 发送到目标服务
-			ServiceDispatcher::Instance().SendMsg(dest_sid, msg);
-		}
-	}
-}
-
-// 验证状态接受数据处理
-void ServiceSession::ReceiveData_Authing(std::vector<char> & data)
-{
-	uint8_t success;
-	std::vector<int32_t> remote_service;
-
-	StreamReader reader(&data[0], (uint32_t)data.size());
-	if (!AutoDecode(reader, success, remote_service))
-	{
-		_reconnect = false;  // 不再进行自动重连
-		_socket->Close();
-		return;
-	}
-
-	if (!success)
-	{
-		_reconnect = false;  // 不再进行自动重连
-		_socket->Close();
-		return;
-	}
-
-	Start(remote_service);
-}
-
-// 等待验证状态接受数据处理
-void ServiceSession::ReceiveData_WaitAuth(std::vector<char> & data)
-{
-	std::vector<int32_t> remote_service;
-	int64_t send_time = 0;
-	std::string sign;
-
-	StreamReader reader(&data[0], (uint32_t)data.size());
-	if (!AutoDecode(reader, remote_service, send_time, sign))
-	{
-		SendAuthCompletedMessage(false);
-		_socket->Close();
-		return;
-	}
-
-	// 验证签名
-	std::string makesign;
-	for (auto sid : remote_service)
-	{
-		makesign.append(std::to_string(sid));
-	}
-	makesign.append(std::to_string(send_time));
-	if (!_proxy_service->GetLocalAuthKey().empty())
-	{
-		makesign.append(_proxy_service->GetLocalAuthKey());
-	}
-
-	MD5 md5(makesign);
-	std::string my_sign = md5.GetResult();
-
-	if (my_sign != sign)
-	{
-		SendAuthCompletedMessage(false);
-		_socket->Close();
-		return;
-	}
-
-	SendAuthCompletedMessage(true);
-	Start(remote_service);
-}
-
-// 发送验证信息
-bool ServiceSession::SendAuthMessage()
-{
-	auto & local_service = ServiceDispatcher::Instance().GetAllLocalSid();
-	int64_t cur_time = TimeHelper::GetEpochSeconds();
-	std::string makesign;
-	for (auto sid : local_service)
-	{
-		makesign.append(std::to_string(sid));
-	}
-	makesign.append(std::to_string(cur_time));
-	if (!_remote_key.empty())
-	{
-		makesign.append(_remote_key);
-	}
-
-	MD5 md5(makesign);
-	std::string sign = md5.GetResult();
-
-	// 发送验证消息
-	uint16_t msg_size = 0;
-	char buf[65536];
-
-	StreamWriter writer(buf + sizeof(msg_size), 65536 - sizeof(msg_size));
-	if (!AutoEncode(writer, local_service, cur_time, sign))
-	{
-		return false;
-	}
-
-	msg_size = (uint16_t)writer.GetStreamLength();
-	StreamWriter msg_size_writer(buf, sizeof(msg_size));
-	if (!AutoEncode(msg_size_writer, msg_size))
-	{
-		return false;
-	}
-
-	assert(_socket);
-	_socket->Send(buf, msg_size + sizeof(msg_size));
-
-	return true;
-}
-
-// 发送验证完成信息
-bool ServiceSession::SendAuthCompletedMessage(bool success)
-{
-	uint8_t succ = success ? 1 : 0;
-	std::vector<int32_t> local_service;
-
-	if (success)
-	{
-		local_service = ServiceDispatcher::Instance().GetAllLocalSid();
-	}
-
-	uint16_t msg_size = 0;
-	char buf[65536];
-
-	StreamWriter writer(buf + sizeof(msg_size), 65536 - sizeof(msg_size));
-	if (!AutoEncode(writer, succ, local_service))
-	{
-		return false;
-	}
-
-	msg_size = (uint16_t)writer.GetStreamLength();
-	StreamWriter msg_size_writer(buf, sizeof(msg_size));
-	if (!AutoEncode(msg_size_writer, msg_size))
-	{
-		return false;
-	}
-
-	assert(_socket);
-	_socket->Send(buf, sizeof(msg_size) + msg_size);
-
-	return true;
-}
-
-// 开始会话
-void ServiceSession::Start(const std::vector<int32_t> & remote_service)
-{
-	_state = ServiceSession::kSessionState_Running;
-	
-	_proxy_service->StartSession(_session_id, remote_service);
-}
-
 // 开始连接定时器
 void ServiceSession::StartConnectTimer(int32_t after_ms)
 {
@@ -401,13 +229,12 @@ void ServiceSession::StartConnectTimer(int32_t after_ms)
 // 定时：连接
 int32_t ServiceSession::OnTimer_Connect(int64_t cur_ms)
 {
-	assert(_state == kSessionState_WaitConnect && _socket == nullptr && !_remote_ip.empty());
+	assert(_state == kSessionState_WaitConnect && _socket && !_remote_ip.empty());
 
 	LOG_INFO << "Start connect to server(" << _remote_ip << ":" << _remote_port << ")" << ENDL;
 
+
 	_state = kSessionState_Connecting;
-	_socket = sframe::TcpSocket::Create(ServiceDispatcher::Instance().GetIoService());
-	_socket->SetMonitor(this);
 	_socket->Connect(sframe::SocketAddr(_remote_ip.c_str(), _remote_port));
 
 	// 只执行一次后停止

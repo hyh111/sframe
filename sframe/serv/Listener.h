@@ -9,6 +9,7 @@
 #include <set>
 #include "../net/net.h"
 #include "../util/Singleton.h"
+#include "Message.h"
 
 namespace sframe {
 
@@ -48,17 +49,19 @@ class Listener : public TcpAcceptor::Monitor, public noncopyable
 public:
 
 	Listener(const std::string & ip, uint16_t port, int32_t handle_service)
-		: _ip(ip), _port(port)
 	{
 		_running.store(false);
+		_addr.ip = ip;
+		_addr.port = port;
 		_distribute_strategy = new ConnDistributeStrategy();
 		_distribute_strategy->SetHandleServices(std::set<int32_t> {handle_service});
 	}
 
 	Listener(const std::string & ip, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy = nullptr)
-		: _ip(ip), _port(port)
 	{
 		_running.store(false);
+		_addr.ip = ip;
+		_addr.port = port;
 		if (distribute_strategy == nullptr)
 		{
 			_distribute_strategy = new ConnDistributeStrategy();
@@ -69,6 +72,11 @@ public:
 	~Listener()
 	{
 		delete _distribute_strategy;
+	}
+
+	void SetDescName(const std::string & desc_name)
+	{
+		_addr.desc_name = desc_name;
 	}
 
 	bool IsRunning() const
@@ -87,8 +95,7 @@ public:
 	void OnClosed(Error err) override;
 
 private:
-	std::string _ip;
-	uint16_t _port;
+	ListenAddress _addr;
 	std::shared_ptr<TcpAcceptor> _acceptor;
 	ConnDistributeStrategy * _distribute_strategy;
 	std::atomic_bool _running;

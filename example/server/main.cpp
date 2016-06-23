@@ -14,59 +14,69 @@
 #include "workservice/WorkService.h"
 #include "util/Log.h"
 #include "util/TimeHelper.h"
+#include "util/DynamicFactory.h"
 
 using namespace sframe;
 
 bool Start()
 {
-	std::set<int32_t> local_gate_service;
+	std::unordered_map<std::string, std::set<int32_t>> local_service;
 
-	// 注册本地服务
-	for (int32_t sid : ServerConfig::Instance().local_service)
+	// 注册所有服务
+	for (const auto & pr : ServerConfig::Instance().services)
 	{
-		Service * service = nullptr;
+		auto serv_info = pr.second;
 
-		if (sid >= kSID_GateServiceBegin && sid <= kSID_GateServiceEnd)
+		if (serv_info->is_local_service)
 		{
-			service = ServiceDispatcher::Instance().RegistService<GateService>(sid);
-			local_gate_service.insert(sid);
-		}
-		else if (sid >= kSID_WorkServiceBegin && sid <= kSID_WorkServiceEnd)
-		{
-			service = ServiceDispatcher::Instance().RegistService<WorkService>(sid);
-		}
+			Service * serv = DynamicFactory::Instance().Create<Service>(serv_info->service_type_name);
+			if (serv == nullptr)
+			{
+				LOG_ERROR << "Create service failure|" << serv_info->service_type_name << "|" << serv_info->sid << std::endl;
+				continue;
+			}
 
-		if (service == nullptr)
+			if (!ServiceDispatcher::Instance().RegistService(serv_info->sid, serv))
+			{
+				delete serv;
+				LOG_ERROR << "Regist local service failure|" << serv_info->service_type_name << "|" << serv_info->sid << std::endl;
+				continue;
+			}
+
+			LOG_INFO << "Regist local service success|" << serv_info->service_type_name << "|" << serv_info->sid << std::endl;
+			local_service[serv_info->service_type_name].insert(serv_info->sid);
+		}
+		else
 		{
-			LOG_ERROR << "regist service " << sid << " failure" << ENDL;
-			return false;
+			if (!ServiceDispatcher::Instance().RegistRemoteService(serv_info->sid, serv_info->remote_addr.ip, serv_info->remote_addr.port))
+			{
+				LOG_ERROR << "Regist remote service failure|" << serv_info->service_type_name << "|" << serv_info->sid << std::endl;
+				continue;
+			}
+
+			LOG_INFO << "Regist remote service success|" << serv_info->service_type_name << "|" << serv_info->sid << std::endl;
 		}
 	}
 
-	// 注册远程服务器
-	for (const ServerInfo & server_info : ServerConfig::Instance().remote_server)
-	{
-		if (!ServiceDispatcher::Instance().RegistRemoteServer(server_info.ip, server_info.port, server_info.key))
-		{
-			LOG_ERROR << "regist remote server(" << server_info.ip << ":" << server_info.port << ") failure" << ENDL;
-			return false;
-		}
-	}
-
-	if (!ServerConfig::Instance().service_listen.ip.empty())
+	if (ServerConfig::Instance().listen_service)
 	{
 		ServiceDispatcher::Instance().SetServiceListenAddr(
-			ServerConfig::Instance().service_listen.ip,
-			ServerConfig::Instance().service_listen.port,
-			ServerConfig::Instance().service_listen.key);
+			ServerConfig::Instance().listen_service->ip,
+			ServerConfig::Instance().listen_service->port);
 	}
 
-	if (!ServerConfig::Instance().client_listen.ip.empty() && !local_gate_service.empty())
+	for (const auto & pr : ServerConfig::Instance().listen_custom)
 	{
-		ServiceDispatcher::Instance().SetCustomListenAddr(
-			ServerConfig::Instance().client_listen.ip, 
-			ServerConfig::Instance().client_listen.port,
-			local_gate_service);
+		auto it = local_service.find(pr.first);
+		if (it == local_service.end() || it->second.empty())
+		{
+			continue;
+		}
+
+		for (const auto & addr_info : pr.second)
+		{
+			ServiceDispatcher::Instance().SetCustomListenAddr(addr_info.desc, addr_info.addr.ip, addr_info.addr.port, it->second);
+		}
 	}
 
 	if (!ServiceDispatcher::Instance().Start(ServerConfig::Instance().thread_num))
@@ -80,19 +90,14 @@ bool Start()
 
 int main(int argc, char * argv[])
 {
-	std::string config_name;
-
 	if (argc < 2)
 	{
-		config_name = "./" + FileHelper::RemoveExtension(FileHelper::GetFileName(argv[0])) + ".conf";
+		printf("Usage: %s <CONFIG_FILE>\n", argv[0]);
+		return -1;
 	}
-	else
-	{
-		config_name = argv[1];
-	}
-	
-	SET_LOG_DIR("./" + FileHelper::RemoveExtension(FileHelper::GetFileName(config_name)) + "_log");
 
+	std::string config_name = argv[1];
+	SET_LOG_DIR("./" + FileHelper::RemoveExtension(FileHelper::GetFileName(config_name)) + "_log");
 	if (!ServerConfig::Instance().Load(config_name))
 	{
 		return -1;
@@ -104,10 +109,6 @@ int main(int argc, char * argv[])
 	}
 
 	getchar();
-	//while (true)
-	//{
-	//	//sframe::TimeHelper::ThreadSleep(2000);
-	//}
 
 	ServiceDispatcher::Instance().Stop();
 

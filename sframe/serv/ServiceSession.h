@@ -2,6 +2,7 @@
 #ifndef SFRAME_SERVICE_SESSION_H
 #define SFRAME_SERVICE_SESSION_H
 
+#include <list>
 #include "../util/Serialization.h"
 #include "../net/net.h"
 #include "../util/Singleton.h"
@@ -19,15 +20,14 @@ public:
 	{
 		kSessionState_WaitConnect = 0,   // 等待连接
 		kSessionState_Connecting,        // 正在连接
-		kSessionState_Authing,           // 正在认证(主动发起连接方等待对方的验证结果)
-		kSessionState_WaitAuth,          // 等待认证(被动连接方等待对方发送验证信息)
 		kSessionState_Running,           // 运行中
 	};
 
-	static const int32_t kReconnectInterval = 5000;    // 重连间隔
+	static const int32_t kReconnectInterval = 5000;       // 重连间隔
+	static const int32_t kMaxCacheMessageNumber = 1024;   // 最多缓存多少个消息
 
 public:
-	ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port, const std::string & remote_key);
+	ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port);
 
 	ServiceSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<TcpSocket> & sock);
 
@@ -44,11 +44,8 @@ public:
 	// 连接完成处理
 	void DoConnectCompleted(bool success);
 
-	// 接受数据
-	void DoRecvData(std::vector<char> & data);
-
 	// 发送数据
-	void SendData(const char * data, int32_t len);
+	void SendData(const std::shared_ptr<ProxyServiceMessage> & msg);
 
 	// 获取状态
 	SessionState GetState() const
@@ -68,23 +65,6 @@ public:
 	void OnConnected(Error err) override;
 
 private:
-	// 运行状态接收数据处理
-	void ReceiveData_Running(std::vector<char> & data);
-
-	// 验证状态接受数据处理
-	void ReceiveData_Authing(std::vector<char> & data);
-
-	// 等待验证状态接受数据处理
-	void ReceiveData_WaitAuth(std::vector<char> & data);
-
-	// 发送验证信息
-	bool SendAuthMessage();
-
-	// 发送验证完成信息
-	bool SendAuthCompletedMessage(bool success);
-
-	// 开始会话
-	void Start(const std::vector<int32_t> & remote_service);
 
 	// 开始连接定时器
 	void StartConnectTimer(int32_t after_ms);
@@ -97,11 +77,10 @@ private:
 	std::shared_ptr<TcpSocket> _socket;
 	int32_t _session_id;
 	SessionState _state;
+	std::list<std::shared_ptr<ProxyServiceMessage>> _msg_cache;
 	bool _reconnect;
-	// 以下3个成员仅用于用于主动发起连接方
 	std::string _remote_ip;
 	uint16_t _remote_port;
-	std::string _remote_key;
 };
 
 }

@@ -2,6 +2,7 @@
 #include "ServiceDispatcher.h"
 #include "Service.h"
 #include "../util/TimeHelper.h"
+#include "../util/Log.h"
 
 using namespace sframe;
 
@@ -51,7 +52,6 @@ void MessageQueue::EndProcess()
 	}
 }
 
-
 // 处理
 void Service::Process()
 {
@@ -99,29 +99,23 @@ void Service::Process()
 			}
 			break;
 
-			case sframe::kMsgType_StartServiceMessage:
-			{
-				this->OnStart();
-			}
-			break;
-
 			case sframe::kMsgType_DestroyServiceMessage:
 			{
 				this->OnDestroy();
 			}
 			break;
 
-			case sframe::kMsgType_ServiceJoinMessage:
+			case sframe::kMsgType_ServiceLostMessage:
 			{
-				auto join_msg = std::static_pointer_cast<ServiceJoinMessage>(msg);
-				this->OnServiceJoin(join_msg->service, join_msg->is_remote);
+				auto lost_msg = std::static_pointer_cast<ServiceLostMessage>(msg);
+				this->OnServiceLost(lost_msg->service);
 			}
 			break;
 
 			case sframe::kMsgType_NewConnectionMessage:
 			{
 				auto new_conn_msg = std::static_pointer_cast<NewConnectionMessage>(msg);
-				this->OnNewConnection(new_conn_msg->GetSocket());
+				this->OnNewConnection(new_conn_msg->GetListenAddress(), new_conn_msg->GetSocket());
 			}
 			break;
 		}
@@ -133,19 +127,25 @@ void Service::Process()
 // 等待销毁完毕
 void Service::WaitDestroyComplete()
 {
+	LOG_INFO << "wait service " << GetServiceId() << " destroy" << std::endl;
+
 	int64_t start_time = TimeHelper::GetEpochMilliseconds();
-	
+	bool succ = true;
+
 	while (!IsDestroyCompleted())
 	{
-		TimeHelper::ThreadSleep(1);
+		TimeHelper::ThreadSleep(50);
 
 		if (kDefaultMaxWaitDestroyTime >= 0)
 		{
 			int64_t cur_time = TimeHelper::GetEpochMilliseconds();
 			if (cur_time - start_time >= kDefaultMaxWaitDestroyTime)
 			{
+				succ = false;
 				break;
 			}
 		}
 	}
+
+	LOG_INFO << "wait service " << GetServiceId() << " destroy|" << (succ ? "succ" : "timeout") << std::endl;
 }

@@ -39,9 +39,6 @@
     <ClInclude Include="..\..\example\server\config\ServerConfig.h">
       <Filter>config</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\example\server\config\ServiceDef.h">
-      <Filter>config</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\example\server\gateservice\ClientSession.h">
       <Filter>gateservice</Filter>
     </ClInclude>

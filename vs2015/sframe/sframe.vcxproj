@@ -52,6 +52,7 @@
     <ClInclude Include="..\..\sframe\util\Buffer.h" />
     <ClInclude Include="..\..\sframe\util\Convert.h" />
     <ClInclude Include="..\..\sframe\util\Delegate.h" />
+    <ClInclude Include="..\..\sframe\util\DynamicFactory.h" />
     <ClInclude Include="..\..\sframe\util\FileHelper.h" />
     <ClInclude Include="..\..\sframe\util\json11.hpp" />
     <ClInclude Include="..\..\sframe\util\Lock.h" />

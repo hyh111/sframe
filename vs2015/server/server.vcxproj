@@ -154,7 +154,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\example\server\config\ServerConfig.h" />
-    <ClInclude Include="..\..\example\server\config\ServiceDef.h" />
     <ClInclude Include="..\..\example\server\gateservice\ClientSession.h" />
     <ClInclude Include="..\..\example\server\gateservice\GateService.h" />
     <ClInclude Include="..\..\example\server\ssproto\SSMsg.h" />

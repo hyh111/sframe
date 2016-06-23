@@ -20,6 +20,11 @@ public:
 
 	int32_t Push(const char * data, int32_t data_len)
 	{
+		if (data == nullptr || data_len <= 0)
+		{
+			return 0;
+		}
+
 		// 检查剩余容量
 		int32_t surplus = Capacity - _len;
 		assert(surplus >= 0);
@@ -115,6 +120,8 @@ public:
 	~SendBuffer();
 
 	void Push(const char * data, int32_t len, bool & send_now);
+
+	void PushNotSend(const char * data, int32_t len);
 
 	// 读数据
 	char * Peek(int32_t & len);

@@ -156,7 +156,7 @@ private:
 #define LOG_ERROR    LOG_LEVEL(sframe::LogLevel::kLogLevel_Error)
 
 // 分模块日志
-#define FLOG(log_name) sframe::LogStream(log_name)
+#define FLOG(log_name) sframe::LogStream(log_name) << sframe::FileHelper::GetFileName(__FILE__) << ':' << __LINE__ << '|'
 
 }
 

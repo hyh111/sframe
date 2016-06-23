@@ -31,21 +31,22 @@ int32_t ConnDistributeStrategy::DistributeHandleService(const std::shared_ptr<Tc
 
 bool Listener::Start()
 {
-	if (_ip.empty())
+	if (_addr.ip.empty())
 	{
 		return false;
 	}
 
 	_acceptor = sframe::TcpAcceptor::Create(ServiceDispatcher::Instance().GetIoService());
 	_acceptor->SetMonitor(this);
-	sframe::Error err = _acceptor->Start(sframe::SocketAddr(_ip.c_str(), _port));
+	sframe::Error err = _acceptor->Start(sframe::SocketAddr(_addr.ip.c_str(), _addr.port));
 	if (err)
 	{
 		_acceptor.reset();
-		LOG_ERROR << "Listen " << _ip << ':' << _port << " error(" << err.Code() << "), " << sframe::ErrorMessage(err).Message() << ENDL;
+		LOG_ERROR << "Listen " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") error|" << err.Code() << "|" << sframe::ErrorMessage(err).Message() << std::endl;
 		return false;
 	}
 
+	LOG_INFO << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") started" << std::endl;
 	_running.store(true);
 
 	return true;
@@ -65,7 +66,7 @@ void Listener::OnAccept(std::shared_ptr<TcpSocket> socket, Error err)
 {
 	if (err)
 	{
-		LOG_ERROR << "Listener(" << _ip << ':' << _port << ")accept connection error(" << err.Code() << "), " << sframe::ErrorMessage(err).Message() << ENDL;
+		LOG_ERROR << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") accept connection error|" << err.Code() << "|" << sframe::ErrorMessage(err).Message() << std::endl;
 		return;
 	}
 
@@ -76,7 +77,7 @@ void Listener::OnAccept(std::shared_ptr<TcpSocket> socket, Error err)
 		return;
 	}
 
-	std::shared_ptr<NewConnectionMessage> new_conn_msg = std::make_shared<NewConnectionMessage>(socket);
+	std::shared_ptr<NewConnectionMessage> new_conn_msg = std::make_shared<NewConnectionMessage>(socket, _addr);
 	GetServiceDispatcher().SendMsg(handle_sid, new_conn_msg);
 }
 
@@ -85,11 +86,11 @@ void Listener::OnClosed(Error err)
 {
 	if (err)
 	{
-		LOG_INFO << "Listener(" << _ip << ':' << _port << ")stoped with Error(" << err.Code() << "): " << sframe::ErrorMessage(err).Message() << ENDL;
+		LOG_ERROR << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") stoped with Error(" << err.Code() << "): " << sframe::ErrorMessage(err).Message() << std::endl;
 	}
 	else
 	{
-		LOG_INFO << "Listener(" << _ip << ':' << _port << ")stoped with no error" << ENDL;
+		LOG_INFO << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") stoped" << std::endl;
 	}
 
 	_running.store(false);

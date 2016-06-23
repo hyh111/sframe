@@ -64,6 +64,8 @@ void ServiceDispatcher::ExecWorker(ServiceDispatcher * dispatcher)
 			{
 				break;
 			}
+
+			TimeHelper::ThreadSleep(1);
         }
     }
     catch (const std::runtime_error& e)
@@ -102,24 +104,24 @@ ServiceDispatcher::~ServiceDispatcher()
 // 发消息
 void ServiceDispatcher::SendMsg(int32_t sid, const std::shared_ptr<Message> & msg)
 {
-	if (_running && sid >= 0 && sid <= kMaxServiceId && _services[sid])
+	if (sid >= 0 && sid <= kMaxServiceId && _services[sid])
 	{
 		_services[sid]->PushMsg(msg);
 	}
 }
 
 // 设置远程服务监听地址
-void ServiceDispatcher::SetServiceListenAddr(const std::string & ipv4, uint16_t port, const std::string & key)
+void ServiceDispatcher::SetServiceListenAddr(const std::string & ip, uint16_t port)
 {
 	RepareProxyServer();
-	((ProxyService*)_services[0])->SetLocalAuthKey(key);
-	Listener * listener = new Listener(ipv4, port, 0);
+	Listener * listener = new Listener(ip, port, 0);
 	assert(listener);
+	listener->SetDescName("ServiceConnectAddr");
 	_listeners.push_back(listener);
 }
 
 // 设置自定义监听地址
-void ServiceDispatcher::SetCustomListenAddr(const std::string & ipv4, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy)
+void ServiceDispatcher::SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy)
 {
 	if (handle_services.empty())
 	{
@@ -134,28 +136,34 @@ void ServiceDispatcher::SetCustomListenAddr(const std::string & ipv4, uint16_t p
 		}
 	}
 
-	Listener * listener = new Listener(ipv4, port, handle_services, distribute_strategy);
+	Listener * listener = new Listener(ip, port, handle_services, distribute_strategy);
 	assert(listener);
+	listener->SetDescName(desc_name);
 	_listeners.push_back(listener);
 }
 
 // 设置自定义监听地址
-void ServiceDispatcher::SetCustomListenAddr(const std::string & ipv4, uint16_t port, int32_t handle_service)
+void ServiceDispatcher::SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, int32_t handle_service)
 {
 	if (handle_service <= 0)
 	{
 		return;
 	}
 
-	Listener * listener = new Listener(ipv4, port, handle_service);
+	Listener * listener = new Listener(ip, port, handle_service);
 	assert(listener);
+	listener->SetDescName(desc_name);
 	_listeners.push_back(listener);
 }
 
 // 开始
 bool ServiceDispatcher::Start(int32_t thread_num)
 {
-	assert(!_running && thread_num > 0 && _ioservice);
+	if (_running || thread_num <= 0 || !_ioservice)
+	{
+		assert(false);
+		return false;
+	}
 
 	Error err = _ioservice->Init();
 	if (err)
@@ -180,21 +188,6 @@ bool ServiceDispatcher::Start(int32_t thread_num)
 	{
 		(*it)->Start();
 	}
-
-	// 通知所有服务开始
-	std::unordered_set<int32_t> usable_service;
-	std::shared_ptr<Message> start_msg = std::make_shared<StartServiceMessage>();
-	for (int i = 0; i <= _max_sid; i++)
-	{
-		if (_services[i] != nullptr)
-		{
-			usable_service.insert(i);
-			_services[i]->PushMsg(start_msg);
-		}
-	}
-
-	// 通知所有服务，服务可用
-	NotifyServiceJoin(usable_service, false);
 
     // 开启工作线程
     for (int i = 0; i < thread_num; i++)
@@ -259,45 +252,40 @@ void ServiceDispatcher::Dispatch(int32_t sid)
 	_dispach_service_queue.Push(sid);
 }
 
-// 通知所有本地服务，其他服务的接入
-void ServiceDispatcher::NotifyServiceJoin(const std::unordered_set<int32_t> & service_set, bool is_remote)
+// 注册工作服务
+bool ServiceDispatcher::RegistService(int32_t sid, Service * service)
 {
-	for (int32_t target_sid : _local_sid)
+	if (_running || !service || sid < 1 || sid > kMaxServiceId || _services[sid])
 	{
-		if (_services[target_sid] != nullptr)
-		{
-			std::shared_ptr<ServiceJoinMessage> state_msg = std::make_shared<ServiceJoinMessage>();
-			
-			for (int32_t sid : service_set)
-			{
-				if (sid != target_sid && _services[target_sid]->IsCareServiceJoin(sid))
-				{
-					state_msg->service.insert(sid);
-				}
-			}
-
-			if (!state_msg->service.empty())
-			{
-				state_msg->is_remote = is_remote;
-				std::shared_ptr<Message> msg(state_msg);
-				_services[target_sid]->PushMsg(msg);
-			}
-		}
+		return false;
 	}
+
+	service->SetServiceId(sid);
+	_max_sid = sid > _max_sid ? sid : _max_sid;
+	_local_sid.push_back(sid);
+
+	int32_t period = service->GetCyclePeriod();
+	if (period > 0)
+	{
+		_cycle_timers.push_back(CycleTimer(sid, period));
+	}
+
+	_services[sid] = service;
+
+	return true;
 }
 
-// 注册远程服务器
-bool ServiceDispatcher::RegistRemoteServer(const std::string & remote_ip, uint16_t remote_port, const std::string & remote_key)
+// 注册远程服务
+bool ServiceDispatcher::RegistRemoteService(int32_t sid, const std::string & remote_ip, uint16_t remote_port)
 {
-	if (remote_ip.empty())
+	if (sid <= 0 || remote_ip.empty())
 	{
-		assert(false);
 		return false;
 	}
 
 	RepareProxyServer();
 
-	int32_t session_id = ((ProxyService*)_services[0])->RegistSession(remote_ip, remote_port, remote_key);
+	int32_t session_id = ((ProxyService*)_services[0])->RegistSession(sid, remote_ip, remote_port);
 	if (session_id <= 0)
 	{
 		return false;

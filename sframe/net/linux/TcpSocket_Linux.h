@@ -63,7 +63,6 @@ private:
     IoMsg _cur_msg;                          // 消息
 	int32_t _last_error;
     uint32_t _cur_events;                    // 当前等待的事件
-    SendBuffer _send_buf;                    // 发送缓冲区
     char _recv_buf[kRecvBufSize];            // 接收缓冲区
     int32_t _recv_len;                       // 接收的数据长度
 };

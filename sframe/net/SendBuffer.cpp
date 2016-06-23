@@ -16,41 +16,61 @@ void SendBuffer::Push(const char * data, int32_t len, bool & send_now)
 {
 	send_now = false;
 
-	if (data == nullptr || len <= 0)
-	{
-		return;
-	}
-
 	AutoLock<Lock> l(_locker);
 
-	if (!_sending)
+	// 先尝试压入主缓冲区
+	int32_t pushed = _buf.Push(data, len);
+	if (pushed < len)
+	{
+		if (pushed > 0)
+		{
+			// 若压入了数据到主缓冲区，那么备用的链表必定为空
+			assert(_standby_list.empty());
+		}
+
+		const char * remain_data = data + pushed;
+		int32_t remain_len = len - pushed;
+
+		while (remain_len > 0)
+		{
+			auto standby = GetStandbyBuffer();
+			pushed = standby->Push(remain_data, remain_len);
+			remain_data += pushed;
+			remain_len -= pushed;
+		}
+	}
+
+	if (!_sending && !_buf.IsEmpty())
 	{
 		_sending = true;
 		send_now = true;
 	}
+}
+
+void SendBuffer::PushNotSend(const char * data, int32_t len)
+{
+	AutoLock<Lock> l(_locker);
 
 	// 先尝试压入主缓冲区
 	int32_t pushed = _buf.Push(data, len);
-	if (pushed >= len)
+	if (pushed < len)
 	{
-		return;
-	}
+		if (pushed > 0)
+		{
+			// 若压入了数据到主缓冲区，那么备用的链表必定为空
+			assert(_standby_list.empty());
+		}
 
-	if (pushed > 0)
-	{
-		// 若压入了数据到主缓冲区，那么备用的链表必定为空
-		assert(_standby_list.empty());
-	}
+		const char * remain_data = data + pushed;
+		int32_t remain_len = len - pushed;
 
-	const char * remain_data = data + pushed;
-	int32_t remain_len = len - pushed;
-
-	while (remain_len > 0)
-	{
-		auto standby = GetStandbyBuffer();
-		pushed = standby->Push(remain_data, remain_len);
-		remain_data += pushed;
-		remain_len -= pushed;
+		while (remain_len > 0)
+		{
+			auto standby = GetStandbyBuffer();
+			pushed = standby->Push(remain_data, remain_len);
+			remain_data += pushed;
+			remain_len -= pushed;
+		}
 	}
 }
 

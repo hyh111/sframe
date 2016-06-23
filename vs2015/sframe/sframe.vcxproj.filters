@@ -159,6 +159,9 @@
     <ClInclude Include="..\..\sframe\serv\Listener.h">
       <Filter>serv</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\sframe\util\DynamicFactory.h">
+      <Filter>util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp">

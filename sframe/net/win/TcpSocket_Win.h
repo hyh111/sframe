@@ -5,7 +5,6 @@
 #include <WinSock2.h>
 #include <MSWSock.h>
 #include "../TcpSocket.h"
-#include "../SendBuffer.h"
 #include "IoUnit.h"
 
 namespace sframe{
@@ -71,7 +70,6 @@ private:
     IoEvent _evt_recv;
     IoMsg _cur_msg;
 	DWORD _last_error_code;
-    SendBuffer _send_buf;                // 发送缓冲区
     int32_t _sending_len;                // 正在发送中的数据长度
     char _recv_buf[kRecvBufSize];        // 接收缓冲区
     int32_t _recv_len;                   // 接收缓冲区中数据长度

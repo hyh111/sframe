@@ -55,10 +55,11 @@ Error TcpAcceptor_Win::Start(const SocketAddr & listen_addr)
         || listen(_sock, SOMAXCONN) == SOCKET_ERROR                    // 开始监听
         )
     {
+		Error err(WSAGetLastError());
         closesocket(_sock);
         _sock = INVALID_SOCKET;
         _running.store(false);
-        return Error(GetLastError());
+        return err;
     }
 
     // 加载AcceptEx函数
@@ -69,10 +70,11 @@ Error TcpAcceptor_Win::Start(const SocketAddr & listen_addr)
         if (WSAIoctl(this->_sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid_accept_ex, sizeof(guid_accept_ex),
             &this->_lpfn_acceptex, sizeof(this->_lpfn_acceptex), &recv_bytes, nullptr, nullptr) == INVALID_SOCKET)
         {
+			Error err(WSAGetLastError());
             closesocket(_sock);
             _sock = INVALID_SOCKET;
             _running.store(false);
-            return Error(GetLastError());
+            return err;
         }
     }
 

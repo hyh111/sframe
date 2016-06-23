@@ -8,9 +8,17 @@
 
 namespace sframe {
 
+// 空锁
+class NoneLock
+{
+public:
+	void lock(){}
+
+	void unlock(){}
+};
 
 // 环形队列
-template<typename T, int Queue_Capacity>
+template<typename T, int Queue_Capacity, typename T_Lock = NoneLock>
 class RingQueue : public noncopyable
 {
 public:
@@ -21,7 +29,7 @@ public:
 	// 压入
 	bool Push(const T & val)
 	{
-		AutoLock<SpinLock> l(_lock);
+		AutoLock<T_Lock> l(_lock);
 
 		if (_len >= Queue_Capacity)
 		{
@@ -38,7 +46,7 @@ public:
 	// 弹出
 	bool Pop(T * val)
 	{
-		AutoLock<SpinLock> l(_lock);
+		AutoLock<T_Lock> l(_lock);
 		if (_len <= 0)
 		{
 			return false;
@@ -55,7 +63,7 @@ public:
 	}
 
 private:
-	SpinLock _lock;
+	T_Lock _lock;
 	T _queue[Queue_Capacity];
 	int32_t _head;
 	int32_t _tail;

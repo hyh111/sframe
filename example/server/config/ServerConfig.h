@@ -5,26 +5,52 @@
 #include <inttypes.h>
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <memory>
+#include <set>
 #include "conf/ConfigDef.h"
 #include "util/Singleton.h"
 
-JSON_OBJECT(ServerInfo)
+struct NetAddrInfo
 {
-	std::string ip;
-	uint16_t port;
-	std::string key;
+	bool ParseFormString(const std::string & data);
+
+	std::string ip;           // IP
+	uint16_t port;            // 端口
+};
+
+struct ListenAddrInfo
+{
+	bool ParseFormString(const std::string & data);
+
+	std::string desc;         // 描述，便于识别
+	NetAddrInfo addr;         // 地址
+};
+
+struct ServiceInfo
+{
+	bool ParseFormString(const std::string & data);
+
+	int32_t sid;
+	std::string service_type_name;   // 服务类型名称
+	bool is_local_service;           // true 为本地服务，false为远程服务
+	NetAddrInfo remote_addr;         // 远程地址，仅当local_service为false是有效
 };
 
 JSON_OBJECT(ServerConfig) : public sframe::singleton<ServerConfig>
 {
 	bool Load(const std::string & filename);
 
-	std::string res_path;       // 资源目录
-	int32_t thread_num;         // 线程数量
-	std::vector<int32_t> local_service;  // 本地开启服务
-	ServerInfo service_listen;    // 服务监听地址
-	ServerInfo client_listen;     // 客户端监听地址
-	std::vector<ServerInfo> remote_server;   // 要连接的远程服务器
+	bool HaveLocalService(const std::string & serv_type_name);
+
+	std::string res_path;                     // 资源目录
+	int32_t thread_num;                       // 线程数量
+	
+	std::shared_ptr<NetAddrInfo> listen_service;                                 // 远程服务监听地址
+	std::shared_ptr<NetAddrInfo> listen_manager;                                 // 管理地址
+	std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>> services;          // 服务信息（sid -> 服务信息）
+	std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>>> type_to_services;  // 类型->该类型所有服务信息
+	std::unordered_map<std::string, std::vector<ListenAddrInfo>> listen_custom;  // 自定义监听
 };
 
 

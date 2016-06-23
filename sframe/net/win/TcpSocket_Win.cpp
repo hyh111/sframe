@@ -52,6 +52,7 @@ void TcpSocket_Win::Connect(const SocketAddr & remote)
         return;
     }
 
+	_remote_addr = remote;
     // 新建套接字
     _sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED);
     if (_sock == INVALID_SOCKET)
@@ -130,14 +131,15 @@ END_ERROR:
 // 发送数据
 void TcpSocket_Win::Send(const char * data, int32_t len)
 {
-    if (len <= 0 || GetState() != kState_Opened)
+	auto cur_state = GetState();
+	// 没有打开的连接，直接返回
+    if (cur_state != kState_Opened)
     {
         return;
     }
 
 	bool send_now = false;
 	_send_buf.Push(data, len, send_now);
-
     if (send_now)
     {
 		// 发送数据
@@ -188,17 +190,18 @@ void TcpSocket_Win::StartRecv()
 // 关闭
 bool TcpSocket_Win::Close()
 {
-    int32_t comp = TcpSocket::kState_Opened;
-    if (!_state.compare_exchange_strong(comp, (int32_t)TcpSocket::kState_Closed))
-    {
-        return false;
-    }
+	int32_t cmp_conn = TcpSocket::kState_Connecting;
+    int32_t cmp_open = TcpSocket::kState_Opened;
+	if (_state.compare_exchange_strong(cmp_conn, (int32_t)TcpSocket::kState_Closed) ||
+		_state.compare_exchange_strong(cmp_open, (int32_t)TcpSocket::kState_Closed))
+	{
+		_cur_msg.msg_type = kIoMsgType_Close;
+		_cur_msg.io_unit = shared_from_this();
+		((IoService_Win*)(_io_service.get()))->PostIoMsg(_cur_msg);
+		return true;
+	}
 
-	_cur_msg.msg_type = kIoMsgType_Close;
-	_cur_msg.io_unit = shared_from_this();
-	((IoService_Win*)(_io_service.get()))->PostIoMsg(_cur_msg);
-
-	return true;
+	return false;
 }
 
 // 完成事件通知
@@ -284,7 +287,7 @@ void TcpSocket_Win::SendCompleted(Error err, int32_t data_len)
     }
 
     // 释放缓冲区
-    _send_buf.Free(_sending_len);
+	_send_buf.Free(_sending_len);
     // 取数据
     char * buf = _send_buf.Peek(_sending_len);
     if (_sending_len > 0)

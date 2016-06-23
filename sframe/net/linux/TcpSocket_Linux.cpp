@@ -61,12 +61,13 @@ void TcpSocket_Linux::Connect(const SocketAddr & remote)
 // 发送数据
 void TcpSocket_Linux::Send(const char * data, int32_t len)
 {
-    if (len <= 0 || GetState() != kState_Opened)
+	auto cur_state = GetState();
+    if (cur_state != kState_Opened)
     {
         return;
     }
 
-    bool send_now = false;
+	bool send_now = false;
 	_send_buf.Push(data, len, send_now);
 
     if (send_now)
@@ -106,17 +107,18 @@ void TcpSocket_Linux::StartRecv()
 // 关闭
 bool TcpSocket_Linux::Close()
 {
-    int32_t comp = TcpSocket::kState_Opened;
-    if (!_state.compare_exchange_strong(comp, (int32_t)TcpSocket::kState_Closed))
+	int32_t cmp_conn = TcpSocket::kState_Connecting;
+	int32_t cmp_open = TcpSocket::kState_Opened;
+    if (_state.compare_exchange_strong(cmp_conn, (int32_t)TcpSocket::kState_Closed) ||
+		_state.compare_exchange_strong(cmp_open, (int32_t)TcpSocket::kState_Closed))
     {
-        return false;
+		_cur_msg.msg_type = kIoMsgType_Close;
+		_cur_msg.io_unit = shared_from_this();
+		((IoService_Linux*)(_io_service.get()))->PostIoMsg(_cur_msg);
+		return true;
     }
 
-	_cur_msg.msg_type = kIoMsgType_Close;
-	_cur_msg.io_unit = shared_from_this();
-	((IoService_Linux*)(_io_service.get()))->PostIoMsg(_cur_msg);
-
-	return true;
+	return false;
 }
 
 void TcpSocket_Linux::OnEvent(IoEvent io_evt)
@@ -343,7 +345,7 @@ bool TcpSocket_Linux::SendData()
         }
 
         assert(peek_len >= ret);
-        _send_buf.Free(ret); 
+		_send_buf.Free(ret);
 
         if (peek_len > ret)
         {

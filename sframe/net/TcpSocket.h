@@ -7,6 +7,7 @@
 #include "SocketAddr.h"
 #include "Error.h"
 #include "IoService.h"
+#include "SendBuffer.h"
 
 namespace sframe{
 
@@ -63,8 +64,8 @@ public:
     virtual void StartRecv() = 0;
 
     // 关闭
-	// 返回true: 表示成功开始执行关闭操作，关闭完成后会执行OnClosed回调
-	// 返回false: 表示socket已经处于关闭状态，不会执行关闭操作，也不会执行OnClosed回调
+	// 返回true: 表示成功开始执行关闭操作，只有处于kState_Connecting和kState_Opened的socket才会执行关闭，关闭完成后会执行OnClosed回调
+	// 返回false: 表示socket本来就没有打开(处于kState_Initial或kState_Closed状态)，不会执行关闭操作，也不会执行OnClosed回调
     virtual bool Close() = 0;
 
     // 设置监听器
@@ -102,6 +103,7 @@ protected:
 	SocketAddr _remote_addr;
     Monitor * _monitor;                                   // 监听器
     std::atomic_int _state;                               // 状态
+	SendBuffer _send_buf;                                 // 发送缓冲区
 };
 
 }

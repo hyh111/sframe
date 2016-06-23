@@ -8,6 +8,7 @@
 #include <vector>
 #include <unordered_set>
 #include <thread>
+#include <algorithm>
 #include "../util/RingQueue.h"
 #include "../util/Singleton.h"
 #include "../util/Serialization.h"
@@ -25,7 +26,7 @@ class ConnDistributeStrategy;
 class ServiceDispatcher : public singleton<ServiceDispatcher>, public noncopyable
 {
 public:
-    static const int32_t kMaxServiceId = 1024; // 最大服务ID
+    static const int32_t kMaxServiceId = 65536; // 最大服务ID
 
 private:
 
@@ -94,20 +95,20 @@ public:
 		return _ioservice;
 	}
 
-	// 获取所有本地服务ID
-	const std::vector<int32_t> & GetAllLocalSid() const
+	// 指定服务ID是否是本地服务
+	bool IsLocalService(int32_t sid) const
 	{
-		return _local_sid;
+		return (std::find(_local_sid.begin(), _local_sid.end(), sid) != _local_sid.end());
 	}
 
 	// 设置远程服务监听地址
-	void SetServiceListenAddr(const std::string & ipv4, uint16_t port, const std::string & key = "");
+	void SetServiceListenAddr(const std::string & ip, uint16_t port);
 
 	// 设置自定义监听地址
-	void SetCustomListenAddr(const std::string & ipv4, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy = nullptr);
+	void SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy = nullptr);
 
 	// 设置自定义监听地址
-	void SetCustomListenAddr(const std::string & ipv4, uint16_t port, int32_t handle_service);
+	void SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, int32_t handle_service);
 
     // 开始
     bool Start(int32_t thread_num);
@@ -118,38 +119,11 @@ public:
 	// 调度服务(将指定服务压入调度队列)
 	void Dispatch(int32_t sid);
 
-	// 通知所有本地服务，其他服务的接入
-	void NotifyServiceJoin(const std::unordered_set<int32_t> & service_set, bool is_remote);
-
     // 注册工作服务
-    template<typename T>
-    T * RegistService(int32_t sid)
-    {
-        assert(!_running);
+	bool RegistService(int32_t sid, Service * service);
 
-		if (sid < 1 || sid > kMaxServiceId || _services[sid])
-		{
-			return nullptr;
-		}
-
-		T * s = new T();
-		s->SetServiceId(sid);
-		_max_sid = sid > _max_sid ? sid : _max_sid;
-		_local_sid.push_back(sid);
-
-		int32_t period = s->GetCyclePeriod();
-		if (period > 0)
-		{
-			_cycle_timers.push_back(CycleTimer(sid, period));
-		}
-
-		_services[sid] = s;
-
-        return s;
-    }
-
-	// 注册远程服务器
-	bool RegistRemoteServer(const std::string & remote_ip, uint16_t remote_port, const std::string & remote_key = "");
+	// 注册远程服务
+	bool RegistRemoteService(int32_t sid, const std::string & remote_ip, uint16_t remote_port);
 
 private:
 	// 准备代理服务
@@ -162,7 +136,7 @@ private:
     bool _running;                                // 是否正在运行
     std::vector<std::thread*> _threads;           // 所有线程
 	std::shared_ptr<IoService> _ioservice;                       // IO服务指针
-	RingQueue<int32_t, kMaxServiceId> _dispach_service_queue;    // 服务调度队列
+	RingQueue<int32_t, kMaxServiceId, SpinLock> _dispach_service_queue;    // 服务调度队列
 	std::vector<Listener*> _listeners;            // 监听器
 
 	// 周期定时器
@@ -186,6 +160,8 @@ static ServiceDispatcher & GetServiceDispatcher()
 {
 	return ServiceDispatcher::Instance();
 }
+
+#define SERVICE_DISPATCHER (ServiceDispatcher::Instance())
 
 }
 

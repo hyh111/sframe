@@ -1,0 +1,25 @@
+{
+	// 资源目录
+	"res_path" : "./resourse",
+
+	// 线程数量
+	"thread_num" : 4,
+
+	// 远程服务连接监听地址
+	"listen_service" : "0.0.0.0:5002",
+
+	// 管理连接监听地址
+	"listen_manager" : "0.0.0.0:6003",
+
+	// 自定义监听地址
+	"listen_custom" : {
+		"GateService" : "ClientConnnectAddr@0.0.0.0:5000"
+	},
+
+	// 服务启动信息
+	"service" : {
+		"1" : "GateService",
+		"2" : "GateService",
+		"3" : "GateService"
+	}
+}

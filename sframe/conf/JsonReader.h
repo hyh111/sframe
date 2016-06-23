@@ -12,29 +12,104 @@
 #include "../util/json11.hpp"
 #include "../util/Convert.h"
 
+class Json_GetObjKey_Wrapper
+{
+	template<typename R, typename T, R(T::*)()>
+	struct MethodMatcher;
+
+	template<typename R, typename T>
+	static std::true_type match(MethodMatcher<R, T, &T::GetKey>*) {}
+
+	template<typename R, typename T>
+	static std::false_type match(...) {}
+
+	template<typename R, typename T>
+	inline static R call(std::false_type, T & obj)
+	{
+		return R();
+	}
+
+	template<typename R, typename T>
+	inline static R call(std::true_type, T & obj)
+	{
+		return obj.GetKey();
+	}
+
+public:
+	template<typename R, typename T>
+	inline static R GetKey(T & obj)
+	{
+		return call<R, T>(decltype(match<R, T>(nullptr))(), obj);
+	}
+};
+
+template<typename R, typename T>
+inline R Json_GetObjKey(T & obj)
+{
+	return Json_GetObjKey_Wrapper::GetKey<R>(obj);
+}
+
+template<typename R, typename T>
+inline R Json_GetObjKey(std::shared_ptr<T> & obj)
+{
+	T & real_obj = *obj;
+	return Json_GetObjKey_Wrapper::GetKey<R>(real_obj);
+}
+
+// 读取JSON到任意类型基础类型
+template<typename T>
+inline void Json_FillObject(const json11::Json & json, T & obj);
+
+template<>
+inline void Json_FillObject(const json11::Json &json, std::string & obj);
+
+// 读取JSON到数组
+template<typename T, int Array_Size>
+inline void Json_FillObject(const json11::Json & json, T(&obj)[Array_Size]);
+
+// 读取JSON到unorder_map
+template<typename T_Key, typename T_Val>
+inline void Json_FillObject(const json11::Json & json, std::unordered_map<T_Key, T_Val> & obj);
+
+// 读取JSON到map
+template<typename T_Key, typename T_Val>
+inline void Json_FillObject(const json11::Json & json, std::map<T_Key, T_Val> & obj);
+
+// 读取JSON到vector
+template<typename T>
+inline void Json_FillObject(const json11::Json & json, std::vector<T> & obj);
+
+// 读取JSON到list
+template<typename T>
+inline void Json_FillObject(const json11::Json & json, std::list<T> & obj);
+
+// 读取JSON到shared_ptr
+template<typename T>
+inline void Json_FillObject(const json11::Json & json, std::shared_ptr<T> & obj);
+
 // 读取JSON到任意类型基础类型
 template<typename T>
 inline void Json_FillObject(const json11::Json & json, T & obj)
 {
 	switch (json.type())
 	{
-		case json11::Json::Type::BOOL:
-		{
-			obj = static_cast<T>(json.bool_value());
-		}
-		break;
+	case json11::Json::Type::BOOL:
+	{
+		obj = static_cast<T>(json.bool_value());
+	}
+	break;
 
-		case json11::Json::Type::NUMBER:
-		{
-			obj = static_cast<T>(json.number_value());
-		}
-		break;
+	case json11::Json::Type::NUMBER:
+	{
+		obj = static_cast<T>(json.number_value());
+	}
+	break;
 
-		case json11::Json::Type::STRING:
-		{
-			obj = sframe::StrToAny<T>(json.string_value());
-		}
-		break;
+	case json11::Json::Type::STRING:
+	{
+		obj = sframe::StrToAny<T>(json.string_value());
+	}
+	break;
 	}
 }
 
@@ -43,88 +118,23 @@ inline void Json_FillObject(const json11::Json &json, std::string & obj)
 {
 	switch (json.type())
 	{
-		case json11::Json::Type::BOOL:
-		{
-			obj = std::to_string(json.bool_value());
-		}
-		break;
-
-		case json11::Json::Type::NUMBER:
-		{
-			obj = std::to_string(json.number_value());
-		}
-		break;
-
-		case json11::Json::Type::STRING:
-		{
-			obj = json.string_value();
-		}
-		break;
-	}
-}
-
-template<typename R, typename T>
-inline R Json_GetObjKey(T & obj)
-{
-	return obj.GetKey();
-}
-
-template<typename R, typename T>
-inline R Json_GetObjKey(std::shared_ptr<T> & obj)
-{
-	return obj->GetKey();
-}
-
-template<typename T>
-inline void Json_FillMap(const json11::Json & json, T & obj)
-{
-	switch (json.type())
+	case json11::Json::Type::BOOL:
 	{
-		case json11::Json::OBJECT:
-		{
-			auto & m = json.object_items();
-			for (auto & item : m)
-			{
-				typename T::key_type k;
-				typename T::mapped_type v;
-
-				k = sframe::StrToAny<T::key_type>(item.first);
-				Json_FillObject(item.second, v);
-				obj.insert(std::make_pair(k, v));
-			}
-		}
-		break;
-
-		case json11::Json::ARRAY:
-		{
-			auto & arr = json.array_items();
-			for (auto & item : arr)
-			{
-				typename T::mapped_type v;
-				Json_FillObject(item, v);
-
-				typename T::key_type k = Json_GetObjKey<typename T::key_type>(v);
-				obj.insert(std::make_pair(k, v));
-			}
-		}
-		break;
+		obj = std::to_string(json.bool_value());
 	}
-}
+	break;
 
-template<typename T>
-inline void Json_FillArray(const json11::Json & json, T & obj)
-{
-	if (!json.is_array())
+	case json11::Json::Type::NUMBER:
 	{
-		return;
+		obj = std::to_string(json.number_value());
 	}
+	break;
 
-	auto & arr = json.array_items();
-	for (auto & item : arr)
+	case json11::Json::Type::STRING:
 	{
-		typename T::value_type v;
-		Json_FillObject(item, v);
-		obj.push_back(v);
+		obj = json.string_value();
+	}
+	break;
 	}
 }
 
@@ -149,6 +159,42 @@ inline void Json_FillObject(const json11::Json & json, T(&obj)[Array_Size])
 	}
 }
 
+template<typename T>
+inline void Json_FillMap(const json11::Json & json, T & obj)
+{
+	switch (json.type())
+	{
+	case json11::Json::OBJECT:
+	{
+		auto & m = json.object_items();
+		for (auto & item : m)
+		{
+			typename T::key_type k;
+			typename T::mapped_type v;
+
+			k = sframe::StrToAny<typename T::key_type>(item.first);
+			Json_FillObject(item.second, v);
+			obj.insert(std::make_pair(k, v));
+		}
+	}
+	break;
+
+	case json11::Json::ARRAY:
+	{
+		auto & arr = json.array_items();
+		for (auto & item : arr)
+		{
+			typename T::mapped_type v;
+			Json_FillObject(item, v);
+
+			typename T::key_type k = Json_GetObjKey<typename T::key_type>(v);
+			obj.insert(std::make_pair(k, v));
+		}
+	}
+	break;
+	}
+}
+
 // 读取JSON到unorder_map
 template<typename T_Key, typename T_Val>
 inline void Json_FillObject(const json11::Json & json, std::unordered_map<T_Key, T_Val> & obj)
@@ -161,6 +207,27 @@ template<typename T_Key, typename T_Val>
 inline void Json_FillObject(const json11::Json & json, std::map<T_Key, T_Val> & obj)
 {
 	Json_FillMap(json, obj);
+}
+
+template<typename T>
+inline void Json_FillArray(const json11::Json & json, T & obj)
+{
+	if (json.is_array())
+	{
+		auto & arr = json.array_items();
+		for (auto & item : arr)
+		{
+			typename T::value_type v;
+			Json_FillObject(item, v);
+			obj.push_back(v);
+		}
+	}
+	else
+	{
+		typename T::value_type v;
+		Json_FillObject(json, v);
+		obj.push_back(v);
+	}
 }
 
 // 读取JSON到vector

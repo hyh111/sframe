@@ -2,6 +2,7 @@
 #include "serv/ServiceDispatcher.h"
 #include "WorkService.h"
 #include "util/Log.h"
+#include "../config/ServerConfig.h"
 
 using namespace sframe;
 
@@ -13,16 +14,30 @@ void WorkService::Init()
 	RegistServiceMessageHandler(kWorkMsg_ClientData, &WorkService::OnMsg_ClientData, this);
 	RegistServiceMessageHandler(kWorkMsg_EnterWorkService, &WorkService::OnMsg_EnterWorkService, this);
 	RegistServiceMessageHandler(kWorkMsg_QuitWorkService, &WorkService::OnMsg_QuitWorkService, this);
+
+	// 给所有网关服务发送注册消息
+	int32_t my_sid = GetServiceId();
+	auto & gate_services = ServerConfig::Instance().type_to_services["GateService"];
+	for (auto & pr : gate_services)
+	{
+		int32_t dest_sid = pr.first;
+		SendServiceMsg(dest_sid, (uint16_t)kGateMsg_RegistWorkService, my_sid);
+	}
 }
 
-// 服务接入
-void WorkService::OnServiceJoin(const std::unordered_set<int32_t> & sid_set, bool is_remote)
+// 服务断开
+void WorkService::OnServiceLost(const std::vector<int32_t> & sid_set)
 {
 	int32_t my_sid = GetServiceId();
+	auto & gate_services = ServerConfig::Instance().type_to_services["GateService"];
+
+	// 对于断开的网关服务，重新发送注册消息
 	for (int32_t sid : sid_set)
 	{
-		assert(sid >= kSID_GateServiceBegin && sid <= kSID_GateServiceEnd);
-		ServiceDispatcher::Instance().SendServiceMsg(my_sid, sid, (uint16_t)kGateMsg_RegistWorkService, my_sid);
+		if (gate_services.find(sid) != gate_services.end())
+		{
+			SendServiceMsg(sid, (uint16_t)kGateMsg_RegistWorkService, my_sid);
+		}
 	}
 }
 
@@ -46,11 +61,10 @@ void WorkService::OnMsg_EnterWorkService(int32_t gate_sid, int32_t session_id)
 		return;
 	}
 
-	LOG_INFO << "user session(" << gate_sid << ", " << session_id << ") enter work service(" << GetServiceId() << ")" << ENDL;
-
+	FLOG(GetLogName()) << "User Enter|GateService|" << gate_sid << "|Session ID|" << session_id << std::endl;
 	if (gate_sid != GetLastServiceId())
 	{
-		LOG_WARN << "gate service id not equal to last service id" << ENDL;
+		FLOG(GetLogName()) << "gate service id not equal to last service id" << std::endl;
 	}
 
 	std::shared_ptr<User> user = std::make_shared<User>(GetServiceId(), gate_sid, session_id);
@@ -62,6 +76,16 @@ void WorkService::OnMsg_QuitWorkService(int32_t gate_sid, int32_t session_id)
 	uint64_t key = MAKE_KEY(gate_sid, session_id);
 	if (_users.erase(key) > 0)
 	{
-		LOG_INFO << "user session(" << session_id << ") quit work service(" << GetServiceId() << ")" << ENDL;
+		FLOG(GetLogName()) << "User Quit|GateService|" << gate_sid << "|Session ID|" << session_id << std::endl;
 	}
+}
+
+const std::string & WorkService::GetLogName()
+{
+	if (_log_name.empty())
+	{
+		_log_name = "WorkService" + std::to_string(GetServiceId());
+	}
+
+	return _log_name;
 }

@@ -6,10 +6,10 @@
 #include <unordered_set>
 #include "ClientSession.h"
 #include "serv/Service.h"
-#include "../config/ServiceDef.h"
 #include "../ssproto/SSMsg.h"
+#include "util/DynamicFactory.h"
 
-class GateService : public sframe::Service
+class GateService : public sframe::Service, public sframe::DynamicCreate<GateService>
 {
 public:
 	GateService() : _new_session_id(1) {}
@@ -19,7 +19,10 @@ public:
 	void Init() override;
 
 	// 新连接到来
-	void OnNewConnection(const std::shared_ptr<sframe::TcpSocket> & sock) override;
+	void OnNewConnection(const sframe::ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock) override;
+
+	// 服务断开（仅与本服务发生过消息往来的服务断开时，才会有通知）
+	void OnServiceLost(const std::vector<int32_t> & services) override;
 
 	// 是否销毁完成
 	bool IsDestroyCompleted() const override
@@ -29,6 +32,7 @@ public:
 
 private:
 	int32_t ChooseWorkService();
+	const std::string & GetLogName();
 
 private:
 	void OnMsg_SessionClosed(const std::shared_ptr<ClientSession> & session);
@@ -41,6 +45,7 @@ private:
 	int32_t _new_session_id;
 	std::unordered_map<int32_t, std::shared_ptr<ClientSession>> _sessions;
 	std::unordered_set<int32_t> _usable_work_service;
+	std::string _log_name;
 };
 
 #endif

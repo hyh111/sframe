@@ -19,9 +19,8 @@ namespace sframe{
 enum MessageType : int32_t
 {
 	kMsgType_CycleMessage,            // 周期消息
-	kMsgType_StartServiceMessage,     // 启动服务消息
 	kMsgType_DestroyServiceMessage,   // 销毁服务消息
-	kMsgType_ServiceJoinMessage,      // 服务接入消息
+	kMsgType_ServiceLostMessage,      // 服务断开消息
 	kMsgType_NewConnectionMessage,    // 新连接消息
 	kMsgType_NetServiceMessage,       // 网络服务间消息
 	kMsgType_InsideServiceMessage,    // 内部服务间消息
@@ -192,17 +191,6 @@ private:
 	int32_t * _len;
 };
 
-// 启动服务消息
-class StartServiceMessage : public Message
-{
-public:
-	// 获取消息类型
-	MessageType GetType() const
-	{
-		return kMsgType_StartServiceMessage;
-	}
-};
-
 // 销毁服务消息
 class DestroyServiceMessage : public Message
 {
@@ -214,22 +202,29 @@ public:
 	}
 };
 
-// 服务接入消息
-class ServiceJoinMessage : public Message
+// 服务断开消息
+class ServiceLostMessage : public Message
 {
 public:
-	ServiceJoinMessage() {}
-	virtual ~ServiceJoinMessage() {}
+	ServiceLostMessage() {}
+	virtual ~ServiceLostMessage() {}
 
 	// 获取消息类型
 	MessageType GetType() const
 	{
-		return kMsgType_ServiceJoinMessage;
+		return kMsgType_ServiceLostMessage;
 	}
 
 public:
-	std::unordered_set<int32_t> service;
-	bool is_remote;  // 是否为远程服务
+	std::vector<int32_t> service;
+};
+
+// 监听地址
+struct ListenAddress
+{
+	std::string desc_name;
+	std::string ip;
+	uint16_t port;
 };
 
 class TcpSocket;
@@ -238,7 +233,8 @@ class TcpSocket;
 class NewConnectionMessage : public Message
 {
 public:
-	NewConnectionMessage(const std::shared_ptr<TcpSocket> & sock) : _sock(sock) {}
+	NewConnectionMessage(const std::shared_ptr<TcpSocket> & sock, const ListenAddress & listen_addr)
+		: _sock(sock), _listen_addr(listen_addr) {}
 	virtual ~NewConnectionMessage() {}
 
 	// 获取消息类型
@@ -247,13 +243,19 @@ public:
 		return kMsgType_NewConnectionMessage;
 	}
 
-	const std::shared_ptr<TcpSocket> & GetSocket()
+	const std::shared_ptr<TcpSocket> & GetSocket() const
 	{
 		return _sock;
 	}
 
+	const ListenAddress & GetListenAddress() const
+	{
+		return _listen_addr;
+	}
+
 private:
 	std::shared_ptr<TcpSocket> _sock;
+	ListenAddress _listen_addr;
 };
 
 }
