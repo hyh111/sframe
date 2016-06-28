@@ -8,7 +8,7 @@ using namespace sframe;
 
 void MessageQueue::Push(const std::shared_ptr<Message> & msg)
 {
-	AutoLock<SpinLock> l(_lock);
+	AUTO_LOCK(_lock);
 
 	_buf_write->push_back(msg);
 	if (_state == kServiceState_Idle)
@@ -21,7 +21,7 @@ void MessageQueue::Push(const std::shared_ptr<Message> & msg)
 
 std::vector<std::shared_ptr<Message>> * MessageQueue::PopAll()
 {
-	AutoLock<SpinLock> l(_lock);
+	AUTO_LOCK(_lock);
 	
 	assert(_state == kServiceState_WaitProcess);
 	auto temp = _buf_write;
@@ -34,7 +34,7 @@ std::vector<std::shared_ptr<Message>> * MessageQueue::PopAll()
 
 void MessageQueue::EndProcess()
 {
-	AutoLock<SpinLock> l(_lock);
+	AUTO_LOCK(_lock);
 
 	assert(_state == kServiceState_Processing);
 	_buf_read->clear();

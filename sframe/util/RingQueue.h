@@ -29,10 +29,10 @@ public:
 	// Ñ¹Èë
 	bool Push(const T & val)
 	{
-		AutoLock<T_Lock> l(_lock);
-
+		_lock.lock();
 		if (_len >= Queue_Capacity)
 		{
+			_lock.unlock();
 			return false;
 		}
 
@@ -40,15 +40,17 @@ public:
 		_tail = (_tail + 1) % Queue_Capacity;
 		_len++;
 
+		_lock.unlock();
 		return true;
 	}
 
 	// µ¯³ö
 	bool Pop(T * val)
 	{
-		AutoLock<T_Lock> l(_lock);
+		_lock.lock();
 		if (_len <= 0)
 		{
+			_lock.unlock();
 			return false;
 		}
 
@@ -59,6 +61,7 @@ public:
 		_head = (_head + 1) % Queue_Capacity;
 		_len--;
 
+		_lock.unlock();
 		return true;
 	}
 

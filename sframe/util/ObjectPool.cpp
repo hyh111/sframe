@@ -26,7 +26,7 @@ FreeMemoryList::~FreeMemoryList()
 // 获取一个内存块
 void * FreeMemoryList::GetMemoryChunk()
 {
-    AutoLock<Lock> l(_locker);
+    AUTO_LOCK(_locker);
 
     void * chunk = nullptr;
 
@@ -54,7 +54,7 @@ void FreeMemoryList::FreeMemoryChunk(void * memory_chunk)
     if (memory_chunk == nullptr)
         return;
 
-    AutoLock<Lock> l(_locker);
+    AUTO_LOCK(_locker);
 
     if (_free_list_len < _max_free_list_len)
     {

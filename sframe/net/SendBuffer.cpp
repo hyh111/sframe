@@ -16,7 +16,7 @@ void SendBuffer::Push(const char * data, int32_t len, bool & send_now)
 {
 	send_now = false;
 
-	AutoLock<Lock> l(_locker);
+	AUTO_LOCK(_locker);
 
 	// 先尝试压入主缓冲区
 	int32_t pushed = _buf.Push(data, len);
@@ -49,7 +49,7 @@ void SendBuffer::Push(const char * data, int32_t len, bool & send_now)
 
 void SendBuffer::PushNotSend(const char * data, int32_t len)
 {
-	AutoLock<Lock> l(_locker);
+	AUTO_LOCK(_locker);
 
 	// 先尝试压入主缓冲区
 	int32_t pushed = _buf.Push(data, len);
@@ -77,7 +77,7 @@ void SendBuffer::PushNotSend(const char * data, int32_t len)
 // 读数据
 char * SendBuffer::Peek(int32_t & len)
 {
-	AutoLock<Lock> l(_locker);
+	AUTO_LOCK(_locker);
 
 	char * data = _buf.Peek(len);
 	if (data == nullptr)
@@ -97,7 +97,7 @@ void SendBuffer::Free(int32_t len)
 		return;
 	}
 
-	AutoLock<Lock> l(_locker);
+	AUTO_LOCK(_locker);
 	_buf.Free(len);
 
 	assert(!_buf.IsFull());

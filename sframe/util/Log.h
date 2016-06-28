@@ -100,7 +100,7 @@ public:
 	}
 
 private:
-	SpinLock _lock;
+	Lock _lock;
 	Logger _default_logger;
 	std::unordered_map<std::string, std::shared_ptr<Logger>> _loggers;
 	std::string _log_dir;

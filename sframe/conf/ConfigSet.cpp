@@ -15,7 +15,7 @@ ConfigSet::ConfigSet(int32_t max_count) : _max_count(max_count)
 	memset(_get_config_name_function, 0, sizeof(GetConfigNameFunction) * _max_count);
 	_init_config_function = new InitConfigFunction[_max_count];
 	memset(_init_config_function, 0, sizeof(InitConfigFunction) * _max_count);
-	_lock = new SpinLock[_max_count];
+	_lock = new Lock[_max_count];
 }
 
 ConfigSet::~ConfigSet()
@@ -100,7 +100,7 @@ bool ConfigSet::Reload(std::string * log_msg)
 		}
 		else
 		{
-			AutoLock<SpinLock> l(_lock[i]);
+			AUTO_LOCK(_lock[i]);
 			_config[i] = config_temp[i];
 		}
 	}

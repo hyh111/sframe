@@ -68,7 +68,7 @@ public:
 			return nullptr;
 		}
 
-		AutoLock<SpinLock> l(_lock[config_id]);
+		AUTO_LOCK(_lock[config_id]);
 		std::shared_ptr<Config<T>> config_ele = std::static_pointer_cast<Config<T>>(_config[config_id]);
 
 		return config_ele ? config_ele->val : nullptr;
@@ -293,7 +293,7 @@ protected:
 	}
 
 private:
-	SpinLock * _lock;                           // 每一个配置一个自旋锁
+	Lock * _lock;                           // 每一个配置一个自旋锁
 	std::shared_ptr<ConfigBase> * _config;      // 所有配置
 	LoadConfigFunction  * _load_config_function;
 	GetConfigNameFunction * _get_config_name_function;

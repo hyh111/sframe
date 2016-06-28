@@ -69,40 +69,10 @@ private:
 
 #endif
 
-// 自旋锁
-class SpinLock
-{
-public:
-	SpinLock()
-	{
-		_lock.clear(std::memory_order_relaxed);
-	}
-
-	void lock()
-	{
-		while (_lock.test_and_set(std::memory_order_acquire)) {}
-	}
-
-	inline bool try_lock()
-	{
-		return (!_lock.test_and_set(std::memory_order_acquire));
-	}
-
-	void unlock()
-	{
-		_lock.clear(std::memory_order_release);
-	}
-
-private:
-	std::atomic_flag _lock;
-};
-
-
-template<typename T_Lock>
 class AutoLock
 {
 public:
-    AutoLock(T_Lock & lock) : _lock(&lock)
+    AutoLock(Lock & lock) : _lock(&lock)
     {
         _lock->lock();
     }
@@ -113,8 +83,10 @@ public:
     }
 
 private:
-	T_Lock * _lock;
+	Lock * _lock;
 };
+
+#define AUTO_LOCK(_lc) sframe::AutoLock l((_lc))
 
 }
 

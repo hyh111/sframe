@@ -39,7 +39,7 @@ Logger::~Logger()
 // 写日志
 void Logger::Write(const char * text, LogLevel log_lv)
 {
-    AutoLock<Lock> l(_lock);
+    AUTO_LOCK(_lock);
 
 	if (LoggerMgr::Instance().IsLogInConsole() && log_lv >= kLogLevel_Begin && log_lv < kLogLevel_End)
 	{
@@ -157,7 +157,7 @@ const std::string Logger::GetLogFileName(int64_t cur_time)
 
 Logger & LoggerMgr::GetLogger(const std::string & log_name)
 {
-	AutoLock<SpinLock> l(_lock);
+	AUTO_LOCK(_lock);
 
 	Logger * logger = nullptr;
 

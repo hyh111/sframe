@@ -18,20 +18,16 @@ namespace sframe{
 class TimeHelper
 {
 public:
-    // 系统启动到现在的时间（微秒）
-    static int64_t GetSystenTickCount()
+    // 获取稳定的时间(从开机到现在的微妙，不能手动修改的时间)
+    static int64_t GetSteadyMiliseconds()
     {
-#ifndef __GNUC__
-        return (int64_t)GetTickCount64();
-#else
-        return 0;
-#endif
+		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
     }
 
-    // 纪元到现在的毫秒数
+    // 纪元到现在的毫秒数（系统时间，可以手动修改的时间）
     static int64_t GetEpochMilliseconds()
     {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     }
 
     // 纪元到现在的秒数

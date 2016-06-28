@@ -45,7 +45,7 @@ public:
 
 private:
 	Service * _related_service;
-	SpinLock _lock;
+	Lock _lock;
 	std::vector<std::shared_ptr<Message>> * _buf_write;
 	std::vector<std::shared_ptr<Message>> * _buf_read;
 	ServiceState _state;

@@ -136,7 +136,7 @@ private:
     bool _running;                                // 是否正在运行
     std::vector<std::thread*> _threads;           // 所有线程
 	std::shared_ptr<IoService> _ioservice;                       // IO服务指针
-	RingQueue<int32_t, kMaxServiceId, SpinLock> _dispach_service_queue;    // 服务调度队列
+	RingQueue<int32_t, kMaxServiceId, Lock> _dispach_service_queue;    // 服务调度队列
 	std::vector<Listener*> _listeners;            // 监听器
 
 	// 周期定时器
