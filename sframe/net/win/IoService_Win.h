@@ -27,7 +27,6 @@ public:
 	void PostIoMsg(const IoMsg & io_msg);
 
 private:
-	std::atomic_bool _busy;  // ÊÇ·ñÃ¦Âµ
 	HANDLE _iocp;
 };
 

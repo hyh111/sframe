@@ -17,7 +17,6 @@ std::shared_ptr<IoService> IoService::Create()
 
 IoService_Linux::IoService_Linux()
 {
-	_busy.store(false);
 	_epoll_fd = -1;
 	_msg_evt_fd = -1;
 }
@@ -81,14 +80,7 @@ void IoService_Linux::RunOnce(int32_t wait_ms, Error & err)
 {
 	err = ErrorSuccess;
 
-	bool cmp_temp = false;
-	if (!_busy.compare_exchange_strong(cmp_temp, true))
-	{
-		return;
-	}
-
     epoll_event evts[kMaxEpollEventsNumber];
-
     int num = epoll_wait(_epoll_fd, evts, kMaxEpollEventsNumber, wait_ms);
     if (num < 0)
     {
@@ -96,10 +88,6 @@ void IoService_Linux::RunOnce(int32_t wait_ms, Error & err)
 		if (errno != EINTR)
 		{
 			err = errno;
-		}
-		else
-		{
-			_busy.store(false);
 		}
 
         return;
@@ -139,8 +127,6 @@ void IoService_Linux::RunOnce(int32_t wait_ms, Error & err)
             sock_ptr->OnEvent(cur_evt->events);
         }
     }
-
-	_busy.store(false);
 }
 
 // 添加监听事件
@@ -188,7 +174,7 @@ bool IoService_Linux::DeleteIoEvent(const IoUnit & iounit, const IoEvent ioevt)
 // 投递消息
 void IoService_Linux::PostIoMsg(const IoMsg & io_msg)
 {
-	AutoLock<Lock> l(_msgs_lock);
+	AutoLock l(_msgs_lock);
 
     _msgs.push_back((IoMsg*)&io_msg);
 	uint64_t c = 1;

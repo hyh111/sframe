@@ -2,6 +2,7 @@
 #ifndef SFRAME_OBJECT_POOL_H
 #define SFRAME_OBJECT_POOL_H
 
+#include <inttypes.h>
 #include <new>
 #include <utility>
 #include <type_traits>

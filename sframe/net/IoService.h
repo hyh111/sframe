@@ -7,7 +7,7 @@
 
 namespace sframe{
 
-// Io服务
+// Io服务（线程不安全）
 class IoService
 {
 public:

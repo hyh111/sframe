@@ -15,8 +15,6 @@ std::shared_ptr<IoService> IoService::Create()
 IoService_Win::IoService_Win()
 {
     WinSockInitial * initial = &g_win_sock_initial;
-
-	_busy.store(false);
 	_iocp = nullptr;
 }
 
@@ -45,12 +43,6 @@ void IoService_Win::RunOnce(int32_t wait_ms, Error & err)
 {
 	err = ErrorSuccess;
 
-	bool cmp_temp = false;
-	if (!_busy.compare_exchange_strong(cmp_temp, true))
-	{
-		return;
-	}
-
 	ULONG_PTR complete_key = 0;
 	LPOVERLAPPED obj = nullptr;
 	DWORD trans_bytes = 0;
@@ -65,10 +57,6 @@ void IoService_Win::RunOnce(int32_t wait_ms, Error & err)
 			if (err_code != WAIT_TIMEOUT)
 			{
 				err = err_code;
-			}
-			else
-			{
-				_busy.store(false);
 			}
 
 			return;
@@ -97,8 +85,6 @@ void IoService_Win::RunOnce(int32_t wait_ms, Error & err)
 			io_obj->OnEvent(io_evt);
 		}
 	}
-
-	_busy.store(false);
 }
 
 // 注册Socket

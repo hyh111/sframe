@@ -1,4 +1,5 @@
 ﻿
+#include <sstream>
 #include "../net/IoService.h"
 #include "ServiceDispatcher.h"
 #include "Service.h"
@@ -9,78 +10,91 @@
 
 using namespace sframe;
 
-// 业务线程函数
-void ServiceDispatcher::ExecWorker(ServiceDispatcher * dispatcher)
+// IO线程函数
+void ServiceDispatcher::ExecIO(ServiceDispatcher * dispatcher)
 {
-	uint32_t step = 0;
-	int32_t cur_sid = 0;
+	try
+	{
+		int64_t min_next_timer_time = 0;
 
-    try
-    {
-        while (true)
-        {
-			// 运行一次IO服务
-			step = 1;
+		while (dispatcher->_running)
+		{
+			int64_t now = TimeHelper::GetSteadyMiliseconds();
+
+			// 检测定时器
+			if (now >= min_next_timer_time && !dispatcher->_cycle_timers.empty())
+			{
+				for (CycleTimer * cur : dispatcher->_cycle_timers)
+				{
+					if (now >= cur->next_time)
+					{
+						// 发送周期消息到目标服务
+						if (cur->msg->TryLock())
+						{
+							std::shared_ptr<Message> cycle_msg(cur->msg);
+							dispatcher->SendMsg(cur->sid, cycle_msg);
+							// 调整下一次执行时间
+							cur->next_time = now + cur->msg->GetPeriod();
+
+							// 刷新最小的下次执行时间
+							if (min_next_timer_time > 0)
+							{
+								if (cur->next_time < min_next_timer_time)
+								{
+									min_next_timer_time = cur->next_time;
+								}
+							}
+							else
+							{
+								min_next_timer_time = cur->next_time;
+							}
+						}
+					}
+				}
+			}
+
 			Error err = ErrorSuccess;
-			dispatcher->_ioservice->RunOnce(1, err);
+			dispatcher->_ioservice->RunOnce(Service::kMinCyclePeriod, err);
 			if (err)
 			{
 				LOG_ERROR << "Run IoService error: " << ErrorMessage(err).Message() << ENDL;
 			}
+		}
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR << "IO thread catched exception and exited|error|" << e.what() << std::endl;
+	}
+}
 
-			// 运行timer
-			step = 2;
-			bool cmp = false;
-			if (dispatcher->_checking_timer.compare_exchange_strong(cmp, true))
-			{
-				int64_t now = TimeHelper::GetEpochMilliseconds();
+// 业务线程函数
+void ServiceDispatcher::ExecWorker(ServiceDispatcher * dispatcher)
+{
+	int32_t cur_sid = 0;
 
-				for (CycleTimer & cycle_timer : dispatcher->_cycle_timers)
-				{
-					if (now < cycle_timer.next_time)
-					{
-						continue;
-					}
-
-					if (cycle_timer.msg->TryLock())
-					{
-						std::shared_ptr<Message> cycle_msg(cycle_timer.msg);
-						dispatcher->SendMsg(cycle_timer.sid, cycle_msg);
-						cycle_timer.next_time = now + cycle_timer.msg->GetPeriod();
-					}
-				}
-
-				dispatcher->_checking_timer.store(false);
-			}
-
+    try
+    {
+        while (dispatcher->_running)
+        {
 			// 处理服务消息
-			cur_sid = 0;
+			cur_sid = -1;
 			if (dispatcher->_dispach_service_queue.Pop(&cur_sid))
 			{
 				assert(cur_sid >= 0 && cur_sid <= kMaxServiceId && dispatcher->_services[cur_sid]);
 				dispatcher->_services[cur_sid]->Process();
 			}
-			else if (!dispatcher->_running)
-			{
-				break;
-			}
-
-			TimeHelper::ThreadSleep(1);
         }
     }
-    catch (const std::runtime_error& e)
-    {
-		static const char kStepName[][20] = { "None", "IoService", "CheckTimer", "LogicService" };
-		LOG_ERROR << "Thread exited, catched exception when run " << kStepName[step > 3 ? 0 : step] 
-			<< ", LogicService(" << cur_sid << "), Error: " << e.what() << ENDL;
+    catch (const std::exception& e)
+	{
+		LOG_ERROR << "Logic thread(" << std::this_thread::get_id() << ") catched exception and exited|sid|" << cur_sid << "|error|" << e.what() << std::endl;
     }
 }
 
 
-ServiceDispatcher::ServiceDispatcher() : _max_sid(0), _running(false)
+ServiceDispatcher::ServiceDispatcher() : _max_sid(0), _running(false), _io_thread(nullptr)
 {
 	memset(_services, 0, sizeof(_services));
-	_checking_timer.store(false);
 	_ioservice = IoService::Create();
 	assert(_ioservice);
 }
@@ -95,10 +109,20 @@ ServiceDispatcher::~ServiceDispatcher()
         }
     }
 
-    for (std::thread * t : _threads)
+    for (auto t : _logic_threads)
     {
         delete t;
     }
+
+	if (_io_thread)
+	{
+		delete _io_thread;
+	}
+
+	for (auto cycle_timer : _cycle_timers)
+	{
+		delete cycle_timer;
+	}
 }
 
 // 发消息
@@ -189,11 +213,15 @@ bool ServiceDispatcher::Start(int32_t thread_num)
 		(*it)->Start();
 	}
 
-    // 开启工作线程
+	// 开启IO线程
+	assert(!_io_thread);
+	_io_thread = new std::thread(ServiceDispatcher::ExecIO, this);
+
+    // 开启逻辑线程
     for (int i = 0; i < thread_num; i++)
     {
-        std::thread * t = new std::thread(ServiceDispatcher::ExecWorker, this);
-        _threads.push_back(t);
+		std::thread * t = new std::thread(ServiceDispatcher::ExecWorker, this);
+        _logic_threads.push_back(t);
     }
 
 	return true;
@@ -235,21 +263,27 @@ void ServiceDispatcher::Stop()
 	}
 
     _running = false;
-
-    for (std::thread * t : _threads)
+	_dispach_service_queue.Stop();
+    for (std::thread * t : _logic_threads)
     {
         t->join();
         delete t;
     }
+	_logic_threads.clear();
 
-    _threads.clear();
+	_io_thread->join();
+	delete _io_thread;
+	_io_thread = nullptr;
 }
 
 // 调度服务(将指定服务压入调度队列)
 void ServiceDispatcher::Dispatch(int32_t sid)
 {
 	assert(sid >= 0 && sid <= kMaxServiceId && _services[sid]);
-	_dispach_service_queue.Push(sid);
+	if (!_dispach_service_queue.Push(sid))
+	{
+		assert(false);
+	}
 }
 
 // 注册工作服务
@@ -267,7 +301,7 @@ bool ServiceDispatcher::RegistService(int32_t sid, Service * service)
 	int32_t period = service->GetCyclePeriod();
 	if (period > 0)
 	{
-		_cycle_timers.push_back(CycleTimer(sid, period));
+		_cycle_timers.push_back(new CycleTimer(sid, period));
 	}
 
 	_services[sid] = service;
@@ -301,6 +335,6 @@ void ServiceDispatcher::RepareProxyServer()
 	{
 		_services[0] = new ProxyService();
 		assert(_services[0]);
-		_cycle_timers.push_back(CycleTimer(0, 1000));
+		_cycle_timers.push_back(new CycleTimer(0, 1000));
 	}
 }

@@ -2,8 +2,7 @@
 #ifndef SFRAME_LOCK_H
 #define SFRAME_LOCK_H
 
-#include <atomic>
-
+#include <assert.h>
 #ifndef __GNUC__
 #include <windows.h>
 #else
@@ -16,6 +15,7 @@ namespace sframe {
 // Windows锁实现
 class Lock
 {
+	friend class ConditionVariable;
 public:
     Lock()
     {
@@ -45,14 +45,17 @@ private:
 // Linux锁实现
 class Lock
 {
+	friend class ConditionVariable;
 public:
-    Lock()
-    {
-        _mutex = PTHREAD_MUTEX_INITIALIZER;
-    }
+    Lock() : _mutex(PTHREAD_MUTEX_INITIALIZER) {}
 
-    ~Lock()
-    {}
+    ~Lock() 
+	{
+		if (pthread_mutex_destroy(&_mutex) != 0)
+		{
+			assert(false);
+		}
+	}
 
     void lock()
     {
@@ -81,6 +84,11 @@ public:
     {
         _lock->unlock();
     }
+
+	Lock * GetLock()
+	{
+		return _lock;
+	}
 
 private:
 	Lock * _lock;

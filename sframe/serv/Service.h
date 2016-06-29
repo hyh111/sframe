@@ -57,7 +57,8 @@ class Service : public noncopyable
 public:
 	static const int32_t kDefaultMaxWaitDestroyTime = 100000;   // 毫秒
 
-public:
+	static const int32_t kMinCyclePeriod = 10;                  // 最小周期（毫秒）
+
 	// 初始化（创建服务成功后调用，此时还未开始运行）
 	virtual void Init() = 0;
 

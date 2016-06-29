@@ -6,10 +6,10 @@
 #include <memory.h>
 #include <memory>
 #include <vector>
-#include <unordered_set>
+#include <set>
 #include <thread>
 #include <algorithm>
-#include "../util/RingQueue.h"
+#include "../util/BlockingQueue.h"
 #include "../util/Singleton.h"
 #include "../util/Serialization.h"
 #include "Message.h"
@@ -22,6 +22,20 @@ class Service;
 class Listener;
 class ConnDistributeStrategy;
 
+
+// 周期定时器
+struct CycleTimer
+{
+	CycleTimer(int32_t sid, int32_t period) : sid(sid), next_time(0)
+	{
+		msg = std::make_shared<CycleMessage>(period);
+	}
+
+	int32_t sid;                          // 服务ID
+	int64_t next_time;                    // 下次执行时间
+	std::shared_ptr<CycleMessage> msg;    // 周期消息
+};
+
 // 服务调度器
 class ServiceDispatcher : public singleton<ServiceDispatcher>, public noncopyable
 {
@@ -29,6 +43,9 @@ public:
     static const int32_t kMaxServiceId = 65536; // 最大服务ID
 
 private:
+
+	// IO线程函数
+	static void ExecIO(ServiceDispatcher * dispatcher);
 
     // 工作线程函数
     static void ExecWorker(ServiceDispatcher * dispatcher);
@@ -134,26 +151,12 @@ private:
     int32_t _max_sid;                             // 当前最大的服务ID
 	std::vector<int32_t> _local_sid;              // 本地所有服务ID
     bool _running;                                // 是否正在运行
-    std::vector<std::thread*> _threads;           // 所有线程
-	std::shared_ptr<IoService> _ioservice;                       // IO服务指针
-	RingQueue<int32_t, kMaxServiceId, Lock> _dispach_service_queue;    // 服务调度队列
+    std::vector<std::thread*> _logic_threads;     // 所有逻辑线程
+	std::thread * _io_thread;                     // IO线程（IO操作，已经周期定时检测）
+	std::shared_ptr<IoService> _ioservice;        // IO服务指针
 	std::vector<Listener*> _listeners;            // 监听器
-
-	// 周期定时器
-	struct CycleTimer
-	{
-		CycleTimer(int32_t sid, int32_t period) : sid(sid), next_time(0) 
-		{
-			msg = std::make_shared<CycleMessage>(period);
-		}
-
-		int32_t sid;                          // 服务ID
-		int64_t next_time;                    // 下次执行时间
-		std::shared_ptr<CycleMessage> msg;    // 周期消息
-	};
-
-	std::vector<CycleTimer> _cycle_timers;        // 周期定时器列表
-	std::atomic_bool _checking_timer;             // 是否正在检查周期定时器
+	BlockingQueue<int32_t, kMaxServiceId> _dispach_service_queue;    // 服务调度队列
+	std::vector<CycleTimer*> _cycle_timers;                          // 周期定时器列表
 };
 
 static ServiceDispatcher & GetServiceDispatcher()

@@ -41,7 +41,6 @@ public:
 	void PostIoMsg(const IoMsg & io_msg);
 
 private:
-	std::atomic_bool _busy;
 	int _epoll_fd;
 	int _msg_evt_fd;               // 用于实现IO消息的发送与处理
 	std::vector<IoMsg*> _msgs;     // IO消息列表

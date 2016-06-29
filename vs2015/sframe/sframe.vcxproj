@@ -49,7 +49,9 @@
     <ClInclude Include="..\..\sframe\serv\ServiceDispatcher.h" />
     <ClInclude Include="..\..\sframe\serv\ServiceSession.h" />
     <ClInclude Include="..\..\sframe\util\BitPanel.h" />
+    <ClInclude Include="..\..\sframe\util\BlockingQueue.h" />
     <ClInclude Include="..\..\sframe\util\Buffer.h" />
+    <ClInclude Include="..\..\sframe\util\ConditionVariable.h" />
     <ClInclude Include="..\..\sframe\util\Convert.h" />
     <ClInclude Include="..\..\sframe\util\Delegate.h" />
     <ClInclude Include="..\..\sframe\util\DynamicFactory.h" />
