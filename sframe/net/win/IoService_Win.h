@@ -20,6 +20,8 @@ public:
 
 	void RunOnce(int32_t wait_ms, Error & err) override;
 
+	void Close() override;
+
 	// ×¢²áSocket
 	bool RegistSocket(const IoUnit & io_unit);
 

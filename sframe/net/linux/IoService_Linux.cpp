@@ -55,6 +55,7 @@ Error IoService_Linux::Init()
 		goto ERROR_HANDLE;
 	}
 
+	_open = true;
 	return ErrorSuccess;
 
 ERROR_HANDLE:
@@ -79,6 +80,11 @@ ERROR_HANDLE:
 void IoService_Linux::RunOnce(int32_t wait_ms, Error & err)
 {
 	err = ErrorSuccess;
+
+	if (!_open)
+	{
+		return;
+	}
 
     epoll_event evts[kMaxEpollEventsNumber];
     int num = epoll_wait(_epoll_fd, evts, kMaxEpollEventsNumber, wait_ms);
@@ -114,11 +120,19 @@ void IoService_Linux::RunOnce(int32_t wait_ms, Error & err)
 			// 处理所有消息
             for (IoMsg * m : msgs)
             {
-				std::shared_ptr<IoUnit> s = m->io_unit;
-                if (s)
-                {
-                    s->OnMsg(m);
-                }
+				if (m)
+				{
+					std::shared_ptr<IoUnit> s = m->io_unit;
+					if (s)
+					{
+						s->OnMsg(m);
+					}
+				}
+				else
+				{
+					_open = false;
+					return;
+				}
             }
         }
         else
@@ -127,6 +141,20 @@ void IoService_Linux::RunOnce(int32_t wait_ms, Error & err)
             sock_ptr->OnEvent(cur_evt->events);
         }
     }
+}
+
+void IoService_Linux::Close()
+{
+	if (!_open)
+	{
+		return;
+	}
+
+	AutoLock l(_msgs_lock);
+	_msgs.push_back(nullptr);
+	uint64_t c = 1;
+	int ret = write(_msg_evt_fd, &c, sizeof(c));
+	assert(ret >= sizeof(c));
 }
 
 // 添加监听事件
@@ -175,7 +203,6 @@ bool IoService_Linux::DeleteIoEvent(const IoUnit & iounit, const IoEvent ioevt)
 void IoService_Linux::PostIoMsg(const IoMsg & io_msg)
 {
 	AutoLock l(_msgs_lock);
-
     _msgs.push_back((IoMsg*)&io_msg);
 	uint64_t c = 1;
 	int ret = write(_msg_evt_fd, &c, sizeof(c));

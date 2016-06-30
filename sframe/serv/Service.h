@@ -55,9 +55,7 @@ private:
 class Service : public noncopyable
 {
 public:
-	static const int32_t kDefaultMaxWaitDestroyTime = 100000;   // 毫秒
-
-	static const int32_t kMinCyclePeriod = 10;                  // 最小周期（毫秒）
+	static const int32_t kDefaultMaxWaitDestroyTime = 3000;   // 毫秒
 
 	// 初始化（创建服务成功后调用，此时还未开始运行）
 	virtual void Init() = 0;
@@ -84,7 +82,7 @@ public:
 	virtual int32_t GetCyclePeriod() const { return 0; }
 
 public:
-    Service() : _sid(0), _msg_queue(this), _last_sid(0), _cur_time(0) {}
+    Service() : _sid(0), _msg_queue(this), _last_sid(0), _cur_time(0), _destroyed(false) {}
 
     virtual ~Service() {}
 
@@ -96,6 +94,12 @@ public:
 	int32_t GetServiceId() const
 	{
 		return _sid;
+	}
+
+	// 是否已经被销毁
+	bool IsDestroyed() const
+	{
+		return _destroyed;
 	}
 
     // 压入消息
@@ -172,6 +176,7 @@ private:
 	int64_t _cur_time;               // 当前时间
 	MessageQueue _msg_queue;         // 消息队列
 	int32_t _last_sid;               // 最近收到的服务消息的服务ID
+	bool _destroyed;                 // 是否已被销毁
 	DelegateManager<InsideServiceMessageDecoder, 65536> _inside_delegate_mgr;
 	DelegateManager<NetServiceMessageDecoder, 65536> _net_delegate_mgr;
 };

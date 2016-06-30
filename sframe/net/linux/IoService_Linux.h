@@ -28,6 +28,8 @@ public:
 
 	void RunOnce(int32_t wait_ms, Error & err) override;
 
+	void Close() override;
+
 	// Ìí¼Ó¼àÌıÊÂ¼ş
 	bool AddIoEvent(const IoUnit & iounit, const IoEvent ioevt);
 

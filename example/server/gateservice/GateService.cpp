@@ -46,6 +46,15 @@ void GateService::OnServiceLost(const std::vector<int32_t> & services)
 	}
 }
 
+// ´¦ÀíÏú»Ù
+void GateService::OnDestroy()
+{
+	for (auto & pr : _sessions)
+	{
+		pr.second->StartClose();
+	}
+}
+
 int32_t GateService::ChooseWorkService()
 {
 	if (_usable_work_service.empty())

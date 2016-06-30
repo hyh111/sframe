@@ -146,7 +146,7 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 }
 
 // 注册会话定时器
-int32_t ProxyService::RegistSessionTimer(int32_t session_id, int32_t after_ms, sframe::ObjectTimerManager<int32_t, ServiceSession>::TimerFunc func)
+uint32_t ProxyService::RegistSessionTimer(int32_t session_id, int32_t after_ms, sframe::ObjectTimerManager<int32_t, ServiceSession>::TimerFunc func)
 {
 	assert(after_ms >= 0 && session_id > 0 && session_id <= kMaxSessionNumber && _session[session_id]);
 	int64_t cur_time = sframe::TimeHelper::GetEpochMilliseconds();

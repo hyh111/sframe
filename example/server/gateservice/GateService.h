@@ -24,6 +24,9 @@ public:
 	// 服务断开（仅与本服务发生过消息往来的服务断开时，才会有通知）
 	void OnServiceLost(const std::vector<int32_t> & services) override;
 
+	// 处理销毁
+	void OnDestroy() override;
+
 	// 是否销毁完成
 	bool IsDestroyCompleted() const override
 	{

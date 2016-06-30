@@ -36,12 +36,19 @@ Error IoService_Win::Init()
 		return err;
 	}
 
+	_open = true;
+
 	return ErrorSuccess;
 }
 
 void IoService_Win::RunOnce(int32_t wait_ms, Error & err)
 {
 	err = ErrorSuccess;
+
+	if (!_open)
+	{
+		return;
+	}
 
 	ULONG_PTR complete_key = 0;
 	LPOVERLAPPED obj = nullptr;
@@ -63,27 +70,53 @@ void IoService_Win::RunOnce(int32_t wait_ms, Error & err)
 		}
 	}
 
-	assert(obj);
-
 	if (complete_key == 0)
 	{
 		IoMsg * io_msg = (IoMsg*)obj;
-		std::shared_ptr<IoUnit> io_obj = io_msg->io_unit;
-		if (io_obj)
+		if (io_msg)
 		{
-			io_obj->OnMsg(io_msg);
+			std::shared_ptr<IoUnit> io_obj = io_msg->io_unit;
+			if (io_obj)
+			{
+				io_obj->OnMsg(io_msg);
+			}
+		}
+		else
+		{
+			_open = false;
 		}
 	}
 	else
 	{
 		IoEvent * io_evt = (IoEvent*)obj;
-		std::shared_ptr<IoUnit> io_obj = io_evt->io_unit;
-		if (io_obj)
+		if (io_evt)
 		{
-			io_evt->err = err_code;
-			io_evt->data_len = trans_bytes;
-			io_obj->OnEvent(io_evt);
+			std::shared_ptr<IoUnit> io_obj = io_evt->io_unit;
+			if (io_obj)
+			{
+				io_evt->err = err_code;
+				io_evt->data_len = trans_bytes;
+				io_obj->OnEvent(io_evt);
+			}
 		}
+		else
+		{
+			assert(false);
+		}
+	}
+}
+
+void IoService_Win::Close()
+{
+	if (!_open)
+	{
+		return;
+	}
+
+	if (!PostQueuedCompletionStatus(_iocp, 0, (ULONG_PTR)0, nullptr))
+	{
+		//DWORD err_code = GetLastError();
+		assert(false);
 	}
 }
 
@@ -108,7 +141,9 @@ bool IoService_Win::RegistSocket(const IoUnit & sock)
 // 投递消息
 void IoService_Win::PostIoMsg(const IoMsg & io_msg)
 {
-	BOOL ret = PostQueuedCompletionStatus(_iocp, 0, (ULONG_PTR)0, (LPOVERLAPPED)&io_msg);
-	DWORD err_code = GetLastError();
-	assert(ret);
+	if (!PostQueuedCompletionStatus(_iocp, 0, (ULONG_PTR)0, (LPOVERLAPPED)&io_msg))
+	{
+		//DWORD err_code = GetLastError();
+		assert(false);
+	}
 }

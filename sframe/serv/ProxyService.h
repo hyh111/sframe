@@ -45,7 +45,7 @@ public:
 	int32_t RegistSession(int32_t sid, const std::string & remote_ip, uint16_t remote_port);
 
 	// 注册会话定时器
-	int32_t RegistSessionTimer(int32_t session_id, int32_t after_ms, ObjectTimerManager<int32_t, ServiceSession>::TimerFunc func);
+	uint32_t RegistSessionTimer(int32_t session_id, int32_t after_ms, ObjectTimerManager<int32_t, ServiceSession>::TimerFunc func);
 
 	// 获取会话
 	ServiceSession * GetServiceSessionById(int32_t session_id);

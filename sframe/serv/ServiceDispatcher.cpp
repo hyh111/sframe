@@ -17,13 +17,15 @@ void ServiceDispatcher::ExecIO(ServiceDispatcher * dispatcher)
 	{
 		int64_t min_next_timer_time = 0;
 
-		while (dispatcher->_running)
+		while (dispatcher->_ioservice->IsOpen())
 		{
+			int64_t wait_timeout = 20000;
 			int64_t now = TimeHelper::GetSteadyMiliseconds();
 
 			// 检测定时器
 			if (now >= min_next_timer_time && !dispatcher->_cycle_timers.empty())
 			{
+				min_next_timer_time = 0;
 				for (CycleTimer * cur : dispatcher->_cycle_timers)
 				{
 					if (now >= cur->next_time)
@@ -35,26 +37,23 @@ void ServiceDispatcher::ExecIO(ServiceDispatcher * dispatcher)
 							dispatcher->SendMsg(cur->sid, cycle_msg);
 							// 调整下一次执行时间
 							cur->next_time = now + cur->msg->GetPeriod();
-
-							// 刷新最小的下次执行时间
-							if (min_next_timer_time > 0)
-							{
-								if (cur->next_time < min_next_timer_time)
-								{
-									min_next_timer_time = cur->next_time;
-								}
-							}
-							else
-							{
-								min_next_timer_time = cur->next_time;
-							}
 						}
+					}
+
+					// 刷新最小的下次执行时间
+					if (min_next_timer_time <= 0 || cur->next_time < min_next_timer_time)
+					{
+						min_next_timer_time = cur->next_time;
 					}
 				}
 			}
 
+			int64_t next_timer_after_millisec = min_next_timer_time - now;
+			assert(next_timer_after_millisec > 0);
+			wait_timeout = wait_timeout > next_timer_after_millisec ? next_timer_after_millisec : wait_timeout;
+
 			Error err = ErrorSuccess;
-			dispatcher->_ioservice->RunOnce(Service::kMinCyclePeriod, err);
+			dispatcher->_ioservice->RunOnce((int32_t)wait_timeout, err);
 			if (err)
 			{
 				LOG_ERROR << "Run IoService error: " << ErrorMessage(err).Message() << ENDL;
@@ -271,6 +270,8 @@ void ServiceDispatcher::Stop()
     }
 	_logic_threads.clear();
 
+	// 停止IO服务和IO线程
+	_ioservice->Close();
 	_io_thread->join();
 	delete _io_thread;
 	_io_thread = nullptr;

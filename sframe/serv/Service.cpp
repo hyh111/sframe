@@ -1,4 +1,5 @@
 ﻿
+#include <stdio.h>
 #include <iostream>
 #include "ServiceDispatcher.h"
 #include "Service.h"
@@ -59,6 +60,17 @@ void Service::Process()
 	for (auto & msg : *msgs)
 	{
 		MessageType msg_type = msg->GetType();
+
+		// 服务销毁后，只能接受服务消息
+		if (IsDestroyed())
+		{
+			if (msg_type != sframe::kMsgType_InsideServiceMessage &&
+				msg_type != sframe::kMsgType_NetServiceMessage)
+			{
+				continue;
+			}
+		}
+
 		switch (msg_type)
 		{
 			case sframe::kMsgType_CycleMessage:
@@ -76,7 +88,11 @@ void Service::Process()
 				assert(service_msg->dest_sid == GetServiceId());
 				_last_sid = service_msg->src_sid;
 				InsideServiceMessageDecoder decoder(service_msg.get());
-				_inside_delegate_mgr.Call(service_msg->msg_id, decoder);
+				if (!_inside_delegate_mgr.Call(service_msg->msg_id, decoder))
+				{
+					LOG_ERROR << "Delegate service message error|inside|service|" << GetServiceId()
+						<< "|from|" << _last_sid << "|msgid|" << service_msg->msg_id << std::endl;
+				}
 			}
 			break;
 
@@ -86,7 +102,11 @@ void Service::Process()
 				assert(net_service_msg->dest_sid == GetServiceId());
 				_last_sid = net_service_msg->src_sid;
 				NetServiceMessageDecoder decoder(net_service_msg.get());
-				_net_delegate_mgr.Call(net_service_msg->msg_id, decoder);
+				if (!_net_delegate_mgr.Call(net_service_msg->msg_id, decoder))
+				{
+					LOG_ERROR << "Delegate service message error|net|service|" << GetServiceId()
+						<< "|from|" << _last_sid << "|msgid|" << net_service_msg->msg_id << std::endl;
+				}
 			}
 			break;
 
@@ -100,6 +120,7 @@ void Service::Process()
 			case sframe::kMsgType_DestroyServiceMessage:
 			{
 				this->OnDestroy();
+				_destroyed = true;
 			}
 			break;
 
@@ -132,7 +153,7 @@ void Service::WaitDestroyComplete()
 
 	while (!IsDestroyCompleted())
 	{
-		TimeHelper::ThreadSleep(50);
+		TimeHelper::ThreadSleep(20);
 
 		if (kDefaultMaxWaitDestroyTime >= 0)
 		{
