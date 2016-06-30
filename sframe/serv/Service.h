@@ -60,12 +60,6 @@ public:
 	// 初始化（创建服务成功后调用，此时还未开始运行）
 	virtual void Init() = 0;
 
-	// 处理周期定时器
-	virtual void OnCycleTimer() {}
-
-	// 处理销毁
-	virtual void OnDestroy() {}
-
 	// 代理服务消息
 	virtual void OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessage> & msg) {}
 
@@ -75,8 +69,18 @@ public:
 	// 新连接到来
 	virtual void OnNewConnection(const ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock) {}
 
+	// 处理销毁
+	virtual void OnDestroy() {}
+
 	// 是否销毁完成
 	virtual bool IsDestroyCompleted() const { return true; }
+
+	// 获取该该服务的销毁优先级
+	// 返回：大于等于0的数字，数字越大越靠后销毁，相同的一起销毁，默认为0
+	virtual int32_t GetDestroyPriority() const { return 0; }
+
+	// 处理周期定时器
+	virtual void OnCycleTimer() {}
 
 	// 获取服务的循环定时器周期，重写此方法返回大于0的值(ms)设置循环周期
 	virtual int32_t GetCyclePeriod() const { return 0; }

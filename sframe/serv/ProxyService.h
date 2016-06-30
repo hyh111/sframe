@@ -31,6 +31,11 @@ public:
 
 	bool IsDestroyCompleted() const override;
 
+	int32_t GetCyclePeriod() const override
+	{
+		return 1000;
+	}
+
 	// 处理周期定时器
 	void OnCycleTimer() override;
 

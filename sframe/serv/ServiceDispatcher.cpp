@@ -195,16 +195,23 @@ bool ServiceDispatcher::Start(int32_t thread_num)
 		return false;
 	}
 
-	// 初始化所有服务
+	_running = true;
+
+	// 初始化所有服务，并设置循环周期
 	for (int i = 0; i <= _max_sid; i++)
 	{
 		if (_services[i] != nullptr)
 		{
+			// 初始化
 			_services[i]->Init();
+			// 设置周期
+			int32_t period = _services[i]->GetCyclePeriod();
+			if (period > 0)
+			{
+				_cycle_timers.push_back(new CycleTimer(i, period));
+			}
 		}
 	}
-
-    _running = true;
 
 	// 开启所有监听器
 	for (auto it = _listeners.begin(); it < _listeners.end(); it++)
@@ -242,22 +249,39 @@ void ServiceDispatcher::Stop()
 		}
 	}
 
-	// 给所有服务发送销毁消息
-	std::shared_ptr<Message> destroy_msg = std::make_shared<DestroyServiceMessage>();
+	// 确定所有服务的销毁优先级批次
+	std::map<int32_t, std::vector<Service*>> destroy_priority_to_service;
 	for (int i = 0; i <= _max_sid; i++)
 	{
 		if (_services[i] != nullptr)
 		{
-			_services[i]->PushMsg(destroy_msg);
+			int32_t priority = _services[i]->GetDestroyPriority();
+			priority = priority > 0 ? priority : 0;
+			destroy_priority_to_service[priority].push_back(_services[i]);
 		}
 	}
 
-	// 等待所有服务销毁完成
-	for (int i = 0; i <= _max_sid; i++)
+	// 销毁服务
+	std::shared_ptr<Message> destroy_msg = std::make_shared<DestroyServiceMessage>();
+	for (auto it = destroy_priority_to_service.begin(); it != destroy_priority_to_service.end(); it++)
 	{
-		if (_services[i] != nullptr)
+		// 发送销毁消息
+		for (Service * s : it->second)
 		{
-			_services[i]->WaitDestroyComplete();
+			if (s)
+			{
+				s->PushMsg(destroy_msg);
+			}
+			else
+			{
+				assert(false);
+			}
+		}
+
+		// 等待销毁完成
+		for (Service * s : it->second)
+		{
+			s->WaitDestroyComplete();
 		}
 	}
 
@@ -298,13 +322,6 @@ bool ServiceDispatcher::RegistService(int32_t sid, Service * service)
 	service->SetServiceId(sid);
 	_max_sid = sid > _max_sid ? sid : _max_sid;
 	_local_sid.push_back(sid);
-
-	int32_t period = service->GetCyclePeriod();
-	if (period > 0)
-	{
-		_cycle_timers.push_back(new CycleTimer(sid, period));
-	}
-
 	_services[sid] = service;
 
 	return true;
@@ -336,6 +353,5 @@ void ServiceDispatcher::RepareProxyServer()
 	{
 		_services[0] = new ProxyService();
 		assert(_services[0]);
-		_cycle_timers.push_back(new CycleTimer(0, 1000));
 	}
 }
