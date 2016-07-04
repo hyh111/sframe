@@ -23,6 +23,7 @@ bool ClientManager::Init()
 			continue;
 		}
 
+		c->SetTimerManager(&_timer_mgr);
 		_clients.insert(std::make_pair(c->GetId(), c));
 	}
 
@@ -43,13 +44,6 @@ bool ClientManager::Init()
 	return true;
 }
 
-// 注册会话定时器
-int32_t ClientManager::RegistTimer(int32_t client_id, int32_t after_ms, sframe::ObjectTimerManager<int32_t, Client>::TimerFunc func)
-{
-	int64_t cur_time = sframe::TimeHelper::GetEpochMilliseconds();
-	return _timer_mgr.Regist(cur_time + after_ms, client_id, func);
-}
-
 void ClientManager::Update()
 {
 	Error err = ErrorSuccess;
@@ -63,8 +57,7 @@ void ClientManager::Update()
 	int s = _state.load();
 	if (s == 1)
 	{
-		int64_t cur_time = TimeHelper::GetEpochMilliseconds();
-		_timer_mgr.Execute(cur_time);
+		_timer_mgr.Execute();
 	}
 	else if (s == 2)
 	{

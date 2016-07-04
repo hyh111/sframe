@@ -7,8 +7,7 @@
 
 using namespace sframe;
 
-ProxyService::ProxyService() 
-	:  _session_num(0), _listening(false), _timer_mgr(std::bind(&ProxyService::GetServiceSessionById, this, std::placeholders::_1))
+ProxyService::ProxyService() :  _session_num(0), _listening(false)
 {
 	memset(_session, 0, sizeof(_session));
 
@@ -60,8 +59,7 @@ bool ProxyService::IsDestroyCompleted() const
 // 处理周期定时器
 void ProxyService::OnCycleTimer()
 {
-	int64_t cur_time = sframe::TimeHelper::GetEpochMilliseconds();
-	_timer_mgr.Execute(cur_time);
+	_timer_mgr.Execute();
 }
 
 // 新连接到来
@@ -78,6 +76,7 @@ void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const
 	assert(_session[session_id] == nullptr);
 	_session[session_id] = new ServiceSession(session_id, this, sock);
 	_session_num++;
+	_session[session_id]->SetTimerManager(&_timer_mgr);
 	_session[session_id]->Init();
 }
 
@@ -126,6 +125,7 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 		assert(_session[session_id] == nullptr);
 		_session[session_id] = new ServiceSession(session_id, this, remote_ip, remote_port);
 		_session_num++;
+		_session[session_id]->SetTimerManager(&_timer_mgr);
 		_session[session_id]->Init();
 		_session_addr_to_sessionid[addr_info] = session_id;
 	}
@@ -143,14 +143,6 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 	remote_info.sessionid = session_id;
 
 	return session_id;
-}
-
-// 注册会话定时器
-uint32_t ProxyService::RegistSessionTimer(int32_t session_id, int32_t after_ms, sframe::ObjectTimerManager<int32_t, ServiceSession>::TimerFunc func)
-{
-	assert(after_ms >= 0 && session_id > 0 && session_id <= kMaxSessionNumber && _session[session_id]);
-	int64_t cur_time = sframe::TimeHelper::GetEpochMilliseconds();
-	return _timer_mgr.Regist(cur_time + after_ms, session_id, func);
 }
 
 ServiceSession * ProxyService::GetServiceSessionById(int32_t session_id)

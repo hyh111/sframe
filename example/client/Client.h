@@ -7,10 +7,11 @@
 #include <memory>
 #include <string>
 #include "net/net.h"
+#include "util/Timer.h"
 
 class ClientManager;
 
-class Client : public sframe::TcpSocket::Monitor
+class Client : public sframe::TcpSocket::Monitor, public sframe::SafeTimerRegistor<Client>
 {
 public:
 	enum State : int32_t
@@ -49,14 +50,14 @@ public:
 	void OnConnected(sframe::Error err) override;
 
 private:
-	int32_t OnTimer(int64_t cur_time);
+	int64_t OnTimer();
 
-	void OnTimer_WaitConnect(int64_t cur_time);
+	void OnTimer_WaitConnect();
 
-	void OnTimer_Working(int64_t cur_time);
+	void OnTimer_Working();
 
 private:
-	typedef void(Client::*TimerRouine)(int64_t cur_time);
+	typedef void(Client::*TimerRouine)();
 	static TimerRouine kStateRoutine[kState_Count];
 
 	ClientManager * _mgr;

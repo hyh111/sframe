@@ -236,5 +236,8 @@
     <ClCompile Include="..\..\sframe\serv\Listener.cpp">
       <Filter>serv</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\sframe\util\Timer.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

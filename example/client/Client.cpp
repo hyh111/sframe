@@ -20,7 +20,7 @@ Client::Client(int32_t id, ClientManager * mgr)
 
 void Client::Init()
 {
-	_mgr->RegistTimer(_id, 1000, &Client::OnTimer);
+	RegistTimer(1000, &Client::OnTimer);
 }
 
 void Client::Close()
@@ -77,20 +77,20 @@ void Client::OnConnected(sframe::Error err)
 	_sock->StartRecv();
 }
 
-int32_t Client::OnTimer(int64_t cur_time)
+int64_t Client::OnTimer()
 {
 	if (_state >= 0 && _state < kState_Count)
 	{
 		if (kStateRoutine[_state])
 		{
-			(this->*kStateRoutine[_state])(cur_time);
+			(this->*kStateRoutine[_state])();
 		}
 	}
 
 	return 1000;
 }
 
-void Client::OnTimer_WaitConnect(int64_t cur_time)
+void Client::OnTimer_WaitConnect()
 {
 	assert(_sock == nullptr);
 	_sock = sframe::TcpSocket::Create(_mgr->GetIoService());
@@ -103,7 +103,7 @@ void Client::OnTimer_WaitConnect(int64_t cur_time)
 	_state = kState_Connecting;
 }
 
-void Client::OnTimer_Working(int64_t cur_time)
+void Client::OnTimer_Working()
 {
 	assert(_sock);
 	auto config = ConfigManager::Instance().GetMapConfigItem<ClientConfig::KeyType, ClientConfig>(_id);

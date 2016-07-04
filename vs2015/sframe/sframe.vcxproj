@@ -94,6 +94,7 @@
     <ClCompile Include="..\..\sframe\util\RandomHelper.cpp" />
     <ClCompile Include="..\..\sframe\util\ShmChunk.cpp" />
     <ClCompile Include="..\..\sframe\util\StringHelper.cpp" />
+    <ClCompile Include="..\..\sframe\util\Timer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{83DE770E-0801-4DAB-ACB1-5554E74D2E0C}</ProjectGuid>

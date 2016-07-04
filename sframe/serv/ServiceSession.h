@@ -6,13 +6,14 @@
 #include "../util/Serialization.h"
 #include "../net/net.h"
 #include "../util/Singleton.h"
+#include "../util/Timer.h"
 
 namespace sframe {
 
 class ProxyService;
 
 // 服务会话（主要处理与网络中的服务的通信）
-class ServiceSession : public TcpSocket::Monitor, public noncopyable
+class ServiceSession : public TcpSocket::Monitor, public noncopyable, public SafeTimerRegistor<ServiceSession>
 {
 public:
 	// 会话状态
@@ -70,7 +71,7 @@ private:
 	void StartConnectTimer(int32_t after_ms);
 
 	// 定时：连接
-	int32_t OnTimer_Connect(int64_t cur_ms);
+	int64_t OnTimer_Connect();
 
 private:
 	ProxyService * _proxy_service;

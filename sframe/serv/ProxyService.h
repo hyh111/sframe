@@ -7,7 +7,6 @@
 #include <queue>
 #include "ServiceSession.h"
 #include "Service.h"
-#include "../util/Timer.h"
 #include "../util/RingQueue.h"
 #include "ProxyServiceMsg.h"
 
@@ -49,9 +48,6 @@ public:
 	// 返回会话ID（大于0的整数），否则为失败
 	int32_t RegistSession(int32_t sid, const std::string & remote_ip, uint16_t remote_port);
 
-	// 注册会话定时器
-	uint32_t RegistSessionTimer(int32_t session_id, int32_t after_ms, ObjectTimerManager<int32_t, ServiceSession>::TimerFunc func);
-
 	// 获取会话
 	ServiceSession * GetServiceSessionById(int32_t session_id);
 
@@ -69,7 +65,7 @@ private:
 	RingQueue<int32_t, kMaxSessionNumber> _session_id_queue;
 	int32_t _session_num;
 	bool _listening;           // 是否正在监听
-	ObjectTimerManager<int32_t, ServiceSession> _timer_mgr;
+	TimerManager _timer_mgr;   // 定时器管理
 
 	// 远程服务记录信息
 	struct RemoteServiceInfo

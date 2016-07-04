@@ -223,11 +223,11 @@ void ServiceSession::OnConnected(sframe::Error err)
 // 开始连接定时器
 void ServiceSession::StartConnectTimer(int32_t after_ms)
 {
-	_proxy_service->RegistSessionTimer(_session_id, after_ms, &ServiceSession::OnTimer_Connect);
+	RegistTimer(after_ms, &ServiceSession::OnTimer_Connect);
 }
 
 // 定时：连接
-int32_t ServiceSession::OnTimer_Connect(int64_t cur_ms)
+int64_t ServiceSession::OnTimer_Connect()
 {
 	assert(_state == kSessionState_WaitConnect && _socket && !_remote_ip.empty());
 
