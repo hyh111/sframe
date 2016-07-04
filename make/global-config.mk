@@ -1,5 +1,5 @@
 
-MFLAGS       := 32
+MFLAGS       :=
 VER          := debug
 AR           := ar
 CPPFLAGS     := -pthread

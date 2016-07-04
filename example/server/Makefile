@@ -12,15 +12,11 @@ SOURCE_DIRS := ./ \
 INCLUDE_PATH = -I$(TOP_DIR)/sframe
 LIB_PATH = -L$(TOP_DIR)/sframe/lib$(MFLAGS)
 
-ifneq ($(MFLAGS),32)
-	EXE_ADD_NAME := $(MFLAGS)
-endif
-
 ifeq ($(VER),debug)
-	TARGET_NAME := $(TOP_DIR)/example/bin/server/server$(EXE_ADD_NAME)-d
+	TARGET_NAME := $(TOP_DIR)/example/bin/server/server$(MFLAGS)-d
 	LIBS = -lsframe-d
 else
-	TARGET_NAME := $(TOP_DIR)/example/bin/server/server$(EXE_ADD_NAME)
+	TARGET_NAME := $(TOP_DIR)/example/bin/server/server$(MFLAGS)
 	LIBS = -lsframe
 endif
 
