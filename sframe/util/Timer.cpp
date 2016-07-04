@@ -148,9 +148,40 @@ Timer::ID TimerManager::NewTimerId()
 	if (_cur_max_timer_id == 0xffffffff)
 	{
 		_cur_max_timer_id = 0;
+		_check_existed_when_new_id = true;
 	}
 
-	return ++_cur_max_timer_id;
+	if (!_check_existed_when_new_id)
+	{
+		return ++_cur_max_timer_id;
+	}
+
+	// 一般情况下不可能到这里来，这里是为了保险起见
+	Timer::ID new_id = _cur_max_timer_id + 1;
+	while (true)
+	{
+		TimerFindor findor(new_id);
+		if (std::find_if(_timer.begin(), _timer.end(), findor) == _timer.end() &&
+			std::find_if(_add_temp.begin(), _add_temp.end(), findor) == _add_temp.end())
+		{
+			_cur_max_timer_id = new_id;
+			return new_id;
+		}
+
+		if (new_id == 0xffffffff)
+		{
+			new_id = 0;
+		}
+
+		new_id++;
+
+		if (new_id == _cur_max_timer_id)
+		{
+			break;
+		}
+	}
+
+	return 0;
 }
 
 void TimerManager::AddTimer(Timer * t)

@@ -217,7 +217,7 @@ class TimerManager
 public:
 	// executor: 执行方法，返回下次多少毫秒后执行，小于0为停止当前的timer
 	TimerManager(bool use_steady_time = true) : 
-		_use_steady_time(use_steady_time), _cur_max_timer_id(0), _executing(false), _min_exec_time(0)
+		_use_steady_time(use_steady_time), _cur_max_timer_id(0), _executing(false), _min_exec_time(0), _check_existed_when_new_id(false)
 	{
 		_add_temp.reserve(512);
 	}
@@ -266,6 +266,7 @@ private:
 	int64_t _min_exec_time;
 	bool _executing;
 	bool _use_steady_time;
+	bool _check_existed_when_new_id;   // 生成ID时是否要检查ID是否存在，当自增到最大，回归到0后变为true(一般情况下不会有到true的时候)
 };
 
 
