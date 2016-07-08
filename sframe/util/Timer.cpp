@@ -7,20 +7,21 @@ using namespace sframe;
 
 TimerManager::~TimerManager()
 {
-	assert(_add_temp.empty());
-	for (Timer * t : _timer)
+	for (int i = 0; i < kAllTimerGroupsNumber; i++)
 	{
-		if (t)
+		Timer * t = _timers_groups[i].timer_head;
+		while (t)
 		{
+			Timer * next = t->GetNext();
 			delete t;
+			t = next;
 		}
 	}
 }
 
 // 注册普通定时器
 // after_msec: 多少毫秒后执行
-// 返回大于0的id
-Timer::ID TimerManager::RegistNormalTimer(int64_t after_msec, NormalTimer::TimerFunc func)
+TimerHandle TimerManager::RegistNormalTimer(int64_t after_msec, NormalTimer::TimerFunc func)
 {
 	if (!func || after_msec < 0)
 	{
@@ -28,179 +29,179 @@ Timer::ID TimerManager::RegistNormalTimer(int64_t after_msec, NormalTimer::Timer
 		return 0;
 	}
 
-	NormalTimer * t = new  NormalTimer(NewTimerId(), func);
-	t->SetExecTime(Now() + after_msec);
-	AddTimer(t);
-
-	return t->GetTimerID();
-}
-
-class TimerFindor
-{
-public:
-	TimerFindor(Timer::ID timer_id) : _timer_id(timer_id) {}
-
-	bool operator()(const Timer * timer)
+	int64_t now = Now();
+	if (_cur_group_change_time <= 0)
 	{
-		return timer->GetTimerID() == _timer_id;
+		_cur_group_change_time = now;
 	}
 
-private:
-	Timer::ID _timer_id;
-};
+	NormalTimer * t = new  NormalTimer(func);
+	t->SetExecTime(now + after_msec);
+	AddTimer(t);
+
+	return t->GetHandle();
+}
 
 // 删除定时器
-void TimerManager::DeleteTimer(Timer::ID timer_id)
+void TimerManager::DeleteTimer(TimerHandle timer_handle)
 {
-	TimerFindor findor(timer_id);
-
-	if (_executing)
+	if (!timer_handle || !timer_handle->IsAlive())
 	{
-		auto it_timer = std::find_if(_timer.begin(), _timer.end(), findor);
-		if (it_timer != _timer.end())
-		{
-			(*it_timer)->SetDelete();
-		}
-		else
-		{
-			auto it_tmp = std::find_if(_add_temp.begin(), _add_temp.end(), findor);
-			if (it_tmp != _add_temp.end())
-			{
-				delete (*it_tmp);
-				_add_temp.erase(it_tmp);
-			}
-		}
+		return;
+	}
+
+	Timer * timer = timer_handle->GetTimerPtr();
+	if (timer == nullptr)
+	{
+		assert(false);
+		return;
+	}
+
+	// 不能删除当前正在执行的timer
+	if (timer == _cur_exec_timer)
+	{
+		return;
+	}
+
+	int32_t group = timer_handle->GetGroup();
+	if (group >= 0 && group < kAllTimerGroupsNumber)
+	{
+		_timers_groups[group].DeleteTimer(timer);
+		delete timer;
 	}
 	else
 	{
-		auto it = std::find_if(_timer.begin(), _timer.end(), findor);
-		if (it != _timer.end())
+		auto it = std::find(_add_timer_cache.begin(), _add_timer_cache.end(), timer);
+		if (it == _add_timer_cache.end())
 		{
-			delete (*it);
-			_timer.erase(it);
+			// 没有在执行组中，肯定在cache中，没有找到说明逻辑有错误
+			assert(false);
+			return;
 		}
+
+		_add_timer_cache.erase(it);
+		delete timer;
 	}
 }
 
 // 执行
 void TimerManager::Execute()
 {
-	int64_t cur_time = Now();
-	if (_min_exec_time <= 0 || cur_time < _min_exec_time)
+	if (_cur_group_change_time <= 0)
 	{
 		return;
 	}
 
-	_min_exec_time = 0;
-	_executing = true;
-	assert(_add_temp.empty());
-	auto it = _timer.begin();
-
-	while (it != _timer.end())
+	// 单位ticks
+	int64_t cur_time = Now();
+	int64_t pass_time = cur_time - _cur_group_change_time;
+	if (pass_time < 0)
 	{
-		Timer * cur = *it;
-		if (cur->IsDeleted())
-		{
-			delete cur;
-			it = _timer.erase(it);
-			continue;
-		}
-
-		if (cur_time >= cur->GetExecTime())
-		{
-			int64_t after_ms = cur->Invoke();
-			if (after_ms < 0)
-			{
-				delete cur;
-				it = _timer.erase(it);
-				continue;
-			}
-			else
-			{
-				cur->SetExecTime(cur_time + after_ms);
-				if (_min_exec_time <= 0 || cur->GetExecTime() < _min_exec_time)
-				{
-					_min_exec_time = cur->GetExecTime();
-				}
-			}
-		}
-
-		it++;
+		assert(false);
+		return;
 	}
 
-	_executing = false;
-
-	// 将add_temp中的timer加入timer列表
-	for (Timer * t : _add_temp)
-	{
-		assert(t);
-		_timer.push_back(t);
-		if (_min_exec_time <= 0 || t->GetExecTime() < _min_exec_time)
-		{
-			_min_exec_time = t->GetExecTime();
-		}
-	}
-	_add_temp.clear();
-}
-
-Timer::ID TimerManager::NewTimerId()
-{
-	if (_cur_max_timer_id == 0xffffffff)
-	{
-		_cur_max_timer_id = 0;
-		_check_existed_when_new_id = true;
-	}
-
-	if (!_check_existed_when_new_id)
-	{
-		return ++_cur_max_timer_id;
-	}
-
-	// 一般情况下不可能到这里来，这里是为了保险起见
-	Timer::ID new_id = _cur_max_timer_id + 1;
+	// 跳多少组
+	int64_t pass_group = pass_time / (kTimeSpanOneGroup * 1000);
+	int64_t old = pass_group;
+	// 执行
 	while (true)
 	{
-		TimerFindor findor(new_id);
-		if (std::find_if(_timer.begin(), _timer.end(), findor) == _timer.end() &&
-			std::find_if(_add_temp.begin(), _add_temp.end(), findor) == _add_temp.end())
+		TimerGroup * group = &_timers_groups[_cur_group];
+		if (group->min_exec_time > 0 && cur_time >= group->min_exec_time)
 		{
-			_cur_max_timer_id = new_id;
-			return new_id;
+			assert(!group->IsEmpty());
+
+			group->min_exec_time = 0;
+			_cur_exec_timer = group->timer_head;
+			while (_cur_exec_timer)
+			{
+				int64_t exec_time = _cur_exec_timer->GetExecTime();
+				if (cur_time >= exec_time)
+				{
+					int64_t after = _cur_exec_timer->Invoke();
+					// 获取下一节点，并删除当前节点
+					Timer * next_timer = _cur_exec_timer->GetNext();
+					group->DeleteTimer(_cur_exec_timer);
+					// 是否还要继续执行
+					if (after >= 0)
+					{
+						_cur_exec_timer->SetExecTime(cur_time + after);
+						_add_timer_cache.push_back(_cur_exec_timer);
+					}
+					else
+					{
+						delete _cur_exec_timer;
+					}
+
+					_cur_exec_timer = next_timer;
+					continue;
+				}
+
+				if (group->min_exec_time == 0 || group->min_exec_time > exec_time)
+				{
+					group->min_exec_time = exec_time;
+				}
+				_cur_exec_timer = _cur_exec_timer->GetNext();
+			}
 		}
 
-		if (new_id == 0xffffffff)
-		{
-			new_id = 0;
-		}
-
-		new_id++;
-
-		if (new_id == _cur_max_timer_id)
+		if (pass_group <= 0)
 		{
 			break;
 		}
+
+		_cur_group_change_time += (kTimeSpanOneGroup * 1000);
+		pass_group--;
+		_cur_group++;
+		if (_cur_group >= kAllTimerGroupsNumber)
+		{
+			_cur_group = 0;
+		}
 	}
 
-	return 0;
+	if (!_add_timer_cache.empty())
+	{
+		for (Timer * t : _add_timer_cache)
+		{
+			AddTimer(t);
+		}
+		_add_timer_cache.clear();
+	}
 }
 
 void TimerManager::AddTimer(Timer * t)
 {
-	if (_executing)
+	if (_cur_exec_timer)
 	{
-		_add_temp.push_back(t);
+		_add_timer_cache.push_back(t);
+		return;
 	}
-	else
+
+	if (_cur_group_change_time <= 0)
 	{
-		_timer.push_back(t);
-		if (_min_exec_time <= 0 || t->GetExecTime() < _min_exec_time)
-		{
-			_min_exec_time = t->GetExecTime();
-		}
+		assert(false);
+		return;
+	}
+
+	int64_t exec_time = t->GetExecTime();
+	int64_t pass_millisec = exec_time - _cur_group_change_time;
+	if (pass_millisec < 0)
+	{
+		assert(false);
+		return;
+	}
+
+	int32_t group_index = ((pass_millisec / (kTimeSpanOneGroup * 1000)) + _cur_group) % kAllTimerGroupsNumber;
+	t->GetHandle()->SetGroup(group_index);
+	_timers_groups[group_index].AddTimer(t);
+	if (_timers_groups[group_index].min_exec_time <= 0 || exec_time < _timers_groups[group_index].min_exec_time)
+	{
+		_timers_groups[group_index].min_exec_time = exec_time;
 	}
 }
 
 int64_t TimerManager::Now()
 {
-	return (_use_steady_time ? TimeHelper::GetSteadyMiliseconds() : TimeHelper::GetEpochMilliseconds());
+	return TimeHelper::GetSteadyMiliseconds();
 }

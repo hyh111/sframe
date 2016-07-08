@@ -5,24 +5,55 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <vector>
-#include <list>
 #include <memory>
 
 namespace sframe {
+
+class Timer;
+
+class TimerWrapper
+{
+	friend class Timer;
+	friend class TimerManager;
+	friend struct TimerGroup;
+public:
+	TimerWrapper(Timer * timer) : _timer(timer), _group(-1) {}
+
+	bool IsAlive() const { return _timer != nullptr; }
+
+private:
+	void SetDeleted() { _timer = nullptr; }
+
+	void SetGroup(int32_t group) { _group = group; }
+
+	Timer * GetTimerPtr() { return _timer; }
+
+	int32_t GetGroup() const { return _group; }
+
+	Timer * _timer;
+	int32_t _group;
+};
+
+typedef std::shared_ptr<TimerWrapper> TimerHandle;
 
 // 定时器
 class Timer
 {
 public:
-	typedef uint32_t ID;
 
-	Timer(ID id) : _timer_id(id), _exec_time(0), _del(false) {}
-
-	virtual ~Timer() {}
-
-	ID GetTimerID() const
+	Timer() : _exec_time(0), _prev(nullptr), _next(nullptr)
 	{
-		return _timer_id;
+		_handle = std::make_shared<TimerWrapper>(this);
+	}
+
+	virtual ~Timer()
+	{
+		_handle->SetDeleted();
+	}
+
+	const TimerHandle & GetHandle() const
+	{
+		return _handle;
 	}
 
 	void SetExecTime(int64_t exec_time)
@@ -35,30 +66,33 @@ public:
 		return _exec_time;
 	}
 
-	void SetDelete()
+	Timer * GetPrev() const
 	{
-		_del = true;
+		return _prev;
 	}
 
-	bool IsDeleted() const
+	Timer * GetNext() const
 	{
-		return _del;
+		return _next;
 	}
 
-	bool operator == (const Timer & t) const
+	void SetPrev(Timer * t)
 	{
-		return this->_timer_id == t._timer_id;
+		_prev = t;
 	}
 
-	virtual int64_t Invoke() const
+	void SetNext(Timer * t)
 	{
-		return 0;
+		_next = t;
 	}
+
+	virtual int64_t Invoke() const = 0;
 
 protected:
-	ID _timer_id;
-	int64_t _exec_time;  // 执行时间
-	bool _del;
+	TimerHandle _handle;
+	int64_t _exec_time;     // 执行时间
+	Timer * _prev;
+	Timer * _next;
 };
 
 // 普通Timer(执行静态函数)
@@ -68,7 +102,7 @@ public:
 	// 返回下次多久后执行，小于0为停止定时器
 	typedef int64_t(*TimerFunc)();
 
-	NormalTimer(ID id, TimerFunc func) : Timer(id), _func(func) {}
+	NormalTimer(TimerFunc func) : _func(func) {}
 
 	virtual ~NormalTimer() {}
 
@@ -187,7 +221,7 @@ public:
 	// 返回下次多久后执行，小于0为停止定时器
 	typedef int64_t(TimerObjType::*TimerFunc)();
 
-	ObjectTimer(ID id, const T_ObjPtr &  obj_ptr, TimerFunc func) : Timer(id), _obj_ptr(obj_ptr), _func(func) {}
+	ObjectTimer(const T_ObjPtr &  obj_ptr, TimerFunc func) : _obj_ptr(obj_ptr), _func(func) {}
 
 	virtual ~ObjectTimer() {}
 
@@ -211,27 +245,100 @@ private:
 	TimerFunc _func;
 };
 
+// 定时器组
+struct TimerGroup
+{
+	TimerGroup() : timer_head(nullptr), timer_tail(nullptr), min_exec_time(0) {}
+
+	void DeleteTimer(Timer * t)
+	{
+		if (t == nullptr)
+		{
+			return;
+		}
+
+		Timer * prev = t->GetPrev();
+		Timer * next = t->GetNext();
+		if (prev && next)
+		{
+			assert(t != timer_head && t != timer_tail);
+			prev->SetNext(next);
+			next->SetPrev(prev);
+		}
+		else if (prev)
+		{
+			assert(t == timer_tail);
+			timer_tail = prev;
+			timer_tail->SetNext(nullptr);
+		}
+		else if (next)
+		{
+			assert(t == timer_head);
+			timer_head = next;
+			timer_head->SetPrev(nullptr);
+		}
+		else
+		{
+			assert(t == timer_head && t == timer_tail);
+			timer_head = nullptr;
+			timer_tail = nullptr;
+			min_exec_time = 0;
+		}
+
+		t->SetPrev(nullptr);
+		t->SetNext(nullptr);
+		t->GetHandle()->SetGroup(-1);
+	}
+
+	void AddTimer(Timer * t)
+	{
+		assert(t->GetPrev() == nullptr && t->GetNext() == nullptr);
+		if (timer_tail == nullptr)
+		{
+			assert(timer_head == nullptr);
+			timer_head = t;
+			timer_tail = t;
+		}
+		else
+		{
+			t->SetPrev(timer_tail);
+			timer_tail->SetNext(t);
+			timer_tail = t;
+		}
+	}
+
+	bool IsEmpty() const
+	{
+		return timer_head == nullptr;
+	}
+
+	Timer* timer_head;           // 定时器链表头
+	Timer* timer_tail;           // 定时器链表头
+	int64_t min_exec_time;       // 最小的执行时间
+};
+
 // 定时器管理器（仅单线程）
 class TimerManager
 {
 public:
-	// executor: 执行方法，返回下次多少毫秒后执行，小于0为停止当前的timer
-	TimerManager(bool use_steady_time = true) : 
-		_use_steady_time(use_steady_time), _cur_max_timer_id(0), _executing(false), _min_exec_time(0), _check_existed_when_new_id(false)
+	static const int32_t kAllTimerGroupsNumber = 120;        // 将定时器分为多少组
+	static const int32_t kTimeSpanOneGroup = 1;              // 一个定时器组的时间跨度（秒 S）
+
+																// executor: 执行方法，返回下次多少毫秒后执行，小于0为停止当前的timer
+	TimerManager() : _cur_group(0), _cur_exec_timer(nullptr)
 	{
-		_add_temp.reserve(512);
+		_add_timer_cache.reserve(128);
 	}
 
 	~TimerManager();
 
 	// 注册普通定时器
 	// after_msec: 多少毫秒后执行
-	// 返回大于0的id
-	Timer::ID RegistNormalTimer(int64_t after_msec, NormalTimer::TimerFunc func);
+	TimerHandle RegistNormalTimer(int64_t after_msec, NormalTimer::TimerFunc func);
 
 	// 注册对象定时器
 	template<typename T_ObjPtr>
-	Timer::ID RegistObjectTimer(int64_t after_msec, typename ObjectTimer<T_ObjPtr>::TimerFunc func, const T_ObjPtr & obj_ptr)
+	TimerHandle RegistObjectTimer(int64_t after_msec, typename ObjectTimer<T_ObjPtr>::TimerFunc func, const T_ObjPtr & obj_ptr)
 	{
 		if (!func || after_msec < 0)
 		{
@@ -239,34 +346,36 @@ public:
 			return 0;
 		}
 
-		ObjectTimer<T_ObjPtr> * t = new ObjectTimer<T_ObjPtr>(NewTimerId(), obj_ptr, func);
-		t->SetExecTime(Now() + after_msec);
+		int64_t now = Now();
+		if (_cur_group_change_time <= 0)
+		{
+			_cur_group_change_time = now;
+		}
+
+		ObjectTimer<T_ObjPtr> * t = new ObjectTimer<T_ObjPtr>(obj_ptr, func);
+		t->SetExecTime(now + after_msec);
 		AddTimer(t);
 
-		return t->GetTimerID();
+		return t->GetHandle();
 	}
 
 	// 删除定时器
-	void DeleteTimer(Timer::ID timer_id);
+	void DeleteTimer(TimerHandle timer_handle);
 
 	// 执行
 	void Execute();
 
 private:
-	Timer::ID NewTimerId();
-
 	void AddTimer(Timer * t);
 
 	int64_t Now();
 
 private:
-	Timer::ID _cur_max_timer_id;
-	std::list<Timer*> _timer;
-	std::vector<Timer*> _add_temp;
-	int64_t _min_exec_time;
-	bool _executing;
-	bool _use_steady_time;
-	bool _check_existed_when_new_id;   // 生成ID时是否要检查ID是否存在，当自增到最大，回归到0后变为true(一般情况下不会有到true的时候)
+	TimerGroup _timers_groups[kAllTimerGroupsNumber];    // 所有的定时器组
+	std::vector<Timer*> _add_timer_cache;                // 添加定时器缓存
+	int32_t _cur_group;
+	int64_t _cur_group_change_time;
+	Timer * _cur_exec_timer;
 };
 
 
@@ -280,7 +389,7 @@ public:
 		static_assert(std::is_base_of<SafeTimerRegistor, T>::value, "T must derived from SafeTimerRegistor");
 	}
 
-	virtual ~SafeTimerRegistor() 
+	virtual ~SafeTimerRegistor()
 	{
 		if (_safe_timer_obj)
 		{
@@ -299,7 +408,7 @@ public:
 	}
 
 	// 注册定时器(只能注册对象自身的)
-	Timer::ID RegistTimer(int64_t after_msec, typename ObjectTimer<T*>::TimerFunc func)
+	TimerHandle RegistTimer(int64_t after_msec, typename ObjectTimer<T*>::TimerFunc func)
 	{
 		if (_timer_mgr == nullptr)
 		{
