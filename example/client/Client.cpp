@@ -77,7 +77,7 @@ void Client::OnConnected(sframe::Error err)
 	_sock->StartRecv();
 }
 
-int64_t Client::OnTimer()
+int32_t Client::OnTimer()
 {
 	if (_state >= 0 && _state < kState_Count)
 	{

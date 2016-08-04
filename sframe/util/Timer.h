@@ -15,23 +15,32 @@ class TimerWrapper
 {
 	friend class Timer;
 	friend class TimerManager;
-	friend struct TimerGroup;
+	friend struct TimerList;
 public:
-	TimerWrapper(Timer * timer) : _timer(timer), _group(-1) {}
+	TimerWrapper(Timer * timer) : _timer(timer), _level(-1), _index(-1) {}
 
 	bool IsAlive() const { return _timer != nullptr; }
 
 private:
 	void SetDeleted() { _timer = nullptr; }
 
-	void SetGroup(int32_t group) { _group = group; }
+	void SetLocation(int32_t level, int32_t index) 
+	{
+		_level = level;
+		_index = index;
+	}
 
 	Timer * GetTimerPtr() { return _timer; }
 
-	int32_t GetGroup() const { return _group; }
+	void GetLocation(int32_t * level, int32_t * index) const
+	{
+		(*level) = _level;
+		(*index) = _index;
+	}
 
 	Timer * _timer;
-	int32_t _group;
+	int32_t _level;
+	int32_t _index;
 };
 
 typedef std::shared_ptr<TimerWrapper> TimerHandle;
@@ -86,7 +95,7 @@ public:
 		_next = t;
 	}
 
-	virtual int64_t Invoke() const = 0;
+	virtual int32_t Invoke() const = 0;
 
 protected:
 	TimerHandle _handle;
@@ -100,16 +109,16 @@ class NormalTimer : public Timer
 {
 public:
 	// 返回下次多久后执行，小于0为停止定时器
-	typedef int64_t(*TimerFunc)();
+	typedef int32_t(*TimerFunc)();
 
 	NormalTimer(TimerFunc func) : _func(func) {}
 
 	virtual ~NormalTimer() {}
 
 	// 执行
-	int64_t Invoke() const override
+	int32_t Invoke() const override
 	{
-		int64_t next = -1;
+		int32_t next = -1;
 		if (_func)
 		{
 			next = (*_func)();
@@ -219,16 +228,16 @@ public:
 	typedef typename TimerObjHelper<T_ObjPtr>::ObjectType TimerObjType;
 
 	// 返回下次多久后执行，小于0为停止定时器
-	typedef int64_t(TimerObjType::*TimerFunc)();
+	typedef int32_t(TimerObjType::*TimerFunc)();
 
 	ObjectTimer(const T_ObjPtr &  obj_ptr, TimerFunc func) : _obj_ptr(obj_ptr), _func(func) {}
 
 	virtual ~ObjectTimer() {}
 
 	// 执行
-	int64_t Invoke() const override
+	int32_t Invoke() const override
 	{
-		int64_t next = -1;
+		int32_t next = -1;
 		if (_func)
 		{
 			TimerObjType * origin_ptr = TimerObjHelper<T_ObjPtr>::GetOriginalPtr(_obj_ptr);
@@ -245,10 +254,12 @@ private:
 	TimerFunc _func;
 };
 
-// 定时器组
-struct TimerGroup
+// 定时器链表
+struct TimerList
 {
-	TimerGroup() : timer_head(nullptr), timer_tail(nullptr), min_exec_time(0) {}
+	TimerList() : timer_head(nullptr), timer_tail(nullptr) {}
+
+	~TimerList();
 
 	void DeleteTimer(Timer * t)
 	{
@@ -282,12 +293,11 @@ struct TimerGroup
 			assert(t == timer_head && t == timer_tail);
 			timer_head = nullptr;
 			timer_tail = nullptr;
-			min_exec_time = 0;
 		}
 
 		t->SetPrev(nullptr);
 		t->SetNext(nullptr);
-		t->GetHandle()->SetGroup(-1);
+		t->GetHandle()->SetLocation(-1, -1);
 	}
 
 	void AddTimer(Timer * t)
@@ -314,31 +324,43 @@ struct TimerGroup
 
 	Timer* timer_head;           // 定时器链表头
 	Timer* timer_tail;           // 定时器链表头
-	int64_t min_exec_time;       // 最小的执行时间
 };
 
-// 定时器管理器（仅单线程）
+#define TVN_BITS 6
+#define TVR_BITS 8
+#define TVN_SIZE (1 << TVN_BITS)
+#define TVR_SIZE (1 << TVR_BITS)
+#define TVN_MASK ((int64_t)(TVN_SIZE - 1))
+#define TVR_MASK ((int64_t)(TVR_SIZE - 1))
+
+struct tvec {
+	struct TimerList vec[TVN_SIZE];
+};
+
+struct tvec_root {
+	struct TimerList vec[TVR_SIZE];
+};
+
+// 定时器管理器
 class TimerManager
 {
 public:
-	static const int32_t kAllTimerGroupsNumber = 120;        // 将定时器分为多少组
-	static const int32_t kTimeSpanOneGroup = 1;              // 一个定时器组的时间跨度（秒 S）
-
+	static const int32_t kMilliSecOneTick = 1;                  // 一个tick多少毫秒
 																// executor: 执行方法，返回下次多少毫秒后执行，小于0为停止当前的timer
-	TimerManager() : _cur_group(0), _cur_exec_timer(nullptr)
+	TimerManager() : _exec_time(0), _cur_exec_timer(nullptr)
 	{
 		_add_timer_cache.reserve(128);
 	}
 
-	~TimerManager();
+	~TimerManager() {}
 
 	// 注册普通定时器
 	// after_msec: 多少毫秒后执行
-	TimerHandle RegistNormalTimer(int64_t after_msec, NormalTimer::TimerFunc func);
+	TimerHandle RegistNormalTimer(int32_t after_msec, NormalTimer::TimerFunc func);
 
 	// 注册对象定时器
 	template<typename T_ObjPtr>
-	TimerHandle RegistObjectTimer(int64_t after_msec, typename ObjectTimer<T_ObjPtr>::TimerFunc func, const T_ObjPtr & obj_ptr)
+	TimerHandle RegistObjectTimer(int32_t after_msec, typename ObjectTimer<T_ObjPtr>::TimerFunc func, const T_ObjPtr & obj_ptr)
 	{
 		if (!func || after_msec < 0)
 		{
@@ -347,9 +369,11 @@ public:
 		}
 
 		int64_t now = Now();
-		if (_cur_group_change_time <= 0)
+		if (_init_time <= 0)
 		{
-			_cur_group_change_time = now;
+			assert(_exec_time <= 0);
+			_init_time = now;
+			_exec_time = now;
 		}
 
 		ObjectTimer<T_ObjPtr> * t = new ObjectTimer<T_ObjPtr>(obj_ptr, func);
@@ -366,15 +390,25 @@ public:
 	void Execute();
 
 private:
+	int32_t Cascade(TimerList * tv, int32_t index);
+
 	void AddTimer(Timer * t);
+
+	TimerList * GetTV(int32_t level, int32_t * size);
+
+	static int64_t MilliSecToTick(int64_t millisec, bool ceil);
 
 	int64_t Now();
 
 private:
-	TimerGroup _timers_groups[kAllTimerGroupsNumber];    // 所有的定时器组
+	TimerList _tv1[TVR_SIZE];
+	TimerList _tv2[TVN_SIZE];
+	TimerList _tv3[TVN_SIZE];
+	TimerList _tv4[TVN_SIZE];
+	TimerList _tv5[TVN_SIZE];
+	int64_t _exec_time;
+	int64_t _init_time;
 	std::vector<Timer*> _add_timer_cache;                // 添加定时器缓存
-	int32_t _cur_group;
-	int64_t _cur_group_change_time;
 	Timer * _cur_exec_timer;
 };
 
@@ -408,7 +442,7 @@ public:
 	}
 
 	// 注册定时器(只能注册对象自身的)
-	TimerHandle RegistTimer(int64_t after_msec, typename ObjectTimer<T*>::TimerFunc func)
+	TimerHandle RegistTimer(int32_t after_msec, typename ObjectTimer<T*>::TimerFunc func)
 	{
 		if (_timer_mgr == nullptr)
 		{

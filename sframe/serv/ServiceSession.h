@@ -71,7 +71,7 @@ private:
 	void StartConnectTimer(int32_t after_ms);
 
 	// 定时：连接
-	int64_t OnTimer_Connect();
+	int32_t OnTimer_Connect();
 
 private:
 	ProxyService * _proxy_service;

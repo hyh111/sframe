@@ -227,7 +227,7 @@ void ServiceSession::StartConnectTimer(int32_t after_ms)
 }
 
 // 定时：连接
-int64_t ServiceSession::OnTimer_Connect()
+int32_t ServiceSession::OnTimer_Connect()
 {
 	assert(_state == kSessionState_WaitConnect && _socket && !_remote_ip.empty());
 

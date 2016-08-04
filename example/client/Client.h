@@ -50,7 +50,7 @@ public:
 	void OnConnected(sframe::Error err) override;
 
 private:
-	int64_t OnTimer();
+	int32_t OnTimer();
 
 	void OnTimer_WaitConnect();
 

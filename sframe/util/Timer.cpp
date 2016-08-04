@@ -2,26 +2,24 @@
 #include <algorithm>
 #include "Timer.h"
 #include "TimeHelper.h"
+#include "Log.h"
 
 using namespace sframe;
 
-TimerManager::~TimerManager()
+TimerList::~TimerList()
 {
-	for (int i = 0; i < kAllTimerGroupsNumber; i++)
+	Timer * t = timer_head;
+	while (t)
 	{
-		Timer * t = _timers_groups[i].timer_head;
-		while (t)
-		{
-			Timer * next = t->GetNext();
-			delete t;
-			t = next;
-		}
+		Timer * next = t->GetNext();
+		delete t;
+		t = next;
 	}
 }
 
 // 注册普通定时器
 // after_msec: 多少毫秒后执行
-TimerHandle TimerManager::RegistNormalTimer(int64_t after_msec, NormalTimer::TimerFunc func)
+TimerHandle TimerManager::RegistNormalTimer(int32_t after_msec, NormalTimer::TimerFunc func)
 {
 	if (!func || after_msec < 0)
 	{
@@ -30,9 +28,13 @@ TimerHandle TimerManager::RegistNormalTimer(int64_t after_msec, NormalTimer::Tim
 	}
 
 	int64_t now = Now();
-	if (_cur_group_change_time <= 0)
+	if (_init_time <= 0)
 	{
-		_cur_group_change_time = now;
+		assert(_exec_time <= 0);
+		_init_time = now;
+		_exec_time = now;
+
+		printf("init %lld\n", now);
 	}
 
 	NormalTimer * t = new  NormalTimer(func);
@@ -63,10 +65,21 @@ void TimerManager::DeleteTimer(TimerHandle timer_handle)
 		return;
 	}
 
-	int32_t group = timer_handle->GetGroup();
-	if (group >= 0 && group < kAllTimerGroupsNumber)
+	int32_t level = -1;
+	int32_t index = -1;
+	timer_handle->GetLocation(&level, &index);
+	int32_t tv_size;
+	TimerList * tv = GetTV(level, &tv_size);
+	if (tv)
 	{
-		_timers_groups[group].DeleteTimer(timer);
+		if (index < 0 || index >= tv_size)
+		{
+			assert(false);
+			return;
+		}
+
+		TimerList & timer_list = tv[index];
+		timer_list.DeleteTimer(timer);
 		delete timer;
 	}
 	else
@@ -87,87 +100,103 @@ void TimerManager::DeleteTimer(TimerHandle timer_handle)
 // 执行
 void TimerManager::Execute()
 {
-	if (_cur_group_change_time <= 0)
+	if (_init_time <= 0 || _exec_time <= 0)
 	{
 		return;
 	}
 
-	// 单位ticks
-	int64_t cur_time = Now();
-	int64_t pass_time = cur_time - _cur_group_change_time;
-	if (pass_time < 0)
+	int64_t now = Now();
+	if (now < _exec_time)
 	{
-		assert(false);
 		return;
 	}
 
-	// 跳多少组
-	int64_t pass_group = pass_time / (kTimeSpanOneGroup * 1000);
-	int64_t old = pass_group;
-	// 执行
-	while (true)
+	do
 	{
-		TimerGroup * group = &_timers_groups[_cur_group];
-		if (group->min_exec_time > 0 && cur_time >= group->min_exec_time)
+		int64_t init_to_exec_tick = (_exec_time - _init_time) / kMilliSecOneTick;
+		int64_t index = init_to_exec_tick & TVR_MASK;
+		if (index <= 0 && _exec_time != _init_time &&
+			Cascade(_tv2, (int32_t)((init_to_exec_tick >> TVR_BITS) & TVN_MASK)) <= 0 &&
+			Cascade(_tv3, (int32_t)((init_to_exec_tick >> (TVR_BITS + TVN_BITS)) & TVN_MASK)) <= 0 &&
+			Cascade(_tv4, (int32_t)((init_to_exec_tick >> (TVR_BITS + 2 * TVN_BITS)) & TVN_MASK)) <= 0)
 		{
-			assert(!group->IsEmpty());
+			Cascade(_tv5, (int32_t)((init_to_exec_tick >> (TVR_BITS + 3 * TVN_BITS)) & TVN_MASK));
+		}
 
-			group->min_exec_time = 0;
-			_cur_exec_timer = group->timer_head;
-			while (_cur_exec_timer)
+		TimerList & cur_list = _tv1[index];
+		_cur_exec_timer = cur_list.timer_head;
+		while (_cur_exec_timer)
+		{
+			// 执行
+			int64_t after = -1;
+			try
 			{
-				int64_t exec_time = _cur_exec_timer->GetExecTime();
-				if (cur_time >= exec_time)
-				{
-					int64_t after = _cur_exec_timer->Invoke();
-					// 获取下一节点，并删除当前节点
-					Timer * next_timer = _cur_exec_timer->GetNext();
-					group->DeleteTimer(_cur_exec_timer);
-					// 是否还要继续执行
-					if (after >= 0)
-					{
-						_cur_exec_timer->SetExecTime(cur_time + after);
-						_add_timer_cache.push_back(_cur_exec_timer);
-					}
-					else
-					{
-						delete _cur_exec_timer;
-					}
+				after = _cur_exec_timer->Invoke();
+			}
+			catch(const std::exception& e)
+			{
+				LOG_ERROR << "Execute timer|std::exception|" << e.what() << std::endl;
+				after = -1;
+			}
+			catch (...)
+			{
+				LOG_ERROR << "Execute timer|std::exception" << std::endl;
+				after = -1;
+			}
 
-					_cur_exec_timer = next_timer;
-					continue;
-				}
+			// 获取下一节点，并删除当前节点
+			Timer * next_timer = _cur_exec_timer->GetNext();
+			cur_list.DeleteTimer(_cur_exec_timer);
 
-				if (group->min_exec_time == 0 || group->min_exec_time > exec_time)
+			if (after >= 0)
+			{
+				_cur_exec_timer->SetExecTime(now + after);
+				_add_timer_cache.push_back(_cur_exec_timer);
+			}
+			else
+			{
+				delete _cur_exec_timer;
+			}
+
+			_cur_exec_timer = next_timer;
+		}
+
+		if (now - _exec_time < kMilliSecOneTick)
+		{
+			if (!_add_timer_cache.empty())
+			{
+				for (Timer * t : _add_timer_cache)
 				{
-					group->min_exec_time = exec_time;
+					AddTimer(t);
 				}
-				_cur_exec_timer = _cur_exec_timer->GetNext();
+				_add_timer_cache.clear();
 			}
 		}
 
-		if (pass_group <= 0)
-		{
-			break;
-		}
+		_exec_time += kMilliSecOneTick;
 
-		_cur_group_change_time += (kTimeSpanOneGroup * 1000);
-		pass_group--;
-		_cur_group++;
-		if (_cur_group >= kAllTimerGroupsNumber)
-		{
-			_cur_group = 0;
-		}
-	}
+	} while (now >= _exec_time);
+}
 
-	if (!_add_timer_cache.empty())
+int32_t TimerManager::Cascade(TimerList * tv, int32_t index)
+{
+	TimerList & timer_list = tv[index];
+
+	Timer * cur = timer_list.timer_head;
+	timer_list.timer_head = nullptr;
+	timer_list.timer_tail = nullptr;
+
+	while (cur)
 	{
-		for (Timer * t : _add_timer_cache)
-		{
-			AddTimer(t);
-		}
-		_add_timer_cache.clear();
+		Timer * next = cur->GetNext();
+		cur->SetNext(nullptr);
+		cur->SetPrev(nullptr);
+		AddTimer(cur);
+
+		cur = next;
 	}
+
+	return index;
 }
 
 void TimerManager::AddTimer(Timer * t)
@@ -178,27 +207,88 @@ void TimerManager::AddTimer(Timer * t)
 		return;
 	}
 
-	if (_cur_group_change_time <= 0)
+	int64_t timer_time = t->GetExecTime();
+	if (_exec_time <= 0 || _init_time <= 0 || timer_time < _exec_time)
 	{
 		assert(false);
 		return;
 	}
 
-	int64_t exec_time = t->GetExecTime();
-	int64_t pass_millisec = exec_time - _cur_group_change_time;
-	if (pass_millisec < 0)
+	int64_t after_time = timer_time - _exec_time;
+	int32_t after_tick = (int32_t)MilliSecToTick(timer_time - _exec_time, true);
+	timer_time = _exec_time + after_tick * kMilliSecOneTick;
+	t->SetExecTime(timer_time);
+	int64_t init_to_exec_tick = (timer_time - _init_time) / kMilliSecOneTick;
+
+	if (after_tick < (1 << TVR_BITS))
 	{
-		assert(false);
-		return;
+		int64_t index = init_to_exec_tick & TVR_MASK;
+		_tv1[index].AddTimer(t);
+		t->GetHandle()->SetLocation(1, (int32_t)index);
+	}
+	else if (after_tick < (1 << (TVR_BITS + TVN_BITS)))
+	{
+		int64_t index = (init_to_exec_tick >> TVR_BITS) & TVN_MASK;
+		_tv2[index].AddTimer(t);
+		t->GetHandle()->SetLocation(2, (int32_t)index);
+	}
+	else if (after_tick < (1 << (TVR_BITS + 2 * TVN_BITS)))
+	{
+		int64_t index = (init_to_exec_tick >> (TVR_BITS + TVN_BITS)) & TVN_MASK;
+		_tv3[index].AddTimer(t);
+		t->GetHandle()->SetLocation(3, (int32_t)index);
+	}
+	else if (after_tick < (1 << (TVR_BITS + 3 * TVN_BITS)))
+	{
+		int64_t index = (init_to_exec_tick >> (TVR_BITS + 2 * TVN_BITS)) & TVN_MASK;
+		_tv4[index].AddTimer(t);
+		t->GetHandle()->SetLocation(4, (int32_t)index);
+	}
+	else
+	{
+		int64_t index = (init_to_exec_tick >> (TVR_BITS + 3 * TVN_BITS)) & TVN_MASK;
+		_tv5[index].AddTimer(t);
+		t->GetHandle()->SetLocation(5, (int32_t)index);
+	}
+}
+
+TimerList * TimerManager::GetTV(int32_t level, int32_t * size)
+{
+	TimerList * tv = nullptr;
+	switch (level)
+	{
+	case 1:
+		tv = _tv1;
+		(*size) = TVR_SIZE;
+		break;
+	case 2:
+		tv = _tv2;
+		(*size) = TVN_SIZE;
+		break;
+	case 3:
+		tv = _tv3;
+		(*size) = TVN_SIZE;
+		break;
+	case 4:
+		tv = _tv4;
+		(*size) = TVN_SIZE;
+		break;
+	case 5:
+		tv = _tv5;
+		(*size) = TVN_SIZE;
+		break;
+	}
+	return tv;
+}
+
+int64_t TimerManager::MilliSecToTick(int64_t millisec, bool ceil)
+{
+	if (ceil)
+	{
+		return (millisec % kMilliSecOneTick > 0) ? (millisec / kMilliSecOneTick + 1) : (millisec / kMilliSecOneTick);
 	}
 
-	int32_t group_index = ((pass_millisec / (kTimeSpanOneGroup * 1000)) + _cur_group) % kAllTimerGroupsNumber;
-	t->GetHandle()->SetGroup(group_index);
-	_timers_groups[group_index].AddTimer(t);
-	if (_timers_groups[group_index].min_exec_time <= 0 || exec_time < _timers_groups[group_index].min_exec_time)
-	{
-		_timers_groups[group_index].min_exec_time = exec_time;
-	}
+	return millisec / kMilliSecOneTick;
 }
 
 int64_t TimerManager::Now()
