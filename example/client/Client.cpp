@@ -99,6 +99,7 @@ void Client::OnTimer_WaitConnect()
 	_server_ip = config->server_ip;
 	_server_port = config->server_port;
 	_sock->SetMonitor(this);
+	_sock->SetTcpNodelay(true);
 	_sock->Connect(sframe::SocketAddr(_server_ip.c_str(), _server_port));
 	_state = kState_Connecting;
 }

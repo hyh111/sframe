@@ -24,6 +24,12 @@ void GateService::Init()
 // 新连接到来
 void GateService::OnNewConnection(const sframe::ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock)
 {
+	sframe::Error err = sock->SetTcpNodelay(true);
+	if (err)
+	{
+		FLOG(GetLogName()) << "Set tcp nodelay error|" << err.Code() << "|" << sframe::ErrorMessage(err).Message() << ENDL;
+	}
+
 	int32_t work_service = ChooseWorkService();
 	if (work_service <= 0)
 	{

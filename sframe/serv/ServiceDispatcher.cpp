@@ -308,10 +308,7 @@ void ServiceDispatcher::Stop()
 void ServiceDispatcher::Dispatch(int32_t sid)
 {
 	assert(sid >= 0 && sid <= kMaxServiceId && _services[sid]);
-	if (!_dispach_service_queue.Push(sid))
-	{
-		assert(false);
-	}
+	_dispach_service_queue.Push(sid);
 }
 
 // 注册工作服务
