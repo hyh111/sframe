@@ -63,9 +63,6 @@ public:
 	// 代理服务消息
 	virtual void OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessage> & msg) {}
 
-	// 服务断开（仅与本服务发生过消息往来的服务断开时，才会有通知）
-	virtual void OnServiceLost(const std::vector<int32_t> & services) {}
-
 	// 新连接到来
 	virtual void OnNewConnection(const ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock) {}
 

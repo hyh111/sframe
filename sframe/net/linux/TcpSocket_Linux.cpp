@@ -1,5 +1,6 @@
 
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <sys/epoll.h>
@@ -40,7 +41,7 @@ std::shared_ptr<TcpSocket_Linux> TcpSocket_Linux::Create(const std::shared_ptr<I
 
 TcpSocket_Linux::TcpSocket_Linux(const std::shared_ptr<IoService> & io_service)
 	: IoUnit(io_service), _add_evt(false), _cur_msg(kIoMsgType_SendData), _cur_events(EPOLLET),
-	_recv_len(0), _last_error(0)
+	_recv_len(0), _last_error(0), _tcp_nodelay(false)
 {}
 
 // 连接
@@ -119,6 +120,28 @@ bool TcpSocket_Linux::Close()
     }
 
 	return false;
+}
+
+// 设置TCP_NODELAY
+Error TcpSocket_Linux::SetTcpNodelay(bool on)
+{
+	if (on == _tcp_nodelay)
+	{
+		return ErrorSuccess;
+	}
+
+	_tcp_nodelay = on;
+	if (_sock != -1)
+	{
+		int nodelayopt = on ? 1 : 0;
+		if (setsockopt(_sock, IPPROTO_TCP, TCP_NODELAY, (const void *)&nodelayopt, sizeof(nodelayopt)) == -1)
+		{
+			Error err(errno);
+			return err;
+		}
+	}
+
+	return ErrorSuccess;
 }
 
 void TcpSocket_Linux::OnEvent(IoEvent io_evt)
@@ -279,6 +302,16 @@ void TcpSocket_Linux::Connect()
 			break;
 		}
 
+		if (_tcp_nodelay)
+		{
+			// 设置NODELAY
+			int nodelayopt = 1;
+			if (setsockopt(_sock, IPPROTO_TCP, TCP_NODELAY, (const void *)&nodelayopt, sizeof(nodelayopt)) == -1)
+			{
+				break;
+			}
+		}
+
 		sockaddr_in remote_addr;
 		remote_addr.sin_family = AF_INET;
 		remote_addr.sin_port = _remote_addr.GetPort();
@@ -396,11 +429,11 @@ bool TcpSocket_Linux::RecvData()
 		
 		if (_monitor)
 		{
-			_monitor->OnReceived(_recv_buf, _recv_len);
+			surplus = _monitor->OnReceived(_recv_buf, _recv_len);
 		}
 		
         surplus = surplus > _recv_len ? _recv_len : surplus;
-
+		
         if (surplus < 0)
         {
             CloseAndNotify(ErrorSuccess);
@@ -408,7 +441,9 @@ bool TcpSocket_Linux::RecvData()
         }
         else if (surplus >= kRecvBufSize)
         {
-            _recv_len = 0;
+			// 或者剩余数据已占满缓冲区，此时直接关闭连接，以免造成数据混乱
+			CloseAndNotify(ErrorSuccess);
+			return false;
         }
         else
         {

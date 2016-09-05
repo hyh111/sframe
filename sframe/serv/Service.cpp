@@ -124,13 +124,6 @@ void Service::Process()
 			}
 			break;
 
-			case sframe::kMsgType_ServiceLostMessage:
-			{
-				auto lost_msg = std::static_pointer_cast<ServiceLostMessage>(msg);
-				this->OnServiceLost(lost_msg->service);
-			}
-			break;
-
 			case sframe::kMsgType_NewConnectionMessage:
 			{
 				auto new_conn_msg = std::static_pointer_cast<NewConnectionMessage>(msg);

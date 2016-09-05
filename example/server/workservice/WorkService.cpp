@@ -14,32 +14,8 @@ void WorkService::Init()
 	RegistServiceMessageHandler(kWorkMsg_ClientData, &WorkService::OnMsg_ClientData, this);
 	RegistServiceMessageHandler(kWorkMsg_EnterWorkService, &WorkService::OnMsg_EnterWorkService, this);
 	RegistServiceMessageHandler(kWorkMsg_QuitWorkService, &WorkService::OnMsg_QuitWorkService, this);
-
-	// 给所有网关服务发送注册消息
-	int32_t my_sid = GetServiceId();
-	auto & gate_services = ServerConfig::Instance().type_to_services["GateService"];
-	for (auto & pr : gate_services)
-	{
-		int32_t dest_sid = pr.first;
-		SendServiceMsg(dest_sid, (uint16_t)kGateMsg_RegistWorkService, my_sid);
-	}
 }
 
-// 服务断开
-void WorkService::OnServiceLost(const std::vector<int32_t> & sid_set)
-{
-	int32_t my_sid = GetServiceId();
-	auto & gate_services = ServerConfig::Instance().type_to_services["GateService"];
-
-	// 对于断开的网关服务，重新发送注册消息
-	for (int32_t sid : sid_set)
-	{
-		if (gate_services.find(sid) != gate_services.end())
-		{
-			SendServiceMsg(sid, (uint16_t)kGateMsg_RegistWorkService, my_sid);
-		}
-	}
-}
 
 void WorkService::OnMsg_ClientData(const WorkMsg_ClientData & msg)
 {

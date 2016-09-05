@@ -38,6 +38,9 @@ public:
     // 关闭
     bool Close() override;
 
+	// 设置TCP_NODELAY
+	Error SetTcpNodelay(bool on) override;
+
     void OnEvent(IoEvent io_evt) override;
 
     void OnMsg(IoMsg * io_msg) override;
@@ -65,6 +68,7 @@ private:
     uint32_t _cur_events;                    // 当前等待的事件
     char _recv_buf[kRecvBufSize];            // 接收缓冲区
     int32_t _recv_len;                       // 接收的数据长度
+	bool _tcp_nodelay;
 };
 
 }

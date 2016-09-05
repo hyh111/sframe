@@ -38,6 +38,9 @@ public:
     // 关闭
 	bool Close() override;
 
+	// 设置TCP_NODELAY
+	Error SetTcpNodelay(bool on) override;
+
     // 完成事件通知
     void OnEvent(IoEvent * io_evt) override;
 
@@ -73,6 +76,7 @@ private:
     int32_t _sending_len;                // 正在发送中的数据长度
     char _recv_buf[kRecvBufSize];        // 接收缓冲区
     int32_t _recv_len;                   // 接收缓冲区中数据长度
+	bool _tcp_nodelay;
 };
 
 }

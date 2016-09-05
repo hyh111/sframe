@@ -18,8 +18,7 @@ class TimerWrapper
 	friend struct TimerList;
 public:
 	TimerWrapper(Timer * timer) : _timer(timer), _level(-1), _index(-1) {}
-
-	bool IsAlive() const { return _timer != nullptr; }
+	~TimerWrapper() {}
 
 private:
 	void SetDeleted() { _timer = nullptr; }
@@ -49,6 +48,11 @@ typedef std::shared_ptr<TimerWrapper> TimerHandle;
 class Timer
 {
 public:
+
+	static bool IsTimerAlive(const TimerHandle & timer_handle)
+	{
+		return timer_handle ? timer_handle->_timer != nullptr : false;
+	}
 
 	Timer() : _exec_time(0), _prev(nullptr), _next(nullptr)
 	{

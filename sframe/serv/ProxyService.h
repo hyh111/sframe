@@ -61,22 +61,13 @@ private:
 
 private:
 	ServiceSession * _session[kMaxSessionNumber + 1];
-	std::unordered_map<int64_t, int32_t> _session_addr_to_sessionid;    // 对于主动连接的Session，目标地址到sessionid的映射
-	RingQueue<int32_t, kMaxSessionNumber> _session_id_queue;
 	int32_t _session_num;
+	std::unordered_map<int64_t, int32_t> _session_addr_to_sessionid;            // 对于主动连接的Session，目标地址到sessionid的映射
+	std::unordered_map<int32_t, int32_t> _sid_to_sessionid;                     // 远程服务ID映射到会话ID
+	std::unordered_map<int32_t, std::unordered_set<int32_t>> _sessionid_to_sid; // 会话ID映射到服务ID
+	RingQueue<int32_t, kMaxSessionNumber> _session_id_queue;
 	bool _listening;           // 是否正在监听
 	TimerManager _timer_mgr;   // 定时器管理
-
-	// 远程服务记录信息
-	struct RemoteServiceInfo
-	{
-		int32_t sid;                                         // 服务id
-		int32_t sessionid;                                   // 所属会话ID
-		std::unordered_set<int32_t> linked_local_services;   // 所关联的本地服务(给本地哪些服务发送过消息)
-	};
-
-	std::unordered_map<int32_t, RemoteServiceInfo> _remote_service_info;        // 远程服务记录信息
-	std::unordered_map<int32_t, std::unordered_set<int32_t>> _sessionid_to_sid; // 会话ID映射到服务ID
 };
 
 }

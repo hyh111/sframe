@@ -10,7 +10,7 @@ using namespace sframe;
 
 ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port)
 	: _session_id(id), _remote_ip(remote_ip), _remote_port(remote_port), _proxy_service(proxy_service), 
-	_state(kSessionState_WaitConnect),  _reconnect(true)
+	_state(kSessionState_Initialize),  _reconnect(true)
 {
 	assert(!remote_ip.empty() && proxy_service);
 }
@@ -26,9 +26,7 @@ void ServiceSession::Init()
 {
 	if (!_socket)
 	{
-		_socket = sframe::TcpSocket::Create(ServiceDispatcher::Instance().GetIoService());
-		_socket->SetMonitor(this);
-		StartConnectTimer(0);
+		SetConnectTimer(0);
 	}
 	else
 	{
@@ -70,11 +68,9 @@ bool ServiceSession::TryFree()
 	}
 
 	_state = kSessionState_WaitConnect;
-	// 全新创建一个socket
-	_socket = sframe::TcpSocket::Create(ServiceDispatcher::Instance().GetIoService());
-	_socket->SetMonitor(this);
+	_socket.reset();
 	// 开启连接定时器
-	StartConnectTimer(kReconnectInterval);
+	SetConnectTimer(kReconnectInterval);
 
 	return false;
 }
@@ -84,12 +80,12 @@ void ServiceSession::DoConnectCompleted(bool success)
 {
 	if (!success)
 	{
-		// 新创建一个socket
-		_socket = sframe::TcpSocket::Create(ServiceDispatcher::Instance().GetIoService());
-		_socket->SetMonitor(this);
-		_state = kSessionState_WaitConnect;
+		// 清空缓存的发送数据
+		_msg_cache.clear();
 		// 开启连接定时器
-		StartConnectTimer(kReconnectInterval);
+		_socket.reset();
+		_state = kSessionState_WaitConnect;
+		SetConnectTimer(kReconnectInterval);
 		return;
 	}
 
@@ -121,6 +117,13 @@ void ServiceSession::SendData(const std::shared_ptr<ProxyServiceMessage> & msg)
 	{
 		// 缓存下来
 		_msg_cache.push_back(msg);
+		// 如果当前处于等待连接状态，删除timer，立即开始连接
+		if (_state == ServiceSession::kSessionState_WaitConnect)
+		{
+			assert(Timer::IsTimerAlive(_connect_timer));
+			GetTimerManager()->DeleteTimer(_connect_timer);
+			StartConnect();
+		}
 	}
 	else
 	{
@@ -221,22 +224,27 @@ void ServiceSession::OnConnected(sframe::Error err)
 }
 
 // 开始连接定时器
-void ServiceSession::StartConnectTimer(int32_t after_ms)
+void ServiceSession::SetConnectTimer(int32_t after_ms)
 {
-	RegistTimer(after_ms, &ServiceSession::OnTimer_Connect);
+	_connect_timer = RegistTimer(after_ms, &ServiceSession::OnTimer_Connect);
 }
 
 // 定时：连接
 int32_t ServiceSession::OnTimer_Connect()
 {
-	assert(_state == kSessionState_WaitConnect && _socket && !_remote_ip.empty());
-
-	LOG_INFO << "Start connect to server(" << _remote_ip << ":" << _remote_port << ")" << ENDL;
-
-
-	_state = kSessionState_Connecting;
-	_socket->Connect(sframe::SocketAddr(_remote_ip.c_str(), _remote_port));
-
+	StartConnect();
 	// 只执行一次后停止
 	return -1;
+}
+
+// 开始连接
+void ServiceSession::StartConnect()
+{
+	assert((_state == kSessionState_Initialize || _state == kSessionState_WaitConnect) && !_socket && !_remote_ip.empty());
+	LOG_INFO << "Start connect to server(" << _remote_ip << ":" << _remote_port << ")" << ENDL;
+	_state = kSessionState_Connecting;
+	_socket = sframe::TcpSocket::Create(ServiceDispatcher::Instance().GetIoService());
+	_socket->SetMonitor(this);
+	_socket->SetTcpNodelay(true);
+	_socket->Connect(sframe::SocketAddr(_remote_ip.c_str(), _remote_port));
 }

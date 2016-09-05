@@ -4,15 +4,21 @@
 #include "GateService.h"
 #include "util/Log.h"
 #include "util/RandomHelper.h"
+#include "../config/ServerConfig.h"
 
 // 初始化（创建服务成功后调用，此时还未开始运行）
 void GateService::Init()
 {
 	RegistInsideServiceMessageHandler(kGateMsg_SessionClosed, &GateService::OnMsg_SessionClosed, this);
 	RegistInsideServiceMessageHandler(kGateMsg_SessionRecvData, &GateService::OnMsg_SessionRecvData, this);
-
-	RegistServiceMessageHandler(kGateMsg_RegistWorkService, &GateService::OnMsg_RegistWorkService, this);
 	RegistServiceMessageHandler(kGateMsg_SendToClient, &GateService::OnMsg_SendToClient, this);
+
+	// 获取配置的所有逻辑服务
+	auto & gate_services = ServerConfig::Instance().type_to_services["WorkService"];
+	for (auto & it_pair : gate_services)
+	{
+		_work_services.push_back(it_pair.first);
+	}
 }
 
 // 新连接到来
@@ -34,18 +40,6 @@ void GateService::OnNewConnection(const sframe::ListenAddress & listen_addr_info
 	FLOG(GetLogName()) << "NewSession|" << sessionid << "|WorkService|" << work_service << ENDL;
 }
 
-// 服务断开（仅与本服务发生过消息往来的服务断开时，才会有通知）
-void GateService::OnServiceLost(const std::vector<int32_t> & services)
-{
-	for (int32_t lost_sid : services)
-	{
-		if (_usable_work_service.erase(lost_sid) > 0)
-		{
-			FLOG(GetLogName()) << "Lost WorkService|" << lost_sid << std::endl;
-		}
-	}
-}
-
 // 处理销毁
 void GateService::OnDestroy()
 {
@@ -57,23 +51,18 @@ void GateService::OnDestroy()
 
 int32_t GateService::ChooseWorkService()
 {
-	if (_usable_work_service.empty())
+	if (_work_services.empty())
 	{
 		return -1;
 	}
 
-	int32_t index = sframe::Rand(0, (int)_usable_work_service.size());
-	for (int32_t sid : _usable_work_service)
+	_last_choosed_work_service++;
+	if (_last_choosed_work_service >= (int32_t)_work_services.size())
 	{
-		if (index == 0)
-		{
-			return sid;
-		}
-
-		index--;
+		_last_choosed_work_service = 0;
 	}
 
-	return -1;
+	return _work_services[_last_choosed_work_service];
 }
 
 const std::string & GateService::GetLogName()
@@ -97,13 +86,6 @@ void GateService::OnMsg_SessionRecvData(const std::shared_ptr<ClientSession> & s
 {
 	assert(session != nullptr && data != nullptr && session->GetWorkService() > 0);
 	session->SendToWorkService(data);
-}
-
-
-void GateService::OnMsg_RegistWorkService(int32_t work_sid)
-{
-	_usable_work_service.insert(work_sid);
-	FLOG(GetLogName()) << "Regist WorkService|" << work_sid << std::endl;
 }
 
 

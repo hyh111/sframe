@@ -20,6 +20,9 @@
 	"service" : {
 		"1" : "GateService",
 		"2" : "GateService",
-		"3" : "GateService"
+		"3" : "GateService",
+		"101" : "WorkService@127.0.0.1:5001",
+		"102" : "WorkService@127.0.0.1:5001",
+		"103" : "WorkService@127.0.0.1:5001"
 	}
 }

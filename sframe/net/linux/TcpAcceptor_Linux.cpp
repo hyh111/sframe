@@ -41,6 +41,12 @@ Error TcpAcceptor_Linux::Start(const SocketAddr & addr)
             break;
         }
 
+		int optval = 1;
+		if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
+		{
+			break;
+		}
+
         if (!IoUnit::SetNonBlock(_sock))
         {
             break;
@@ -153,18 +159,30 @@ void TcpAcceptor_Linux::Accept()
             return;
         }
 
-        // 获取绑定的本地地址
-        sockaddr_in local_addr_in{};
-        getsockname(sock, (sockaddr*)&local_addr_in, &addr_len);
-
-        SocketAddr local_addr(local_addr_in.sin_addr.s_addr, local_addr_in.sin_port);
-        SocketAddr remote_addr(remote_addr_in.sin_addr.s_addr, remote_addr_in.sin_port);
-
-        // 创建
-        std::shared_ptr<TcpSocket> sock_obj = TcpSocket_Linux::Create(_io_service, sock, &local_addr, &remote_addr);
-		if (_monitor)
+		// 设置套接字非阻塞
+		if (!IoUnit::SetNonBlock(sock))
 		{
-			_monitor->OnAccept(sock_obj, ErrorSuccess);
+			Error err(errno);
+			if (_monitor)
+			{
+				_monitor->OnAccept(nullptr, err);
+			}
+		}
+		else
+		{
+			// 获取绑定的本地地址
+			sockaddr_in local_addr_in{};
+			getsockname(sock, (sockaddr*)&local_addr_in, &addr_len);
+
+			SocketAddr local_addr(local_addr_in.sin_addr.s_addr, local_addr_in.sin_port);
+			SocketAddr remote_addr(remote_addr_in.sin_addr.s_addr, remote_addr_in.sin_port);
+
+			// 创建
+			std::shared_ptr<TcpSocket> sock_obj = TcpSocket_Linux::Create(_io_service, sock, &local_addr, &remote_addr);
+			if (_monitor)
+			{
+				_monitor->OnAccept(sock_obj, ErrorSuccess);
+			}
 		}
     }
 }

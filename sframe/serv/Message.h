@@ -20,7 +20,6 @@ enum MessageType : int32_t
 {
 	kMsgType_CycleMessage,            // 周期消息
 	kMsgType_DestroyServiceMessage,   // 销毁服务消息
-	kMsgType_ServiceLostMessage,      // 服务断开消息
 	kMsgType_NewConnectionMessage,    // 新连接消息
 	kMsgType_NetServiceMessage,       // 网络服务间消息
 	kMsgType_InsideServiceMessage,    // 内部服务间消息
@@ -200,23 +199,6 @@ public:
 	{
 		return kMsgType_DestroyServiceMessage;
 	}
-};
-
-// 服务断开消息
-class ServiceLostMessage : public Message
-{
-public:
-	ServiceLostMessage() {}
-	virtual ~ServiceLostMessage() {}
-
-	// 获取消息类型
-	MessageType GetType() const
-	{
-		return kMsgType_ServiceLostMessage;
-	}
-
-public:
-	std::vector<int32_t> service;
 };
 
 // 监听地址

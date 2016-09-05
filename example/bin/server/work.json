@@ -16,9 +16,6 @@
 
 	// 服务启动信息
 	"service" : {
-		"1" : "GateService@127.0.0.1:5002",
-		"2" : "GateService@127.0.0.1:5002",
-		"3" : "GateService@127.0.0.1:5002",
 		"101" : "WorkService",
 		"102" : "WorkService",
 		"103" : "WorkService"

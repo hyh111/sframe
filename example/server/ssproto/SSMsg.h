@@ -11,8 +11,7 @@ enum GateMsgId : uint16_t
 {
 	kGateMsg_Start = 1,
 
-	kGateMsg_RegistWorkService = kGateMsg_Start,
-	kGateMsg_SessionClosed,
+	kGateMsg_SessionClosed = kGateMsg_Start,
 	kGateMsg_SessionRecvData,
 	kGateMsg_SendToClient,
 

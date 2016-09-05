@@ -40,7 +40,7 @@ std::shared_ptr<TcpSocket_Win> TcpSocket_Win::Create(const std::shared_ptr<IoSer
 TcpSocket_Win::TcpSocket_Win(const std::shared_ptr<IoService> & ioservice)
     : IoUnit(ioservice), _lpfn_connectex(nullptr), _evt_connect(kIoEvent_ConnectCompleted),
     _evt_send(kIoEvent_SendCompleted), _evt_recv(kIoEvent_RecvCompleted), _cur_msg(kIoMsgType_NotifyError),
-    _last_error_code(ERROR_SUCCESS), _recv_len(0), _sending_len(0)
+    _last_error_code(ERROR_SUCCESS), _recv_len(0), _sending_len(0), _tcp_nodelay(false)
 {}
 
 // 连接
@@ -59,6 +59,15 @@ void TcpSocket_Win::Connect(const SocketAddr & remote)
     {
         goto END_ERROR;
     }
+
+	if (_tcp_nodelay)
+	{
+		char nodelay_opt = 1;
+		if (setsockopt(_sock, IPPROTO_TCP, TCP_NODELAY, &nodelay_opt, sizeof(nodelay_opt)) == -1)
+		{
+			goto END_ERROR;
+		}
+	}
     
     // 绑定套接字到任意地址
     SOCKADDR_IN addr;
@@ -112,7 +121,7 @@ void TcpSocket_Win::Connect(const SocketAddr & remote)
 
 END_ERROR:
 
-    _last_error_code = GetLastError();
+    _last_error_code = WSAGetLastError();
 
     if (_sock != INVALID_SOCKET)
     {
@@ -202,6 +211,27 @@ bool TcpSocket_Win::Close()
 	}
 
 	return false;
+}
+
+// 设置TCP_NODELAY
+Error TcpSocket_Win::SetTcpNodelay(bool on)
+{
+	if (on == _tcp_nodelay)
+	{
+		return ErrorSuccess;
+	}
+
+	_tcp_nodelay = on;
+	if (_sock != INVALID_SOCKET)
+	{
+		char nodelay_opt = on ? 1 : 0;
+		if (setsockopt(_sock, IPPROTO_TCP, TCP_NODELAY, &nodelay_opt, sizeof(nodelay_opt)) == -1)
+		{
+			return Error(WSAGetLastError());
+		}
+	}
+
+	return ErrorSuccess;
 }
 
 // 完成事件通知
@@ -324,7 +354,9 @@ void TcpSocket_Win::RecvCompleted(Error err, int32_t data_len)
         }
         else if (surplus >= kRecvBufSize)
         {
-            _recv_len = 0;
+			// 或者剩余数据已占满缓冲区，此时直接关闭连接，以免造成数据混乱
+			CloseAndNotify(ErrorSuccess);
+			return;
         }
         else
         {

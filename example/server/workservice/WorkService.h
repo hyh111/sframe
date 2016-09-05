@@ -17,9 +17,6 @@ public:
 	// 初始化（创建服务成功后调用，此时还未开始运行）
 	void Init() override;
 
-	// 服务断开
-	void OnServiceLost(const std::vector<int32_t> & sid_set) override;
-
 private:
 	void OnMsg_ClientData(const WorkMsg_ClientData & msg);
 

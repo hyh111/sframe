@@ -68,6 +68,9 @@ public:
 	// 返回false: 表示socket本来就没有打开(处于kState_Initial或kState_Closed状态)，不会执行关闭操作，也不会执行OnClosed回调
     virtual bool Close() = 0;
 
+	// 设置TCP_NODELAY
+	virtual Error SetTcpNodelay(bool on) = 0;
+
     // 设置监听器
     void SetMonitor(Monitor * monitor)
     {

@@ -19,13 +19,13 @@ public:
 	// 会话状态
 	enum SessionState : int32_t
 	{
-		kSessionState_WaitConnect = 0,   // 等待连接
+		kSessionState_Initialize = 0,    // 初始状态
+		kSessionState_WaitConnect,       // 等待连接
 		kSessionState_Connecting,        // 正在连接
 		kSessionState_Running,           // 运行中
 	};
 
-	static const int32_t kReconnectInterval = 5000;       // 重连间隔
-	static const int32_t kMaxCacheMessageNumber = 1024;   // 最多缓存多少个消息
+	static const int32_t kReconnectInterval = 5000;       // 自动重连间隔
 
 public:
 	ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port);
@@ -68,16 +68,20 @@ public:
 private:
 
 	// 开始连接定时器
-	void StartConnectTimer(int32_t after_ms);
+	void SetConnectTimer(int32_t after_ms);
 
 	// 定时：连接
 	int32_t OnTimer_Connect();
+
+	// 开始连接
+	void StartConnect();
 
 private:
 	ProxyService * _proxy_service;
 	std::shared_ptr<TcpSocket> _socket;
 	int32_t _session_id;
 	SessionState _state;
+	TimerHandle _connect_timer;
 	std::list<std::shared_ptr<ProxyServiceMessage>> _msg_cache;
 	bool _reconnect;
 	std::string _remote_ip;

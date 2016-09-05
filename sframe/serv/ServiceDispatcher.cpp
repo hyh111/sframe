@@ -48,10 +48,13 @@ void ServiceDispatcher::ExecIO(ServiceDispatcher * dispatcher)
 				}
 			}
 
-			int64_t next_timer_after_millisec = min_next_timer_time - now;
-			assert(next_timer_after_millisec > 0);
-			wait_timeout = wait_timeout > next_timer_after_millisec ? next_timer_after_millisec : wait_timeout;
-
+			if (min_next_timer_time > 0)
+			{
+				int64_t next_timer_after_millisec = min_next_timer_time - now;
+				assert(next_timer_after_millisec > 0);
+				wait_timeout = wait_timeout > next_timer_after_millisec ? next_timer_after_millisec : wait_timeout;
+			}
+			
 			Error err = ErrorSuccess;
 			dispatcher->_ioservice->RunOnce((int32_t)wait_timeout, err);
 			if (err)
@@ -191,7 +194,7 @@ bool ServiceDispatcher::Start(int32_t thread_num)
 	Error err = _ioservice->Init();
 	if (err)
 	{
-		LOG_ERROR << "Initialize IoService error(" << err.Code() << "): " << ErrorMessage(err).Message() << ENDL;
+		LOG_ERROR << "Initialize IoService error|" << err.Code() << "|" << ErrorMessage(err).Message() << ENDL;
 		return false;
 	}
 

@@ -86,7 +86,8 @@ void Listener::OnClosed(Error err)
 {
 	if (err)
 	{
-		LOG_ERROR << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") stoped with Error(" << err.Code() << "): " << sframe::ErrorMessage(err).Message() << std::endl;
+		LOG_ERROR << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") stoped with error|" 
+			<< err.Code() << "|" << sframe::ErrorMessage(err).Message() << std::endl;
 	}
 	else
 	{

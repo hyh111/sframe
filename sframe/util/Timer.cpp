@@ -47,7 +47,7 @@ TimerHandle TimerManager::RegistNormalTimer(int32_t after_msec, NormalTimer::Tim
 // É¾³ý¶¨Ê±Æ÷
 void TimerManager::DeleteTimer(TimerHandle timer_handle)
 {
-	if (!timer_handle || !timer_handle->IsAlive())
+	if (!Timer::IsTimerAlive(timer_handle))
 	{
 		return;
 	}

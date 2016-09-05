@@ -65,11 +65,17 @@ void ProxyService::OnCycleTimer()
 // 新连接到来
 void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock)
 {
+	Error err = sock->SetTcpNodelay(true);
+	if (err)
+	{
+		LOG_WARN << "Set tcp nodelay error|" << err.Code() << "|" << sframe::ErrorMessage(err).Message() << ENDL;
+	}
+
 	int32_t session_id = -1;
 	if (!_session_id_queue.Pop(&session_id))
 	{
 		sock->Close();
-		LOG_INFO << "ServiceSession number upper limit, current session number: " << _session_num << ENDL;
+		LOG_ERROR << "ServiceSession number upper limit|session number|" << _session_num << ENDL;
 		return;
 	}
 
@@ -83,16 +89,14 @@ void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const
 // 代理服务消息
 void ProxyService::OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessage> & msg)
 {
-	auto it = _remote_service_info.find(msg->dest_sid);
-	if (it == _remote_service_info.end())
+	auto it = _sid_to_sessionid.find(msg->dest_sid);
+	if (it == _sid_to_sessionid.end())
 	{
 		return;
 	}
 
-	int32_t sessionid = it->second.sessionid;
+	int32_t sessionid = it->second;
 	assert(sessionid > 0 && sessionid <= kMaxSessionNumber && _session[sessionid]);
-	// 添加关联的本地服务（以便在session断开时，通知该本地服务）
-	it->second.linked_local_services.insert(msg->src_sid);
 	// 调用发送
 	_session[sessionid]->SendData(msg);
 }
@@ -103,11 +107,11 @@ void ProxyService::OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessa
 // 返回会话ID，小于0失败
 int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, uint16_t remote_port)
 {
-	auto it_remote_service_info = _remote_service_info.find(sid);
-	if (it_remote_service_info != _remote_service_info.end())
+	auto it_sid_to_sessionid = _sid_to_sessionid.find(sid);
+	if (it_sid_to_sessionid != _sid_to_sessionid.end())
 	{
-		assert(it_remote_service_info->second.sessionid > 0 && it_remote_service_info->second.sid > 0);
-		return it_remote_service_info->second.sessionid;
+		assert(it_sid_to_sessionid->second > 0);
+		return it_sid_to_sessionid->second;
 	}
 
 	int32_t session_id = -1;
@@ -137,10 +141,8 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 	assert(session_id > 0 && session_id <= kMaxSessionNumber && _session[session_id]);
 	// 添加会话包含的服务
 	_sessionid_to_sid[session_id].insert(sid);
-	// 创建新的远程服务信息
-	RemoteServiceInfo & remote_info = _remote_service_info[sid];
-	remote_info.sid = sid;
-	remote_info.sessionid = session_id;
+	// 添加sid到sessionid的映射
+	_sid_to_sessionid[sid] = session_id;
 
 	return session_id;
 }
@@ -155,51 +157,6 @@ ServiceSession * ProxyService::GetServiceSessionById(int32_t session_id)
 void ProxyService::OnMsg_SessionClosed(bool by_self, int32_t session_id)
 {
 	assert(_session[session_id]);
-
-	if (!by_self)
-	{
-		// 通知相关联的本地服务
-		// 查询session包含的服务
-		auto it = _sessionid_to_sid.find(session_id);
-		if (it != _sessionid_to_sid.end())
-		{
-			std::unordered_map<int32_t, std::shared_ptr<ServiceLostMessage>> lost_msgs;
-
-			for (auto it_remote_sid = it->second.begin(); it_remote_sid != it->second.end(); it_remote_sid++)
-			{
-				int32_t remote_sid = *it_remote_sid;
-				auto it_remote_info = _remote_service_info.find(remote_sid);
-				if (it_remote_info == _remote_service_info.end())
-				{
-					assert(false);
-					continue;
-				}
-
-				assert(session_id == it_remote_info->second.sessionid);
-
-				auto & local_sid_set = it_remote_info->second.linked_local_services;
-				for (int32_t local_sid : local_sid_set)
-				{
-					auto & msg = lost_msgs[local_sid];
-					if (!msg)
-					{
-						msg = std::make_shared<ServiceLostMessage>();
-						msg->service.reserve(8);
-					}
-					assert(msg);
-					msg->service.push_back(remote_sid);
-				}
-			}
-
-			// 依次发送消息
-			for (auto it_msg = lost_msgs.begin(); it_msg != lost_msgs.end(); it_msg++)
-			{
-				int32_t sid = it_msg->first;
-				assert(ServiceDispatcher::Instance().IsLocalService(sid));
-				ServiceDispatcher::Instance().SendMsg(sid, it_msg->second);
-			}
-		}
-	}
 
 	// 是否要删除session
 	if (!_session[session_id]->TryFree())
@@ -222,7 +179,15 @@ void ProxyService::OnMsg_SessionClosed(bool by_self, int32_t session_id)
 	{
 		for (int32_t rm_sid : it_sid->second)
 		{
-			_remote_service_info.erase(rm_sid);
+			auto it_sid_to_sessionid = _sid_to_sessionid.find(rm_sid);
+			if (it_sid_to_sessionid != _sid_to_sessionid.end() && it_sid_to_sessionid->second == session_id)
+			{
+				_sid_to_sessionid.erase(rm_sid);
+			}
+			else
+			{
+				assert(false);
+			}
 		}
 
 		_sessionid_to_sid.erase(session_id);
@@ -262,30 +227,13 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 		return;
 	}
 
-	// 查找远程服务记录信息
-	auto it_info = _remote_service_info.find(src_sid);
-	if (it_info != _remote_service_info.end())
+	// 查找远程服务是否已经关联了session，若还没有关联，在这里关联
+	auto it_sid_to_sessionid = _sid_to_sessionid.find(src_sid);
+	if (it_sid_to_sessionid == _sid_to_sessionid.end())
 	{
-		// session 是否冲突
-		if (it_info->second.sessionid != session_id)
-		{
-			LOG_ERROR << "service message, session conflicted" << std::endl;
-			return;
-		}
+		_sid_to_sessionid[src_sid] = session_id;
+		_sessionid_to_sid[session_id].insert(src_sid);
 	}
-	else
-	{
-		auto insert_ret = _remote_service_info.insert(std::make_pair(src_sid, RemoteServiceInfo{}));
-		assert(insert_ret.second);
-		it_info = insert_ret.first;
-		it_info->second.sid = src_sid;
-		it_info->second.sessionid = session_id;
-	}
-
-	// 添加关联的本地服务（以便在session断开时，通知该本地服务）
-	it_info->second.linked_local_services.insert(dest_sid);
-	// 添加会话包含的服务信息
-	_sessionid_to_sid[it_info->second.sessionid].insert(src_sid);
 
 	// 封装消息并发送到目标本地服务
 	int32_t data_len = (int32_t)len - (int32_t)reader.GetReadedLength();
