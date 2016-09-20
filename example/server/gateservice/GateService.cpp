@@ -39,7 +39,9 @@ void GateService::OnNewConnection(const sframe::ListenAddress & listen_addr_info
 
 	assert(work_service <= sframe::ServiceDispatcher::kMaxServiceId);
 
-	int32_t sessionid = _new_session_id++;
+	int64_t cur_sid = GetServiceId();
+	int64_t sessionid = _new_session_id++;
+	sessionid = sessionid | (cur_sid << 32);
 	std::shared_ptr<ClientSession> session = std::make_shared<ClientSession>(this, sessionid, sock);
 	session->EnterWorkService(work_service);
 	_sessions.insert(std::make_pair(sessionid, session));

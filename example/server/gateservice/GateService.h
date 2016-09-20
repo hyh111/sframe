@@ -37,13 +37,11 @@ private:
 private:
 	void OnMsg_SessionClosed(const std::shared_ptr<ClientSession> & session);
 	void OnMsg_SessionRecvData(const std::shared_ptr<ClientSession> & session, const std::shared_ptr<std::vector<char>> & data);
-
-	void OnMsg_RegistWorkService(int32_t work_sid);
 	void OnMsg_SendToClient(const GateMsg_SendToClient & data);
 
 private:
 	int32_t _new_session_id;
-	std::unordered_map<int32_t, std::shared_ptr<ClientSession>> _sessions;
+	std::unordered_map<int64_t, std::shared_ptr<ClientSession>> _sessions;
 	std::vector<int32_t> _work_services;
 	int32_t _last_choosed_work_service;
 	std::string _log_name;

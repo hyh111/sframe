@@ -86,13 +86,11 @@ void Service::Process()
 			{
 				auto service_msg = std::static_pointer_cast<ServiceMessage>(msg);
 				assert(service_msg->dest_sid == GetServiceId());
-				_last_sid = service_msg->src_sid;
-				InsideServiceMessageDecoder decoder(service_msg.get());
-				if (!_inside_delegate_mgr.Call(service_msg->msg_id, decoder))
-				{
-					LOG_ERROR << "Delegate service message error|inside|service|" << GetServiceId()
-						<< "|from|" << _last_sid << "|msgid|" << service_msg->msg_id << std::endl;
-				}
+				_sender_sid = service_msg->src_sid;
+				_cur_session_key = service_msg->session_key;
+				DelegateInsideServiceMsg(service_msg);
+				_sender_sid = 0;
+				_cur_session_key = 0;
 			}
 			break;
 
@@ -100,13 +98,11 @@ void Service::Process()
 			{
 				auto net_service_msg = std::static_pointer_cast<NetServiceMessage>(msg);
 				assert(net_service_msg->dest_sid == GetServiceId());
-				_last_sid = net_service_msg->src_sid;
-				NetServiceMessageDecoder decoder(net_service_msg.get());
-				if (!_net_delegate_mgr.Call(net_service_msg->msg_id, decoder))
-				{
-					LOG_ERROR << "Delegate service message error|net|service|" << GetServiceId()
-						<< "|from|" << _last_sid << "|msgid|" << net_service_msg->msg_id << std::endl;
-				}
+				_sender_sid = net_service_msg->src_sid;
+				_cur_session_key = net_service_msg->session_key;
+				DelegateNetServiceMsg(net_service_msg);
+				_sender_sid = 0;
+				_cur_session_key = 0;
 			}
 			break;
 
@@ -160,4 +156,55 @@ void Service::WaitDestroyComplete()
 	}
 
 	LOG_INFO << "wait service " << GetServiceId() << " destroy|" << (succ ? "succ" : "timeout") << std::endl;
+}
+
+
+// 内部消息委托调用
+void Service::DelegateInsideServiceMsg(const std::shared_ptr<sframe::ServiceMessage> & msg)
+{
+	DelegateType delegate_type = _inside_delegate_mgr.GetMsgDelegateType(msg->msg_id);
+	InsideServiceMessageDecoder decoder(msg.get());
+	bool call_succ = false;
+
+	switch (delegate_type)
+	{
+	case kDelegateType_MemberFuncDelegate_WithObject:
+		call_succ = _inside_delegate_mgr.Call(msg->msg_id, decoder);
+		break;
+
+	case kDelegateType_MemberFuncDelegate_WithObjectFinder:
+		call_succ = _inside_delegate_mgr.CallWithObjectKey(msg->msg_id, msg->session_key, decoder);
+		break;
+	}
+
+	if (!call_succ)
+	{
+		LOG_ERROR << "Delegate inside service message error|Service|" << GetServiceId() << "|from|" << msg->src_sid << 
+			"|msgid|" << msg->msg_id << "|session_id|" << msg->session_key << "|delegate type|" << (int32_t)delegate_type << std::endl;
+	}
+}
+
+// 网络消息委托调用
+void Service::DelegateNetServiceMsg(const std::shared_ptr<sframe::NetServiceMessage> & msg)
+{
+	DelegateType delegate_type = _net_delegate_mgr.GetMsgDelegateType(msg->msg_id);
+	NetServiceMessageDecoder decoder(msg.get());
+	bool call_succ = false;
+
+	switch (delegate_type)
+	{
+	case kDelegateType_MemberFuncDelegate_WithObject:
+		call_succ = _net_delegate_mgr.Call(msg->msg_id, decoder);
+		break;
+
+	case kDelegateType_MemberFuncDelegate_WithObjectFinder:
+		call_succ = _net_delegate_mgr.CallWithObjectKey(msg->msg_id, msg->session_key, decoder);
+		break;
+	}
+
+	if (!call_succ)
+	{
+		LOG_ERROR << "Delegate net service message error|Service|" << GetServiceId() << "|from|" << msg->src_sid <<
+			"|msgid|" << msg->msg_id << "|session_id|" << msg->session_key << "|delegate type|" << (int32_t)delegate_type << std::endl;
+	}
 }

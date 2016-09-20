@@ -172,7 +172,7 @@ int32_t ServiceSession::OnReceived(char * data, int32_t len)
 			surplus -= msg_size;
 		}
 			
-		ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, kProxyServiceMsgId_SessionRecvData, _session_id, data);
+		ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, 0, kProxyServiceMsgId_SessionRecvData, _session_id, data);
 	}
 
 	return surplus;
@@ -215,7 +215,7 @@ void ServiceSession::OnConnected(sframe::Error err)
 	}
 
 	// 通知连接完成
-	ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, kProxyServiceMsgId_SessionConnectCompleted, _session_id, success);
+	ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, 0, kProxyServiceMsgId_SessionConnectCompleted, _session_id, success);
 	// 开始接收数据
 	if (success)
 	{

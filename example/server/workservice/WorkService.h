@@ -4,7 +4,6 @@
 
 #include <unordered_map>
 #include "serv/Service.h"
-#include "../ssproto/SSMsg.h"
 #include "User.h"
 #include "util/DynamicFactory.h"
 
@@ -18,16 +17,16 @@ public:
 	void Init() override;
 
 private:
-	void OnMsg_ClientData(const WorkMsg_ClientData & msg);
+	void OnMsg_EnterWorkService(int32_t gate_sid, int64_t session_id);
 
-	void OnMsg_EnterWorkService(int32_t gate_sid, int32_t session_id);
-
-	void OnMsg_QuitWorkService(int32_t gate_sid, int32_t session_id);
+	void OnMsg_QuitWorkService(int32_t gate_sid, int64_t session_id);
 
 	const std::string & GetLogName();
 
+	User * GetUser(int64_t session_id);
+
 private:
-	std::unordered_map<uint64_t, std::shared_ptr<User>> _users;
+	std::unordered_map<int64_t, std::shared_ptr<User>> _users;
 	std::string _log_name;
 };
 

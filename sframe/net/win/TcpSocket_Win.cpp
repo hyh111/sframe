@@ -39,7 +39,7 @@ std::shared_ptr<TcpSocket_Win> TcpSocket_Win::Create(const std::shared_ptr<IoSer
 
 TcpSocket_Win::TcpSocket_Win(const std::shared_ptr<IoService> & ioservice)
     : IoUnit(ioservice), _lpfn_connectex(nullptr), _evt_connect(kIoEvent_ConnectCompleted),
-    _evt_send(kIoEvent_SendCompleted), _evt_recv(kIoEvent_RecvCompleted), _cur_msg(kIoMsgType_NotifyError),
+    _evt_send(kIoEvent_SendCompleted), _evt_recv(kIoEvent_RecvCompleted), _io_msg_close(kIoMsgType_Close), _io_msg_notify_err(kIoMsgType_NotifyError),
     _last_error_code(ERROR_SUCCESS), _recv_len(0), _sending_len(0), _tcp_nodelay(false)
 {}
 
@@ -132,9 +132,8 @@ END_ERROR:
     _lpfn_connectex = nullptr;
     _evt_connect.io_unit.reset();
 
-	_cur_msg.msg_type = kIoMsgType_NotifyError;
-	_cur_msg.io_unit = shared_from_this();
-	((IoService_Win*)(_io_service.get()))->PostIoMsg(_cur_msg);
+	_io_msg_notify_err.io_unit = shared_from_this();
+	((IoService_Win*)(_io_service.get()))->PostIoMsg(_io_msg_notify_err);
 }
 
 // 发送数据
@@ -165,9 +164,8 @@ void TcpSocket_Win::Send(const char * data, int32_t len)
 				return;
 			}
 
-			_cur_msg.msg_type = kIoMsgType_NotifyError;
-			_cur_msg.io_unit = shared_from_this();
-			((IoService_Win*)(_io_service.get()))->PostIoMsg(_cur_msg);
+			_io_msg_notify_err.io_unit = shared_from_this();
+			((IoService_Win*)(_io_service.get()))->PostIoMsg(_io_msg_notify_err);
 		}
     }
 }
@@ -190,23 +188,23 @@ void TcpSocket_Win::StartRecv()
 			return;
 		}
 
-		_cur_msg.msg_type = kIoMsgType_NotifyError;
-		_cur_msg.io_unit = shared_from_this();
-		((IoService_Win*)(_io_service.get()))->PostIoMsg(_cur_msg);
+		_io_msg_notify_err.io_unit = shared_from_this();
+		((IoService_Win*)(_io_service.get()))->PostIoMsg(_io_msg_notify_err);
     }
 }
 
 // 关闭
 bool TcpSocket_Win::Close()
 {
-	int32_t cmp_conn = TcpSocket::kState_Connecting;
+	int32_t cmp_connecting = TcpSocket::kState_Connecting;
+	int32_t cmp_conn_failed = TcpSocket::kState_ConnectFailed;
     int32_t cmp_open = TcpSocket::kState_Opened;
-	if (_state.compare_exchange_strong(cmp_conn, (int32_t)TcpSocket::kState_Closed) ||
+	if (_state.compare_exchange_strong(cmp_connecting, (int32_t)TcpSocket::kState_Closed) ||
+		_state.compare_exchange_strong(cmp_conn_failed, (int32_t)TcpSocket::kState_Closed) ||
 		_state.compare_exchange_strong(cmp_open, (int32_t)TcpSocket::kState_Closed))
 	{
-		_cur_msg.msg_type = kIoMsgType_Close;
-		_cur_msg.io_unit = shared_from_this();
-		((IoService_Win*)(_io_service.get()))->PostIoMsg(_cur_msg);
+		_io_msg_close.io_unit = shared_from_this();
+		((IoService_Win*)(_io_service.get()))->PostIoMsg(_io_msg_close);
 		return true;
 	}
 
@@ -266,16 +264,16 @@ void TcpSocket_Win::OnEvent(IoEvent * io_evt)
 // IO消息通知
 void TcpSocket_Win::OnMsg(IoMsg * io_msg)
 {
-    assert(io_msg == &_cur_msg);
-
     TcpSocket::State s = GetState();
-	_cur_msg.io_unit.reset();
+	io_msg->io_unit.reset();
 
 	if (io_msg->msg_type == kIoMsgType_NotifyError)
 	{
-		if (s == TcpSocket::kState_Connecting)
+		assert(io_msg == &_io_msg_notify_err);
+
+		int cmp_state_connecting = kState_Connecting;
+		if (_state.compare_exchange_strong(cmp_state_connecting, kState_ConnectFailed))
 		{
-			_state.store(TcpSocket::kState_Closed);
 			if (_monitor)
 			{
 				_monitor->OnConnected(_last_error_code);
@@ -294,6 +292,7 @@ void TcpSocket_Win::OnMsg(IoMsg * io_msg)
 	}
 	else if (io_msg->msg_type == kIoMsgType_Close)
 	{
+		assert(io_msg == &_io_msg_close);
 		assert(s == TcpSocket::kState_Closed);
 		shutdown(_sock, SD_BOTH);
 		closesocket(_sock);
@@ -374,21 +373,24 @@ void TcpSocket_Win::RecvCompleted(Error err, int32_t data_len)
 // 连接完成
 void TcpSocket_Win::ConnectCompleted(Error err)
 {
-    if (!err)
-    {
-        _state.store(TcpSocket::kState_Opened);
-    }
-    else
-    {
-		_state.store(TcpSocket::kState_Closed);
-        closesocket(_sock);
-        _sock = INVALID_SOCKET;
-    }
+	int chg_to_state = kState_Initial;
 
-    if (_monitor)
-    {
-        _monitor->OnConnected(err);
-    }
+	if (!err)
+	{
+		chg_to_state = kState_Opened;
+	}
+	else
+	{
+		chg_to_state = kState_ConnectFailed;
+		closesocket(_sock);
+		_sock = INVALID_SOCKET;
+	}
+
+	int cmp_state = kState_Connecting;
+	if (_state.compare_exchange_strong(cmp_state, chg_to_state) && _monitor)
+	{
+		_monitor->OnConnected(err);
+	}
 }
 
 // 发送数据

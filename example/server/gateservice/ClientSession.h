@@ -20,9 +20,9 @@ public:
 	void OnClosed(bool by_self, sframe::Error err) override;
 
 public:
-	ClientSession(GateService * gate_service, int32_t session_id, const std::shared_ptr<sframe::TcpSocket> & sock);
+	ClientSession(GateService * gate_service, int64_t session_id, const std::shared_ptr<sframe::TcpSocket> & sock);
 
-	int32_t GetSessionId() const
+	int64_t GetSessionId() const
 	{
 		return _session_id;
 	}
@@ -45,7 +45,7 @@ public:
 private:
 	GateService * _gate_service;
 	std::shared_ptr<sframe::TcpSocket> _sock;
-	int32_t _session_id;
+	int64_t _session_id;
 	int32_t _cur_work_sid;
 };
 

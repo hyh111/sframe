@@ -69,40 +69,42 @@ public:
 
 	// 发送内部服务消息
 	template<typename... T_Args>
-	void SendInsideServiceMsg(int32_t src_sid, int32_t dest_sid, uint16_t msg_id, T_Args&... args)
+	void SendInsideServiceMsg(int32_t src_sid, int32_t dest_sid, int64_t session_key, uint16_t msg_id, T_Args&... args)
 	{
 		assert(dest_sid >= 0 && dest_sid <= kMaxServiceId);
 		std::shared_ptr<InsideServiceMessage<T_Args...>> msg = std::make_shared<InsideServiceMessage<T_Args...>>(args...);
 		msg->src_sid = src_sid;
 		msg->dest_sid = dest_sid;
+		msg->session_key = session_key;
 		msg->msg_id = msg_id;
 		SendMsg(dest_sid, msg);
 	}
 
 	// 发送网络服务消息
 	template<typename... T_Args>
-	void SendNetServiceMsg(int32_t src_sid, int32_t dest_sid, uint16_t msg_id, T_Args&... args)
+	void SendNetServiceMsg(int32_t src_sid, int32_t dest_sid, int64_t session_key, uint16_t msg_id, T_Args&... args)
 	{
 		std::shared_ptr<ProxyServiceMessageT<T_Args...>> msg = std::make_shared<ProxyServiceMessageT<T_Args...>>(args...);
 		msg->src_sid = src_sid;
 		msg->dest_sid = dest_sid;
+		msg->session_key = session_key;
 		msg->msg_id = msg_id;
 		SendMsg(0, msg);
 	}
 
 	// 发送服务消息
 	template<typename... T_Args>
-	void SendServiceMsg(int32_t src_sid, int32_t dest_sid, uint16_t msg_id, T_Args&... args)
+	void SendServiceMsg(int32_t src_sid, int32_t dest_sid, int64_t session_key, uint16_t msg_id, T_Args&... args)
 	{
 		assert(dest_sid >= 0 && dest_sid <= kMaxServiceId);
 
 		if (_services[dest_sid])
 		{
-			SendInsideServiceMsg(src_sid, dest_sid, msg_id, args...);
+			SendInsideServiceMsg(src_sid, dest_sid, session_key, msg_id, args...);
 		}
 		else
 		{
-			SendNetServiceMsg(src_sid, dest_sid, msg_id, args...);
+			SendNetServiceMsg(src_sid, dest_sid, session_key, msg_id, args...);
 		}
 	}
 

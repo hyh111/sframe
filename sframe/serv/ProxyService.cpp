@@ -206,8 +206,9 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 	// 读取消息头部
 	int32_t src_sid = 0;
 	int32_t dest_sid = 0;
+	int64_t msg_session_key = 0;
 	uint16_t msg_id = 0;
-	if (!AutoDecode(reader, src_sid, dest_sid, msg_id))
+	if (!AutoDecode(reader, src_sid, dest_sid, msg_session_key, msg_id))
 	{
 		LOG_ERROR << "decode net service message error" << std::endl;
 		return;
@@ -241,6 +242,7 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 	std::shared_ptr<NetServiceMessage> msg = std::make_shared<NetServiceMessage>();
 	msg->dest_sid = dest_sid;
 	msg->src_sid = src_sid;
+	msg->session_key = msg_session_key;
 	msg->msg_id = msg_id;
 	msg->data = std::move(vec_data);
 	// 发送到目标服务

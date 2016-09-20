@@ -37,7 +37,7 @@ int32_t ClientSession::OnReceived(char * data, int32_t len)
 		}
 
 		std::shared_ptr<ClientSession> session = shared_from_this();
-		ServiceDispatcher::Instance().SendInsideServiceMsg(0, _gate_service->GetServiceId(), kGateMsg_SessionRecvData, session, data);
+		ServiceDispatcher::Instance().SendInsideServiceMsg(0, _gate_service->GetServiceId(), 0, kGateMsg_SessionRecvData, session, data);
 	}
 
 	return surplus;
@@ -48,11 +48,11 @@ int32_t ClientSession::OnReceived(char * data, int32_t len)
 void ClientSession::OnClosed(bool by_self, sframe::Error err)
 {
 	std::shared_ptr<ClientSession> session = shared_from_this();
-	ServiceDispatcher::Instance().SendInsideServiceMsg((int32_t)0, _gate_service->GetServiceId(), (uint16_t)kGateMsg_SessionClosed, session);
+	ServiceDispatcher::Instance().SendInsideServiceMsg((int32_t)0, _gate_service->GetServiceId(), 0, (uint16_t)kGateMsg_SessionClosed, session);
 }
 
 
-ClientSession::ClientSession(GateService * gate_service, int32_t session_id, const std::shared_ptr<sframe::TcpSocket> & sock)
+ClientSession::ClientSession(GateService * gate_service, int64_t session_id, const std::shared_ptr<sframe::TcpSocket> & sock)
 	: _sock(sock), _gate_service(gate_service), _session_id(session_id), _cur_work_sid(0)
 {
 	_sock->SetMonitor(this);
@@ -74,14 +74,14 @@ void ClientSession::EnterWorkService(int32_t sid)
 
 	_cur_work_sid = sid;
 	int32_t gate_sid = _gate_service->GetServiceId();
-	_gate_service->SendServiceMsg(_cur_work_sid, (uint16_t)kWorkMsg_EnterWorkService, gate_sid, _session_id);
+	_gate_service->SendServiceMsg(_cur_work_sid, _session_id, (uint16_t)kWorkMsg_EnterWorkService, gate_sid, _session_id);
 }
 
 void ClientSession::HandleClosed()
 {
 	_sock.reset();
 	int32_t gate_sid = _gate_service->GetServiceId();
-	ServiceDispatcher::Instance().SendServiceMsg(_gate_service->GetServiceId(), _cur_work_sid,
+	ServiceDispatcher::Instance().SendServiceMsg(_gate_service->GetServiceId(), _cur_work_sid, _session_id,
 		(uint16_t)kWorkMsg_QuitWorkService, gate_sid, _session_id);
 }
 
@@ -98,7 +98,7 @@ void ClientSession::SendToWorkService(const std::shared_ptr<std::vector<char>> &
 	msg.gate_sid = _gate_service->GetServiceId();
 	msg.session_id = _session_id;
 	msg.client_data = data;
-	ServiceDispatcher::Instance().SendServiceMsg(_gate_service->GetServiceId(), _cur_work_sid, (uint16_t)kWorkMsg_ClientData, msg);
+	ServiceDispatcher::Instance().SendServiceMsg(_gate_service->GetServiceId(), _cur_work_sid, _session_id, (uint16_t)kWorkMsg_ClientData, msg);
 }
 
 void ClientSession::SendToClient(const std::shared_ptr<std::vector<char>> & data)

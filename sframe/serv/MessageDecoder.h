@@ -66,9 +66,10 @@ public:
 
 		int32_t src_sid = 0;
 		int32_t dest_sid = 0;
+		int64_t session_key = 0;
 		uint16_t msg_id = 0;
 		StreamReader stream_reader(&(msg->data)[0], (uint32_t)msg->data.size());
-		return AutoDecode(stream_reader, src_sid, dest_sid, msg_id, args...);
+		return AutoDecode(stream_reader, src_sid, dest_sid, session_key, msg_id, args...);
 	}
 
 private:

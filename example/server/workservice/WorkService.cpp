@@ -11,46 +11,34 @@ using namespace sframe;
 // 初始化（创建服务成功后调用，此时还未开始运行）
 void WorkService::Init()
 {
-	RegistServiceMessageHandler(kWorkMsg_ClientData, &WorkService::OnMsg_ClientData, this);
 	RegistServiceMessageHandler(kWorkMsg_EnterWorkService, &WorkService::OnMsg_EnterWorkService, this);
 	RegistServiceMessageHandler(kWorkMsg_QuitWorkService, &WorkService::OnMsg_QuitWorkService, this);
+
+	std::function<User*(const int64_t &)> get_user_func = std::bind(&WorkService::GetUser, this, std::placeholders::_1);
+	RegistServiceMessageHandler(kWorkMsg_ClientData, &User::OnClientData, get_user_func);
 }
 
 
-void WorkService::OnMsg_ClientData(const WorkMsg_ClientData & msg)
+void WorkService::OnMsg_EnterWorkService(int32_t gate_sid, int64_t session_id)
 {
-	uint64_t key = MAKE_KEY(msg.gate_sid, msg.session_id);
-	auto it_user = _users.find(key);
-	if (it_user == _users.end())
-	{
-		return;
-	}
-
-	it_user->second->OnClientMsg(*msg.client_data);
-}
-
-void WorkService::OnMsg_EnterWorkService(int32_t gate_sid, int32_t session_id)
-{
-	uint64_t key = MAKE_KEY(gate_sid, session_id);
-	if (_users.find(key) != _users.end())
+	if (_users.find(session_id) != _users.end())
 	{
 		return;
 	}
 
 	FLOG(GetLogName()) << "User Enter|GateService|" << gate_sid << "|Session ID|" << session_id << std::endl;
-	if (gate_sid != GetLastServiceId())
+	if (gate_sid != GetSenderServiceId())
 	{
 		FLOG(GetLogName()) << "gate service id not equal to last service id" << std::endl;
 	}
 
 	std::shared_ptr<User> user = std::make_shared<User>(GetServiceId(), gate_sid, session_id);
-	_users.insert(std::make_pair(key, user));
+	_users.insert(std::make_pair(session_id, user));
 }
 
-void WorkService::OnMsg_QuitWorkService(int32_t gate_sid, int32_t session_id)
+void WorkService::OnMsg_QuitWorkService(int32_t gate_sid, int64_t session_id)
 {
-	uint64_t key = MAKE_KEY(gate_sid, session_id);
-	if (_users.erase(key) > 0)
+	if (_users.erase(session_id) > 0)
 	{
 		FLOG(GetLogName()) << "User Quit|GateService|" << gate_sid << "|Session ID|" << session_id << std::endl;
 	}
@@ -64,4 +52,15 @@ const std::string & WorkService::GetLogName()
 	}
 
 	return _log_name;
+}
+
+User * WorkService::GetUser(int64_t session_id)
+{
+	auto it = _users.find(session_id);
+	if (it == _users.end())
+	{
+		return nullptr;
+	}
+
+	return it->second.get();
 }

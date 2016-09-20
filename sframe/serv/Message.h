@@ -41,10 +41,10 @@ public:
 class CycleMessage : public Message
 {
 public:
-    CycleMessage(int32_t period) : _period(period) 
-    {
-        _locked.store(false);
-    }
+    CycleMessage(int32_t period) : _period(period)
+	{
+		_locked.clear(std::memory_order_relaxed);
+	}
 
     // 获取消息类型
     MessageType GetType() const override
@@ -57,20 +57,24 @@ public:
         return _period;
     }
 
+	void SetPeriod(int32_t period)
+	{
+		_period = period;
+	}
+
     bool TryLock()
     {
-        bool compare = false;
-        return _locked.compare_exchange_strong(compare, true);
+		return (!_locked.test_and_set(std::memory_order_acquire));
     }
 
     void Unlock()
     {
-        _locked.store(false);
+		_locked.clear(std::memory_order_relaxed);
     }
 
 private:
-    int32_t _period;          // 周期，毫秒
-    std::atomic_bool _locked;  // 是否锁定
+    int32_t _period;           // 周期，毫秒
+    std::atomic_flag _locked;  // 是否锁定
 };
 
 // 服务消息
@@ -82,6 +86,7 @@ public:
 public:
 	int32_t src_sid;     // 发送源服务ID
 	int32_t dest_sid;    // 目标服务ID
+	int64_t session_key; // 会话key
 	uint16_t msg_id;     // 消息号
 };
 
@@ -170,7 +175,7 @@ public:
 		assert(_buf && _len && (*_len) >= 0);
 		uint16_t msg_size = 0;
 		StreamWriter writer(_buf + sizeof(msg_size), (uint32_t)(*_len) - sizeof(msg_size));
-		if (!AutoEncode(writer, src_sid, dest_sid, msg_id, args...))
+		if (!AutoEncode(writer, src_sid, dest_sid, session_key, msg_id, args...))
 		{
 			return false;
 		}

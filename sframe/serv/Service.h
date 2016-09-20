@@ -72,7 +72,7 @@ public:
 	// 是否销毁完成
 	virtual bool IsDestroyCompleted() const { return true; }
 
-	// 获取该该服务的销毁优先级
+	// 获取该服务的销毁优先级
 	// 返回：大于等于0的数字，数字越大越靠后销毁，相同的一起销毁，默认为0
 	virtual int32_t GetDestroyPriority() const { return 0; }
 
@@ -83,7 +83,7 @@ public:
 	virtual int32_t GetCyclePeriod() const { return 0; }
 
 public:
-    Service() : _sid(0), _msg_queue(this), _last_sid(0), _cur_time(0), _destroyed(false) {}
+    Service() : _sid(0), _msg_queue(this), _sender_sid(0), _cur_session_key(0), _cur_time(0), _destroyed(false) {}
 
     virtual ~Service() {}
 
@@ -115,10 +115,18 @@ public:
 	// 等待销毁完毕
 	void WaitDestroyComplete();
 
-	// 获取最近发送消息给本服务的服务ID
-	int32_t GetLastServiceId() const
+	// 获取当前正在处理的服务消息的发送者的ServiceId
+	// 只有在服务消息处理函数中，调用此方法有效
+	int32_t GetSenderServiceId() const
 	{
-		return _last_sid;
+		return _sender_sid;
+	}
+
+	// 获取当前正在处理的服务消息中的session_key
+	// 只有在服务消息处理函数中，调用此方法有效
+	int64_t GetCurSessionKey() const
+	{
+		return _cur_session_key;
 	}
 
 	// 获取当前时间
@@ -129,57 +137,85 @@ public:
 
 	// 注册服务消息处理函数(内部服务消息和网络服务消息都注册)
 	template<typename Func_Type, typename Obj_Type>
-	bool RegistServiceMessageHandler(int msg_id, Func_Type func, Obj_Type * obj)
+	void RegistServiceMessageHandler(int msg_id, Func_Type func, Obj_Type * obj)
 	{
-		bool ret = false;
-		ret = _inside_delegate_mgr.Regist(msg_id, func, obj);
-		ret = _net_delegate_mgr.Regist(msg_id, func, obj) && ret;
-		return ret;
+		_inside_delegate_mgr.Regist(msg_id, func, obj);
+		_net_delegate_mgr.Regist(msg_id, func, obj);
 	}
 
-	// 注册内部服务消息处理函数
+	// 仅注册内部服务消息处理函数
 	template<typename Func_Type, typename Obj_Type>
-	bool RegistInsideServiceMessageHandler(int msg_id, Func_Type func, Obj_Type * obj)
+	void RegistInsideServiceMessageHandler(int msg_id, Func_Type func, Obj_Type * obj)
 	{
-		return _inside_delegate_mgr.Regist(msg_id, func, obj);
+		_inside_delegate_mgr.Regist(msg_id, func, obj);
 	}
 
-	// 注册网络服务消息处理函数
+	// 仅注册网络服务消息处理函数
 	template<typename Func_Type, typename Obj_Type>
-	bool RegistNetServiceMessageHandler(int msg_id, Func_Type func, Obj_Type * obj)
+	void RegistNetServiceMessageHandler(int msg_id, Func_Type func, Obj_Type * obj)
 	{
-		return _net_delegate_mgr.Regist(msg_id, func, obj);
+		_net_delegate_mgr.Regist(msg_id, func, obj);
+	}
+
+	// 注册服务消息处理函数(内部服务消息和网络服务消息都注册)
+	template<typename Func_Type, typename Obj_Type>
+	void RegistServiceMessageHandler(int msg_id, Func_Type func, const std::function<Obj_Type*(const int64_t &)> & obj_finder)
+	{
+		_inside_delegate_mgr.Regist(msg_id, func, obj_finder);
+		_net_delegate_mgr.Regist(msg_id, func, obj_finder);
+	}
+
+	// 仅注册内部服务消息处理函数
+	template<typename Func_Type, typename Obj_Type>
+	void RegistInsideServiceMessageHandler(int msg_id, Func_Type func, const std::function<Obj_Type*(const int64_t &)> & obj_finder)
+	{
+		_inside_delegate_mgr.Regist(msg_id, func, obj_finder);
+	}
+
+	// 仅注册网络服务消息处理函数
+	template<typename Func_Type, typename Obj_Type>
+	void RegistNetServiceMessageHandler(int msg_id, Func_Type func, const std::function<Obj_Type*(const int64_t &)> & obj_finder)
+	{
+		_net_delegate_mgr.Regist(msg_id, func, obj_finder);
 	}
 
 	// 发送内部服务消息
 	template<typename... T_Args>
-	void SendInsideServiceMsg(int32_t dest_sid, uint16_t msg_id, T_Args&... args)
+	void SendInsideServiceMsg(int32_t dest_sid, int64_t session_key, uint16_t msg_id, T_Args&... args)
 	{
-		ServiceDispatcher::Instance().SendInsideServiceMsg(_sid, dest_sid, msg_id, args...);
+		ServiceDispatcher::Instance().SendInsideServiceMsg(_sid, dest_sid, session_key, msg_id, args...);
 	}
 
 	// 发送网络服务消息
 	template<typename... T_Args>
-	void SendNetServiceMsg(int32_t dest_sid, uint16_t msg_id, T_Args&... args)
+	void SendNetServiceMsg(int32_t dest_sid, int64_t session_key, uint16_t msg_id, T_Args&... args)
 	{
-		ServiceDispatcher::Instance().SendNetServiceMsg(_sid, dest_sid, msg_id, args...);
+		ServiceDispatcher::Instance().SendNetServiceMsg(_sid, dest_sid, session_key, msg_id, args...);
 	}
 
 	// 发送服务消息
 	template<typename... T_Args>
-	void SendServiceMsg(int32_t dest_sid, uint16_t msg_id, T_Args&... args)
+	void SendServiceMsg(int32_t dest_sid, int64_t session_key, uint16_t msg_id, T_Args&... args)
 	{
-		ServiceDispatcher::Instance().SendServiceMsg(_sid, dest_sid, msg_id, args...);
+		ServiceDispatcher::Instance().SendServiceMsg(_sid, dest_sid, session_key, msg_id, args...);
 	}
+
+private:
+	// 内部消息委托调用
+	void DelegateInsideServiceMsg(const std::shared_ptr<sframe::ServiceMessage> & msg);
+
+	// 网络消息委托调用
+	void DelegateNetServiceMsg(const std::shared_ptr<sframe::NetServiceMessage> & msg);
 
 private:
 	int32_t _sid;
 	int64_t _cur_time;               // 当前时间
 	MessageQueue _msg_queue;         // 消息队列
-	int32_t _last_sid;               // 最近收到的服务消息的服务ID
+	int32_t _sender_sid;             // 当前正在处理的服务消息的源服务ID
+	int64_t _cur_session_key;        // 当前正在处理的服务消息中的会话ID
 	bool _destroyed;                 // 是否已被销毁
-	DelegateManager<InsideServiceMessageDecoder, 65536> _inside_delegate_mgr;
-	DelegateManager<NetServiceMessageDecoder, 65536> _net_delegate_mgr;
+	DelegateManager<InsideServiceMessageDecoder> _inside_delegate_mgr;
+	DelegateManager<NetServiceMessageDecoder> _net_delegate_mgr;
 };
 
 }

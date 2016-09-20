@@ -19,10 +19,11 @@ public:
     // 状态
     enum State : int32_t
     {
-        kState_Initial,    // 初始状态
-        kState_Connecting, // 连接中
-        kState_Opened,     // 开启
-        kState_Closed,     // 已关闭
+        kState_Initial,          // 初始状态
+        kState_Connecting,       // 连接中
+		kState_ConnectFailed,    // 连接失败
+        kState_Opened,           // 开启
+        kState_Closed,           // 已关闭
     };
 
     // Tcp套接字监听器接口，实现此接口监听套接字的事件
@@ -64,8 +65,8 @@ public:
     virtual void StartRecv() = 0;
 
     // 关闭
-	// 返回true: 表示成功开始执行关闭操作，只有处于kState_Connecting和kState_Opened的socket才会执行关闭，关闭完成后会执行OnClosed回调
-	// 返回false: 表示socket本来就没有打开(处于kState_Initial或kState_Closed状态)，不会执行关闭操作，也不会执行OnClosed回调
+	// 返回true: 表示成功开始执行关闭操作，只有处于kState_Connecting、kState_ConnectFailed、kState_Opened的socket才会执行关闭，关闭完成后会执行OnClosed回调
+	// 返回false: 关闭失败，socket处于kState_Initial或kState_Closed状态，不会执行关闭操作，也不会执行OnClosed回调
     virtual bool Close() = 0;
 
 	// 设置TCP_NODELAY

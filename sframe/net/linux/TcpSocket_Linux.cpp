@@ -40,8 +40,8 @@ std::shared_ptr<TcpSocket_Linux> TcpSocket_Linux::Create(const std::shared_ptr<I
 }
 
 TcpSocket_Linux::TcpSocket_Linux(const std::shared_ptr<IoService> & io_service)
-	: IoUnit(io_service), _add_evt(false), _cur_msg(kIoMsgType_SendData), _cur_events(EPOLLET),
-	_recv_len(0), _last_error(0), _tcp_nodelay(false)
+	: IoUnit(io_service), _add_evt(false), _io_msg_send_and_conn(kIoMsgType_SendData), _io_msg_close(kIoMsgType_Close),
+	  _io_msg_notify_err(kIoMsgType_NotifyError), _cur_events(EPOLLET), _recv_len(0), _last_error(0), _tcp_nodelay(false)
 {}
 
 // 连接
@@ -54,9 +54,9 @@ void TcpSocket_Linux::Connect(const SocketAddr & remote)
     }
 
 	_remote_addr = remote;
-	_cur_msg.msg_type = kIoMsgType_Connect;
-	_cur_msg.io_unit = shared_from_this();
-	((IoService_Linux*)(_io_service.get()))->PostIoMsg(_cur_msg);
+	_io_msg_send_and_conn.msg_type = kIoMsgType_Connect;
+	_io_msg_send_and_conn.io_unit = shared_from_this();
+	((IoService_Linux*)(_io_service.get()))->PostIoMsg(_io_msg_send_and_conn);
 }
 
 // 发送数据
@@ -74,9 +74,9 @@ void TcpSocket_Linux::Send(const char * data, int32_t len)
     if (send_now)
     {
 		// 向IO服务投递发送数据的消息
-		_cur_msg.msg_type = kIoMsgType_SendData;
-		_cur_msg.io_unit = shared_from_this();
-		((IoService_Linux*)(_io_service.get()))->PostIoMsg(_cur_msg);
+		_io_msg_send_and_conn.msg_type = kIoMsgType_SendData;
+		_io_msg_send_and_conn.io_unit = shared_from_this();
+		((IoService_Linux*)(_io_service.get()))->PostIoMsg(_io_msg_send_and_conn);
     }
 }
 
@@ -99,23 +99,23 @@ void TcpSocket_Linux::StartRecv()
 			return;
 		}
 
-		_cur_msg.msg_type = kIoMsgType_NotifyError;
-		_cur_msg.io_unit = shared_from_this();
-		((IoService_Linux*)(_io_service.get()))->PostIoMsg(_cur_msg);
+		_io_msg_notify_err.io_unit = shared_from_this();
+		((IoService_Linux*)(_io_service.get()))->PostIoMsg(_io_msg_notify_err);
     }
 }
 
 // 关闭
 bool TcpSocket_Linux::Close()
 {
-	int32_t cmp_conn = TcpSocket::kState_Connecting;
+	int32_t cmp_connecting = TcpSocket::kState_Connecting;
+	int32_t cmp_conn_failed = TcpSocket::kState_ConnectFailed;
 	int32_t cmp_open = TcpSocket::kState_Opened;
-    if (_state.compare_exchange_strong(cmp_conn, (int32_t)TcpSocket::kState_Closed) ||
+    if (_state.compare_exchange_strong(cmp_connecting, (int32_t)TcpSocket::kState_Closed) ||
+		_state.compare_exchange_strong(cmp_conn_failed, (int32_t)TcpSocket::kState_Closed) ||
 		_state.compare_exchange_strong(cmp_open, (int32_t)TcpSocket::kState_Closed))
     {
-		_cur_msg.msg_type = kIoMsgType_Close;
-		_cur_msg.io_unit = shared_from_this();
-		((IoService_Linux*)(_io_service.get()))->PostIoMsg(_cur_msg);
+		_io_msg_close.io_unit = shared_from_this();
+		((IoService_Linux*)(_io_service.get()))->PostIoMsg(_io_msg_close);
 		return true;
     }
 
@@ -154,11 +154,11 @@ void TcpSocket_Linux::OnEvent(IoEvent io_evt)
 
 	if (s == kState_Connecting)
 	{
+		int cmp_state_conn = kState_Connecting;
 		getsockopt(_sock, SOL_SOCKET, SO_ERROR, &error, &error_len);
 		if (io_evt == EPOLLOUT && error == 0)
 		{
-			_state.store(kState_Opened);
-			if (_monitor)
+			if (_state.compare_exchange_strong(cmp_state_conn, kState_Opened) && _monitor)
 			{
 				this->_monitor->OnConnected(ErrorSuccess);
 			}
@@ -168,8 +168,7 @@ void TcpSocket_Linux::OnEvent(IoEvent io_evt)
 			((IoService_Linux*)(_io_service.get()))->DeleteIoEvent(*this, _cur_events);
 			close(_sock);
 			_sock = -1;
-			_state.store(kState_Closed);
-			if (_monitor)
+			if (_state.compare_exchange_strong(cmp_state_conn, kState_ConnectFailed) && _monitor)
 			{
 				this->_monitor->OnConnected(Error(error));
 			}
@@ -206,12 +205,12 @@ void TcpSocket_Linux::OnEvent(IoEvent io_evt)
 
 void TcpSocket_Linux::OnMsg(IoMsg * io_msg)
 {
-    assert(io_msg == &_cur_msg);
 	TcpSocket::State s = GetState();
-	_cur_msg.io_unit.reset();
+	io_msg->io_unit.reset();
 
-	if (_cur_msg.msg_type == kIoMsgType_Connect)
+	if (io_msg->msg_type == kIoMsgType_Connect)
 	{
+		assert(io_msg == &_io_msg_send_and_conn);
 		if (s != TcpSocket::kState_Connecting)
 		{
 			return;
@@ -219,8 +218,9 @@ void TcpSocket_Linux::OnMsg(IoMsg * io_msg)
 
 		Connect();
 	}
-	else if (_cur_msg.msg_type == kIoMsgType_SendData)
+	else if (io_msg->msg_type == kIoMsgType_SendData)
 	{
+		assert(io_msg == &_io_msg_send_and_conn);
 		if (s != TcpSocket::kState_Opened)
 		{
 			return;
@@ -228,21 +228,25 @@ void TcpSocket_Linux::OnMsg(IoMsg * io_msg)
 
 		SendData();
 	}
-	else if (_cur_msg.msg_type == kIoMsgType_Close)
+	else if (io_msg->msg_type == kIoMsgType_Close)
 	{
+		assert(io_msg == &_io_msg_close);
 		assert(s == TcpSocket::kState_Closed);
-
-		((IoService_Linux*)(_io_service.get()))->DeleteIoEvent(*this, _cur_events);
-		shutdown(_sock, SHUT_RDWR);
-		close(_sock);
-		_sock = -1;
+		if (_sock >= 0)
+		{
+			((IoService_Linux*)(_io_service.get()))->DeleteIoEvent(*this, _cur_events);
+			shutdown(_sock, SHUT_RDWR);
+			close(_sock);
+			_sock = -1;
+		}
 		if (_monitor)
 		{
 			_monitor->OnClosed(true, ErrorSuccess);
 		}
 	}
-	else if (_cur_msg.msg_type == kIoMsgType_NotifyError)
+	else if (io_msg->msg_type == kIoMsgType_NotifyError)
 	{
+		assert(io_msg == &_io_msg_notify_err);
 		assert(s == TcpSocket::kState_Closed);
 		shutdown(_sock, SHUT_RDWR);
 		close(_sock);
@@ -287,6 +291,8 @@ bool TcpSocket_Linux::ModifyEpollEvent(uint32_t evt)
 // 连接
 void TcpSocket_Linux::Connect()
 {
+	int cmp_state_conn = kState_Connecting;
+
 	do
 	{
 		// 新建套接字
@@ -319,8 +325,7 @@ void TcpSocket_Linux::Connect()
 		// 连接
 		if (connect(_sock, (const sockaddr *)&remote_addr, sizeof(remote_addr)) == 0)
 		{
-			_state.store(kState_Opened);
-			if (_monitor)
+			if (_state.compare_exchange_strong(cmp_state_conn, kState_Opened) && _monitor)
 			{
 				_monitor->OnConnected(ErrorSuccess);
 			}
@@ -350,9 +355,7 @@ void TcpSocket_Linux::Connect()
 		_sock = -1;
 	}
 
-	_state.store(kState_Closed);
-
-	if (_monitor)
+	if (_state.compare_exchange_strong(cmp_state_conn, kState_ConnectFailed) && _monitor)
 	{
 		_monitor->OnConnected(err);
 	}

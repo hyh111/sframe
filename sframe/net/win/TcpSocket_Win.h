@@ -71,7 +71,8 @@ private:
     IoEvent _evt_connect;
     IoEvent _evt_send;
     IoEvent _evt_recv;
-    IoMsg _cur_msg;
+    IoMsg _io_msg_close;
+	IoMsg _io_msg_notify_err;
 	DWORD _last_error_code;
     int32_t _sending_len;                // 正在发送中的数据长度
     char _recv_buf[kRecvBufSize];        // 接收缓冲区

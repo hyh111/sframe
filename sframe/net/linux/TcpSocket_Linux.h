@@ -63,7 +63,9 @@ private:
 
 private:
     bool _add_evt;                           // 是否已经添加了事件
-    IoMsg _cur_msg;                          // 消息
+    IoMsg _io_msg_send_and_conn;             // IO消息(用于发送和连接操作，发送和连接操作，同时只能存在一个，可以共用)
+	IoMsg _io_msg_close;                     // IO消息(用于关闭)
+	IoMsg _io_msg_notify_err;                // IO消息(用于通知错误)
 	int32_t _last_error;
     uint32_t _cur_events;                    // 当前等待的事件
     char _recv_buf[kRecvBufSize];            // 接收缓冲区
