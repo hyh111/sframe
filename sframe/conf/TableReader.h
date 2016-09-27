@@ -2,8 +2,21 @@
 #ifndef SFRAME_TABLE_READER_H
 #define SFRAME_TABLE_READER_H
 
+#include <assert.h>
+#include <string>
+#include <vector>
+#include <list>
+#include <set>
+#include <unordered_set>
+#include <map>
+#include <unordered_map>
+#include <memory>
 #include "Table.h"
 #include "ConfigStringParser.h"
+#include "ConfigLoader.h"
+#include "ConfigMeta.h"
+
+namespace sframe {
 
 class TableReader
 {
@@ -35,20 +48,8 @@ private:
 	int32_t _cur_row;
 };
 
-template<typename R, typename T>
-inline R Table_GetObjKey(T & obj)
-{
-	return obj.GetKey();
-}
-
-template<typename R, typename T>
-inline R Table_GetObjKey(std::shared_ptr<T> & obj)
-{
-	return obj->GetKey();
-}
-
 template<typename T_Map>
-inline void Table_FillMap(TableReader & tbl, T_Map & obj)
+inline bool Table_FillMap(TableReader & tbl, T_Map & obj)
 {
 	while (true)
 	{
@@ -58,17 +59,25 @@ inline void Table_FillMap(TableReader & tbl, T_Map & obj)
 		}
 
 		typename T_Map::mapped_type v;
-		Table_FillObject(tbl, v);
+		if (!ConfigLoader::Load(tbl, v))
+		{
+			return false;
+		}
 
-		typename T_Map::key_type k = Table_GetObjKey<typename T_Map::key_type>(v);
-		obj.insert(std::make_pair(k, v));
+		typename T_Map::key_type k = GetConfigObjKey<typename T_Map::key_type>(v);
+		if (!obj.insert(std::make_pair(k, v)).second)
+		{
+			return false;
+		}
 
 		tbl.Next();
 	}
+
+	return true;
 }
 
 template<typename T_Array>
-inline void Table_FillArray(TableReader & tbl, T_Array & obj)
+inline bool Table_FillArray(TableReader & tbl, T_Array & obj)
 {
 	while (true)
 	{
@@ -78,112 +87,147 @@ inline void Table_FillArray(TableReader & tbl, T_Array & obj)
 		}
 
 		typename T_Array::value_type v;
-		Table_FillObject(tbl, v);
+		if (!ConfigLoader::Load(tbl, v))
+		{
+			return false;
+		}
 
 		obj.push_back(v);
 		tbl.Next();
 	}
+
+	return true;
+}
+
+template<typename T_Set>
+inline bool Table_FillSet(TableReader & tbl, T_Set & obj)
+{
+	while (true)
+	{
+		if (!tbl.GetCurrentRow())
+		{
+			break;
+		}
+
+		typename T_Set::value_type v;
+		if (!ConfigLoader::Load(tbl, v))
+		{
+			return false;
+		}
+
+		obj.insert(v);
+		tbl.Next();
+	}
+
+	return true;
 }
 
 // Ìî³äTableµ½unorder_map
 template<typename T_Key, typename T_Val>
-inline void Table_FillObject(TableReader & tbl, std::unordered_map<T_Key, T_Val> & obj)
+struct ObjectFiller<TableReader, std::unordered_map<T_Key, T_Val>>
 {
-	Table_FillMap(tbl, obj);
-}
+	static bool Fill(TableReader & tbl, std::unordered_map<T_Key, T_Val> & obj)
+	{
+		return Table_FillMap(tbl, obj);
+	}
+};
 
 // Ìî³äTableµ½map
 template<typename T_Key, typename T_Val>
-inline void Table_FillObject(TableReader & tbl, std::map<T_Key, T_Val> & obj)
+struct ObjectFiller<TableReader, std::map<T_Key, T_Val>>
 {
-	Table_FillMap(tbl, obj);
-}
+	static bool Fill(TableReader & tbl, std::map<T_Key, T_Val> & obj)
+	{
+		return Table_FillMap(tbl, obj);
+	}
+};
+
+// Ìî³äTableµ½set
+template<typename T>
+struct ObjectFiller<TableReader, std::set<T>>
+{
+	static bool Fill(TableReader & tbl, std::set<T> & obj)
+	{
+		return Table_FillSet(tbl, obj);
+	}
+};
+
+// Ìî³äTableµ½unordered_set
+template<typename T>
+struct ObjectFiller<TableReader, std::unordered_set<T>>
+{
+	static bool Fill(TableReader & tbl, std::unordered_set<T> & obj)
+	{
+		return Table_FillSet(tbl, obj);
+	}
+};
+
 
 // Ìî³äTableµ½vector
 template<typename T>
-inline void Table_FillObject(TableReader & tbl, std::vector<T> & obj)
+struct ObjectFiller<TableReader, std::vector<T>>
 {
-	Table_FillArray(tbl, obj);
-}
+	static bool Fill(TableReader & tbl, std::vector<T> & obj)
+	{
+		return Table_FillArray(tbl, obj);
+	}
+};
 
 // Ìî³äTableµ½list
 template<typename T>
-inline void Table_FillObject(TableReader & tbl, std::list<T> & obj)
+struct ObjectFiller<TableReader, std::list<T>>
 {
-	Table_FillArray(tbl, obj);
-}
+	static bool Fill(TableReader & tbl, std::list<T> & obj)
+	{
+		return Table_FillArray(tbl, obj);
+	}
+};
 
 // Ìî³äTableµ½shared_ptr
 template<typename T>
-inline void Table_FillObject(TableReader & tbl, std::shared_ptr<T> & obj)
+struct ObjectFiller<TableReader, std::shared_ptr<T>>
 {
-	obj = std::make_shared<T>();
-	Table_FillObject(tbl, *(obj.get()));
-}
+	static bool Fill(TableReader & tbl, std::shared_ptr<T> & obj)
+	{
+		obj = std::make_shared<T>();
+		return ConfigLoader::Load(tbl, *(obj.get()));
+	}
+};
 
 // Ìî³ä±í¸ñ×Ö¶Î
 template<typename T>
-inline void Table_FillFieldWithDefault(TableReader & tbl, const char * field_name, T & obj, const T & default_value)
+inline bool FillField(TableReader & reader, const char * field_name, T & obj, const T & default_value = T())
 {
 	std::string * str = nullptr;
-	sframe::Row * r = tbl.GetCurrentRow();
+	sframe::Row * r = reader.GetCurrentRow();
 	if (!r || (str = r->GetValue(field_name)) == nullptr)
 	{
 		obj = default_value;
-		return;
+		return false;
 	}
 	
 	ParseConfigString(*str, obj);
+
+	return true;
 }
 
 // Ìî³ä±í¸ñ×Ö¶Î
 template<typename T>
-inline void Table_FillFieldWithDefault(TableReader & tbl, int32_t field_index, T & obj, const T & default_value)
+inline bool FillIndex(TableReader & reader, int32_t field_index, T & obj, const T & default_value = T())
 {
 	std::string * str = nullptr;
-	sframe::Row * r = tbl.GetCurrentRow();
+	sframe::Row * r = reader.GetCurrentRow();
 	if (!r || (str = r->GetValue(field_index, false)) == nullptr)
 	{
 		obj = default_value;
-		return;
+		return false;
 	}
 
 	ParseConfigString(*str, obj);
+
+	return true;
 }
 
-// Ìî³ä±í¸ñ×Ö¶Î
-template<typename T>
-inline void Table_FillField(TableReader & tbl, const char * field_name, T & obj)
-{
-	std::string * str = nullptr;
-	sframe::Row * r = tbl.GetCurrentRow();
-	if (!r || (str = r->GetValue(field_name)) == nullptr)
-	{
-		return;
-	}
-
-	ParseConfigString(*str, obj);
 }
-
-// Ìî³ä±í¸ñ×Ö¶Î
-template<typename T>
-inline void Table_FillField(TableReader & tbl, int32_t field_index, T & obj)
-{
-	std::string * str = nullptr;
-	sframe::Row * r = tbl.GetCurrentRow();
-	if (!r || (str = r->GetValue(field_index, false)) == nullptr)
-	{
-		return;
-	}
-
-	ParseConfigString(*str, obj);
-}
-
-
-#define TABLE_FILLFIELD(name)                                            Table_FillField(tbl, #name, obj.name);
-#define TABLE_FILLFIELD_WITH_DEFAULT(name, defaultval)                   Table_FillFieldWithDefault(tbl, #name, obj.name, defaultval)
-#define TABLE_FILLFIELD_INDEX(index, name)                               Table_FillField(tbl, (int)index, obj.name);
-#define TABLE_FILLFIELD_INDEX_WITH_DEFAULT(index, name, defaultval)      Table_FillFieldWithDefault(tbl, (int)index, obj.name, defaultval)
-
 
 #endif

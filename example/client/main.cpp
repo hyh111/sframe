@@ -21,9 +21,10 @@ int main()
 {
 	SET_LOG_DIR("./client_log");
 
-	if (!ConfigManager::Instance().Initialize("./client_data"))
+	std::string err;
+	if (!ConfigManager::InitializeConfig("./client_data", err))
 	{
-		LOG_ERROR << "load config error" << ENDL;
+		LOG_ERROR << "config error:" << err << ENDL;
 		return -1;
 	}
 

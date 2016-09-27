@@ -4,6 +4,7 @@
 
 #include "../util/FileHelper.h"
 #include "../util/Log.h"
+#include "JsonReader.h"
 
 namespace sframe {
 
@@ -12,7 +13,7 @@ class JsonLoader
 {
 public:
 	template<typename T>
-	bool Load(const std::string & full_name, T & o)
+	static bool Load(const std::string & full_name, T & o)
 	{
 		std::string content;
 		if (!FileHelper::ReadFile(full_name, content))
@@ -29,9 +30,7 @@ public:
 			return false;
 		}
 
-		Json_FillObject(json, o);
-
-		return true;
+		return ConfigLoader::Load<const json11::Json>(json, o);
 	}
 };
 

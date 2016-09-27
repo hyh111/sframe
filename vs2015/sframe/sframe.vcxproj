@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\sframe\conf\ConfigDef.h" />
+    <ClInclude Include="..\..\sframe\conf\ConfigLoader.h" />
+    <ClInclude Include="..\..\sframe\conf\ConfigMeta.h" />
     <ClInclude Include="..\..\sframe\conf\ConfigSet.h" />
     <ClInclude Include="..\..\sframe\conf\ConfigStringParser.h" />
     <ClInclude Include="..\..\sframe\conf\csv.h" />

@@ -34,7 +34,7 @@ void User::OnClientData(const WorkMsg_ClientData & msg)
 	FLOG(_log_name) << client_id << ": " << count << " -> " << text << ENDL;
 
 	char resp_text[1024];
-	sprintf(resp_text, "Client %d, you are in gate(%d), and your sessionid id is %d", client_id, _gate_sid, _session_id);
+	sprintf(resp_text, "Client %d, you are in gate(%d), and your sessionid id is %lld", client_id, _gate_sid, _session_id);
 	int resp_text_len = (int)strlen(resp_text);
 
 	GateMsg_SendToClient resp_msg;

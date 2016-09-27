@@ -159,7 +159,10 @@ bool ServerConfig::Load(const std::string & filename)
 		return false;
 	}
 
-	Json_FillObject(json, *this);
+	if (!ConfigLoader::Load(json, *this))
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -183,35 +186,36 @@ bool ServerConfig::HaveLocalService(const std::string & serv_type_name)
 	return false;
 }
 
-void Json_FillObject(const json11::Json & json, ServerConfig & obj)
+void ServerConfig::Fill(json11::Json & reader)
 {
-	JSON_FILLFIELD_WITH_DEFAULT(res_path, std::string("./res"));
-	JSON_FILLFIELD_WITH_DEFAULT(thread_num, 2);
-	if (obj.res_path.empty() || *(obj.res_path.end() - 1) != '/' || *(obj.res_path.end() - 1) != '\\')
+	FILLFIELD_DEFAULT(res_path, std::string("./res"));
+	if (res_path.empty() || *(res_path.end() - 1) != '/' || *(res_path.end() - 1) != '\\')
 	{
-		obj.res_path.push_back('/');
-	}
-	obj.thread_num = std::max(1, obj.thread_num);
-
-	std::string listen_service; // 服务监听地址
-	Json_FillField(json, "listen_service", listen_service);
-	obj.listen_service = std::make_shared<NetAddrInfo>();
-	if (!obj.listen_service->ParseFormString(listen_service))
-	{
-		obj.listen_service.reset();
+		res_path.push_back('/');
 	}
 
-	std::string listen_manager; // 管理监听地址
-	Json_FillField(json, "listen_manager", listen_manager);
-	obj.listen_manager = std::make_shared<NetAddrInfo>();
-	if (!obj.listen_manager->ParseFormString(listen_manager))
+	FILLFIELD_DEFAULT(thread_num, 2);
+	thread_num = std::max(1, thread_num);
+
+	std::string str_listen_service; // 服务监听地址
+	FillField(reader, "listen_service", str_listen_service);
+	listen_service = std::make_shared<NetAddrInfo>();
+	if (!listen_service->ParseFormString(str_listen_service))
 	{
-		obj.listen_manager.reset();
+		listen_service.reset();
 	}
 
-	std::unordered_map<std::string, std::string> service; // 服务信息
-	Json_FillField(json, "service", service);
-	for (auto & it : service)
+	std::string str_listen_manager; // 管理监听地址
+	FillField(reader, "listen_manager", str_listen_manager);
+	listen_manager = std::make_shared<NetAddrInfo>();
+	if (!listen_manager->ParseFormString(str_listen_manager))
+	{
+		listen_manager.reset();
+	}
+
+	std::unordered_map<std::string, std::string> map_service; // 服务信息
+	FillField(reader, "service", map_service);
+	for (auto & it : map_service)
 	{
 		int32_t sid = sframe::StrToAny<int32_t>(it.first);
 		if (sid <= 0)
@@ -227,19 +231,20 @@ void Json_FillObject(const json11::Json & json, ServerConfig & obj)
 		s_info->sid = sid;
 		assert(!s_info->service_type_name.empty());
 
-		obj.services[sid] = s_info;
-		obj.type_to_services[s_info->service_type_name][sid] = s_info;
+		services[sid] = s_info;
+		type_to_services[s_info->service_type_name][sid] = s_info;
 	}
 
-	std::unordered_map<std::string, std::vector<std::string>> listen_custom; // 自定义监听地址(服务类型->地址列表)
-	Json_FillField(json, "listen_custom", listen_custom);
-	for (auto & pr : listen_custom)
+	// 自定义监听地址(服务类型->地址列表)
+	std::unordered_map<std::string, std::vector<std::string>> map_listen_custom;
+	FillField(reader, "listen_custom", map_listen_custom);
+	for (auto & pr : map_listen_custom)
 	{
 		std::string serv_type_name = pr.first;
 		assert(!serv_type_name.empty());
 
 		// 本地服务中必须有该服务
-		if (!obj.HaveLocalService(serv_type_name))
+		if (!HaveLocalService(serv_type_name))
 		{
 			continue;
 		}
@@ -255,7 +260,7 @@ void Json_FillObject(const json11::Json & json, ServerConfig & obj)
 
 			if (!vec_addr_info)
 			{
-				vec_addr_info = &obj.listen_custom[serv_type_name];
+				vec_addr_info = &listen_custom[serv_type_name];
 			}
 			vec_addr_info->push_back(listen_info);
 		}

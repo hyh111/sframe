@@ -168,6 +168,12 @@
     <ClInclude Include="..\..\sframe\util\BlockingQueue.h">
       <Filter>util</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\ConfigLoader.h">
+      <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\conf\ConfigMeta.h">
+      <Filter>conf</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp">

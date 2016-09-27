@@ -5,106 +5,77 @@
 
 using namespace sframe;
 
-ConfigSet::ConfigSet(int32_t max_count) : _max_count(max_count)
-{
-	assert(max_count > 0);
-	_config = new std::shared_ptr<ConfigBase>[_max_count];
-	_load_config_function = new LoadConfigFunction[_max_count];
-	memset(_load_config_function, 0, sizeof(LoadConfigFunction) * _max_count);
-	_get_config_name_function = new GetConfigNameFunction[_max_count];
-	memset(_get_config_name_function, 0, sizeof(GetConfigNameFunction) * _max_count);
-	_init_config_function = new InitConfigFunction[_max_count];
-	memset(_init_config_function, 0, sizeof(InitConfigFunction) * _max_count);
-	_lock = new Lock[_max_count];
-}
 
-ConfigSet::~ConfigSet()
+// 加载(全部成功返回true, 只要有一个失败都会返回false)
+// 出错时，err_info会返回出错的配置信息
+bool ConfigSet::Load(const std::string & path, std::vector<ConfigError> * vec_err_info)
 {
-	delete[] _config;
-	delete[] _load_config_function;
-	delete[] _get_config_name_function;
-	delete[] _init_config_function;
-	delete[] _lock;
-}
-
-// 加载
-bool ConfigSet::Initialize(const std::string & dir, std::string * log_msg)
-{
-	_config_dir = dir;
-	if (!_config_dir.empty())
+	if (path.empty() || !_config.empty())
 	{
-		for (auto it = _config_dir.begin(); it < _config_dir.end(); it++)
-		{
-			if (*it == '\\')
-			{
-				*it = '/';
-			}
-		}
-
-		if (*(_config_dir.end() - 1) != '/')
-		{
-			_config_dir.push_back('/');
-		}
+		return false;
 	}
 
-	RegistAllConfig();
+	_config_dir = path;
 
-	return Reload(log_msg);
-}
-
-// 重新加载
-bool ConfigSet::Reload(std::string * log_msg)
-{
-	assert(!_config_dir.empty());
-
-	std::shared_ptr<ConfigBase> * config_temp = new std::shared_ptr<ConfigBase>[_max_count];
-
+	std::map<int32_t, std::shared_ptr<ConfigBase>> map_conf;
 	bool ret = true;
 
 	// 加载
-	for (int i = 0; i < _max_count; i++)
+	for (auto it = _config_load_helper.begin(); it != _config_load_helper.end(); it++)
 	{
-		if (!_load_config_function[i])
+		Func_LoadConfig func_load = it->second.func_load;
+		if (!func_load)
 		{
+			assert(false);
 			continue;
 		}
 
-		assert(_get_config_name_function[i]);
-
-		config_temp[i] = (this->*_load_config_function[i])();
-		if (!config_temp[i])
+		std::shared_ptr<ConfigBase> conf = (this->*func_load)();
+		if (!conf)
 		{
 			ret = false;
-			if (log_msg)
+			if (vec_err_info)
 			{
-				log_msg->append("load config " + std::string((*_get_config_name_function[i])()) + " error\n");
-			}
-		}
-	}
-
-	// 初始化
-	for (int i = 0; i < _max_count; i++)
-	{
-		if (!config_temp[i])
-		{
-			continue;
-		}
-
-		assert(_init_config_function[i]);
-		if (!(*_init_config_function[i])(config_temp[i]))
-		{
-			if (log_msg)
-			{
-				log_msg->append("init config " + std::string((*_get_config_name_function[i])()) + " error\n");
+				ConfigError err;
+				err.err_type = ConfigError::kLoadConfigError;
+				err.config_type = it->first;
+				err.config_file_name = it->second.conf_file_name;
+				vec_err_info->push_back(err);
 			}
 		}
 		else
 		{
-			AUTO_LOCK(_lock[i]);
-			_config[i] = config_temp[i];
+			map_conf[it->first] = conf;
 		}
 	}
 
-	delete[] config_temp;
+	// 初始化
+	for (auto it = map_conf.begin(); it != map_conf.end(); it++)
+	{
+		const auto & load_helper = _config_load_helper[it->first];
+		if (!it->second || !load_helper.func_init)
+		{
+			assert(false);
+			continue;
+		}
+
+		if (!(this->*load_helper.func_init)(it->second))
+		{
+			ret = false;
+			if (vec_err_info)
+			{
+				ConfigError err;
+				err.err_type = ConfigError::kInitConfigError;
+				err.config_type = it->first;
+				err.config_file_name = load_helper.conf_file_name;
+				vec_err_info->push_back(err);
+			}
+		}
+		else
+		{
+			_config[it->first] = it->second;
+		}
+	}
+
 	return ret;
 }

@@ -3,21 +3,14 @@
 #ifndef __CLIENT_CONFIG_H__
 #define __CLIENT_CONFIG_H__
 
-#include <inttypes.h>
-#include <string>
-#include <vector>
-#include <unordered_map>
 #include "conf/ConfigDef.h"
 #include "ConfigType.h"
 
-TABLE_CONFIG(ClientConfig, "client_config.csv", kConfigType_ClientConfig)
+struct ClientConfig
 {
-	typedef int32_t KeyType;
+	STATIC_MAP_CONFIG(int32_t, ClientConfig, client_id, kConfigId_ClientConfig)
 
-	KeyType GetKey() const
-	{
-		return client_id;
-	}
+	void Fill(sframe::TableReader & reader);
 
 	int32_t client_id;
 	std::string server_ip;

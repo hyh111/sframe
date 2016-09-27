@@ -24,7 +24,7 @@ class TableLoader
 
 public:
 	template<typename T>
-	bool Load(const std::string & full_name, T & o)
+	static bool Load(const std::string & full_name, T & o)
 	{
 		std::string content;
 		if (!FileHelper::ReadFile(full_name, content))
@@ -62,9 +62,7 @@ public:
 		}
 
 		TableReader reader(tbl);
-		Table_FillObject(reader, o);
-
-		return true;
+		return ConfigLoader::Load(reader, o);
 	}
 };
 

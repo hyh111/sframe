@@ -9,7 +9,7 @@ using namespace sframe;
 
 bool ClientManager::Init()
 {
-	auto config = ConfigManager::Instance().GetMapConfig<ClientConfig::KeyType, ClientConfig>();
+	auto config = ConfigManager::GetConfigSet()->GetConfig<ClientConfig>();
 	if (config == nullptr)
 	{
 		return false;

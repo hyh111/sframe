@@ -37,15 +37,16 @@ struct ServiceInfo
 	NetAddrInfo remote_addr;         // 远程地址，仅当local_service为false是有效
 };
 
-JSON_OBJECT(ServerConfig) : public sframe::singleton<ServerConfig>
+struct ServerConfig : public sframe::singleton<ServerConfig>
 {
 	bool Load(const std::string & filename);
+
+	void Fill(json11::Json & reader);
 
 	bool HaveLocalService(const std::string & serv_type_name);
 
 	std::string res_path;                     // 资源目录
 	int32_t thread_num;                       // 线程数量
-	
 	std::shared_ptr<NetAddrInfo> listen_service;                                 // 远程服务监听地址
 	std::shared_ptr<NetAddrInfo> listen_manager;                                 // 管理地址
 	std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>> services;          // 服务信息（sid -> 服务信息）
