@@ -159,7 +159,7 @@ bool ServerConfig::Load(const std::string & filename)
 		return false;
 	}
 
-	if (!ConfigLoader::Load(json, *this))
+	if (!ConfigLoader::Load<const json11::Json>(json, *this))
 	{
 		return false;
 	}
@@ -186,7 +186,7 @@ bool ServerConfig::HaveLocalService(const std::string & serv_type_name)
 	return false;
 }
 
-void ServerConfig::Fill(json11::Json & reader)
+void ServerConfig::Fill(const json11::Json & reader)
 {
 	FILLFIELD_DEFAULT(res_path, std::string("./res"));
 	if (res_path.empty() || *(res_path.end() - 1) != '/' || *(res_path.end() - 1) != '\\')

@@ -12,15 +12,11 @@ namespace sframe {
 
 #define GET_CONFIGID(T) T::ConfigMeta::GetConfigId()
 
-#define GET_CONFIGFILENAME(T) T::ConfigMeta::GetFileName()
-
 #define CONFIG_MODEL_TYPE(T) T::ConfigMeta::ModelType
 
 #define CONFIG_KEY_TYPE(T) T::ConfigMeta::KeyType
 
 #define GET_DYNAMIC_CONFIGID(T) T::DynamicConfigMeta::GetConfigId()
-
-#define GET_DYNAMIC_CONFIGFILENAME(T) T::DynamicConfigMeta::GetFileName()
 
 #define DYNAMIC_CONFIG_MODEL_TYPE(T) T::DynamicConfigMeta::ModelType
 

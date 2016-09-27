@@ -41,7 +41,7 @@ struct ServerConfig : public sframe::singleton<ServerConfig>
 {
 	bool Load(const std::string & filename);
 
-	void Fill(json11::Json & reader);
+	void Fill(const json11::Json & reader);
 
 	bool HaveLocalService(const std::string & serv_type_name);
 
