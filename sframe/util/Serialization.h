@@ -13,6 +13,7 @@
 #include <set>
 #include <unordered_set>
 #include <memory>
+#include <type_traits>
 
 class StreamWriter
 {
@@ -140,641 +141,843 @@ inline bool CheckCpuEndian()
 #define NTOH_32(x) (CheckCpuEndian() ? (uint32_t)(x) : REVERSE_BYTES_ORDER_32(x))
 #define NTOH_64(x) (CheckCpuEndian() ? (uint64_t)(x) : REVERSE_BYTES_ORDER_64(x))
 
-
-/**
-   基础类型的序列化和反序列化函数
-   将每一种类型分开来写，防止没有定义Encode函数的Struct被编码
-*/
-
-inline bool Encode(StreamWriter & stream_writer, char v)
-{
-	return stream_writer.Write((const void *)&v, sizeof(char));
-}
-
-inline bool Decode(StreamReader & stream_reader, char & v)
-{
-	return stream_reader.Read((void*)&v, sizeof(char));
-}
-
-inline bool Encode(StreamWriter & stream_writer, int8_t v)
-{
-	return stream_writer.Write((const void *)&v, sizeof(int8_t));
-}
-
-inline bool Decode(StreamReader & stream_reader, int8_t & v)
-{
-	return stream_reader.Read((void*)&v, sizeof(int8_t));
-}
-
-inline bool Encode(StreamWriter & stream_writer, uint8_t v)
-{
-	return stream_writer.Write((const void *)&v, sizeof(uint8_t));
-}
-
-inline bool Decode(StreamReader & stream_reader, uint8_t & v)
-{
-	return stream_reader.Read((void*)&v, sizeof(uint8_t));
-}
-
-inline bool Encode(StreamWriter & stream_writer, int16_t v)
-{
-	v = (int16_t)HTON_16(v);
-	return stream_writer.Write((const void *)&v, sizeof(int16_t));
-}
-
-inline bool Decode(StreamReader & stream_reader, int16_t & v)
-{
-	if (!stream_reader.Read((void*)&v, sizeof(int16_t)))
-	{
-		return false;
-	}
-	v = (int16_t)NTOH_16(v);
-	return true;
-}
-
-inline bool Encode(StreamWriter & stream_writer, uint16_t v)
-{
-	v = (uint16_t)HTON_16(v);
-	return stream_writer.Write((const void *)&v, sizeof(uint16_t));
-}
-
-inline bool Decode(StreamReader & stream_reader, uint16_t & v)
-{
-	if (!stream_reader.Read((void*)&v, sizeof(uint16_t)))
-	{
-		return false;
-	}
-	v = (uint16_t)NTOH_16(v);
-	return true;
-}
-
-inline bool Encode(StreamWriter & stream_writer, int32_t v)
-{
-	v = (int32_t)HTON_32(v);
-	return stream_writer.Write((const void *)&v, sizeof(int32_t));
-}
-
-inline bool Decode(StreamReader & stream_reader, int32_t & v)
-{
-	if (!stream_reader.Read((void*)&v, sizeof(int32_t)))
-	{
-		return false;
-	}
-	v = (int32_t)NTOH_32(v);
-	return true;
-}
-
-inline bool Encode(StreamWriter & stream_writer, uint32_t v)
-{
-	v = (uint32_t)HTON_32(v);
-	return stream_writer.Write((const void *)&v, sizeof(uint32_t));
-}
-
-inline bool Decode(StreamReader & stream_reader, uint32_t & v)
-{
-	if (!stream_reader.Read((void*)&v, sizeof(uint32_t)))
-	{
-		return false;
-	}
-	v = (uint32_t)NTOH_32(v);
-	return true;
-}
-
-inline bool Encode(StreamWriter & stream_writer, int64_t v)
-{
-	v = (int64_t)HTON_64(v);
-	return stream_writer.Write((const void *)&v, sizeof(int64_t));
-}
-
-inline bool Decode(StreamReader & stream_reader, int64_t & v)
-{
-	if (!stream_reader.Read((void*)&v, sizeof(int64_t)))
-	{
-		return false;
-	}
-	v = (int64_t)NTOH_64(v);
-	return true;
-}
-
-inline bool Encode(StreamWriter & stream_writer, uint64_t v)
-{
-	v = (uint64_t)HTON_64(v);
-	return stream_writer.Write((const void *)&v, sizeof(uint64_t));
-}
-
-inline bool Decode(StreamReader & stream_reader, uint64_t & v)
-{
-	if (!stream_reader.Read((void*)&v, sizeof(uint64_t)))
-	{
-		return false;
-	}
-	v = (uint64_t)NTOH_64(v);
-	return true;
-}
-
 template<typename T>
-inline int32_t GetSize(const T & v)
+struct Serializer
 {
-	static_assert(std::is_pod<T>::value, "GetSize type not be pod type");
-	return sizeof(v);
-}
-
-inline bool Encode(StreamWriter & stream_writer, const std::string & v)
-{
-	uint16_t len = (uint16_t)HTON_16(v.length());
-
-	if (!stream_writer.Write((const void *)&len, sizeof(len)))
+	static bool Encode(StreamWriter & stream_writer, const T & v)
 	{
+		assert(false);
 		return false;
 	}
 
-	return len > 0 ? stream_writer.Write((const void *)v.c_str(), (uint32_t)v.length()) : true;
-}
-
-inline bool Decode(StreamReader & stream_reader, std::string & v)
-{
-	v.clear();
-
-	uint16_t len = 0;
-	if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
+	static bool Decode(StreamReader & stream_reader, T & v)
 	{
+		assert(false);
 		return false;
 	}
 
-	len = (uint16_t)NTOH_16(len);
-
-	return len > 0 ? stream_reader.Read(v, len) : true;
-}
-
-inline int32_t GetSize(const std::string & v)
-{
-	return sizeof(uint16_t) + (int32_t)v.length();
-}
-
-template<typename T, int Array_Size>
-inline bool Encode(StreamWriter & stream_writer, const T(&v)[Array_Size])
-{
-	for (int i = 0; i < Array_Size; i++)
+	static int32_t GetSize(const T & v)
 	{
-		if (!Encode(stream_writer, v[i]))
+		assert(false);
+		return 0;
+	}
+};
+
+class Encoder
+{
+public:
+	template<typename T>
+	static bool Encode(StreamWriter & stream_writer, const T & obj)
+	{
+		return call<T>(decltype(match<T>(nullptr))(), stream_writer, obj);
+	}
+
+private:
+	template<typename T>
+	static bool call(std::false_type, StreamWriter & stream_writer, const T & obj)
+	{
+		return Serializer<T>::Encode(stream_writer, obj);
+	}
+
+	template<typename T>
+	static bool call(std::true_type, StreamWriter & stream_writer, const T & obj)
+	{
+		return obj.Encode(stream_writer);
+	}
+
+	// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
+	template<typename U, bool(U::*)(StreamWriter &) const>
+	struct MethodMatcher;
+
+	template<typename U>
+	static std::true_type match(MethodMatcher<U, &U::Encode>*);
+
+	template<typename U>
+	static std::false_type match(...);
+};
+
+class Decoder
+{
+public:
+	template<typename T>
+	static bool Decode(StreamReader & stream_reader, T & obj)
+	{
+		return call<T>(decltype(match<T>(nullptr))(), stream_reader, obj);
+	}
+
+private:
+	template<typename T>
+	static bool call(std::false_type, StreamReader & stream_reader, T & obj)
+	{
+		return Serializer<T>::Decode(stream_reader, obj);
+	}
+
+	template<typename T>
+	static bool call(std::true_type, StreamReader & stream_reader, T & obj)
+	{
+		return obj.Decode(stream_reader);
+	}
+
+	// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
+	template<typename U, bool(U::*)(StreamReader &)>
+	struct MethodMatcher;
+
+	template<typename U>
+	static std::true_type match(MethodMatcher<U, &U::Decode>*);
+
+	template<typename U>
+	static std::false_type match(...);
+};
+
+class SizeGettor
+{
+public:
+	template<typename T>
+	static int32_t GetSize(const T & obj)
+	{
+		return call<T>(decltype(match<T>(nullptr))(), obj);
+	}
+
+private:
+	template<typename T>
+	static int32_t call(std::false_type, const T & obj)
+	{
+		return Serializer<T>::GetSize(obj);
+	}
+
+	template<typename T>
+	static int32_t call(std::true_type, const T & obj)
+	{
+		return obj.GetSize();
+	}
+
+	// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
+	template<typename U, int32_t(U::*)() const>
+	struct MethodMatcher;
+
+	template<typename U>
+	static std::true_type match(MethodMatcher<U, &U::GetSize>*);
+
+	template<typename U>
+	static std::false_type match(...);
+};
+
+template<>
+struct Serializer<char>
+{
+	static bool Encode(StreamWriter & stream_writer, char v)
+	{
+		return stream_writer.Write((const void *)&v, sizeof(char));
+	}
+
+	static bool Decode(StreamReader & stream_reader, char & v)
+	{
+		return stream_reader.Read((void*)&v, sizeof(char));
+	}
+
+	static int32_t GetSize(char v)
+	{
+		return sizeof(v);
+	}
+};
+
+template<>
+struct Serializer<int8_t>
+{
+	static bool Encode(StreamWriter & stream_writer, int8_t v)
+	{
+		return stream_writer.Write((const void *)&v, sizeof(int8_t));
+	}
+
+	static bool Decode(StreamReader & stream_reader, int8_t & v)
+	{
+		return stream_reader.Read((void*)&v, sizeof(int8_t));
+	}
+
+	static int32_t GetSize(int8_t v)
+	{
+		return sizeof(v);
+	}
+};
+
+
+template<>
+struct Serializer<uint8_t>
+{
+	static bool Encode(StreamWriter & stream_writer, uint8_t v)
+	{
+		return stream_writer.Write((const void *)&v, sizeof(uint8_t));
+	}
+
+	static bool Decode(StreamReader & stream_reader, uint8_t & v)
+	{
+		return stream_reader.Read((void*)&v, sizeof(uint8_t));
+	}
+
+	static int32_t GetSize(uint8_t v)
+	{
+		return sizeof(v);
+	}
+};
+
+template<>
+struct Serializer<int16_t>
+{
+	static bool Encode(StreamWriter & stream_writer, int16_t v)
+	{
+		v = (int16_t)HTON_16(v);
+		return stream_writer.Write((const void *)&v, sizeof(int16_t));
+	}
+
+	static bool Decode(StreamReader & stream_reader, int16_t & v)
+	{
+		if (!stream_reader.Read((void*)&v, sizeof(int16_t)))
 		{
 			return false;
 		}
-	}
-
-	return true;
-}
-
-template<typename T, int Array_Size>
-inline bool Decode(StreamReader & stream_reader, T(&v)[Array_Size])
-{
-	for (int i = 0; i < Array_Size; i++)
-	{
-		if (!Decode(stream_reader, v[i]))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-template<typename T, int Array_Size>
-inline int32_t GetSize(const T(&v)[Array_Size])
-{
-	int32_t len = 0;
-
-	for (int i = 0; i < Array_Size; i++)
-	{
-		len += GetSize(v[i]);
-	}
-
-	return len;
-}
-
-template<typename T>
-inline bool Encode(StreamWriter & stream_writer, const std::vector<T> & v)
-{
-	uint16_t len = (uint16_t)HTON_16(v.size());
-
-	if (!stream_writer.Write((const void *)&len, sizeof(len)))
-	{
-		return false;
-	}
-
-	for (const T & item : v)
-	{
-		if (!Encode(stream_writer, item))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-template<typename T>
-inline bool Decode(StreamReader & stream_reader, std::vector<T> & v)
-{
-	v.clear();
-
-	uint16_t len = 0;
-	if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
-	{
-		return false;
-	}
-
-	if (len == 0)
-	{
+		v = (int16_t)NTOH_16(v);
 		return true;
 	}
 
-	len = (uint16_t)NTOH_16(len);
-
-	v.reserve(len);
-
-	for (int i = 0; i < len; i++)
+	static int32_t GetSize(int16_t v)
 	{
-		T item;
+		return sizeof(v);
+	}
+};
 
-		if (!Decode(stream_reader, item))
+template<>
+struct Serializer<uint16_t>
+{
+	static bool Encode(StreamWriter & stream_writer, uint16_t v)
+	{
+		v = (uint16_t)HTON_16(v);
+		return stream_writer.Write((const void *)&v, sizeof(uint16_t));
+	}
+
+	static bool Decode(StreamReader & stream_reader, uint16_t & v)
+	{
+		if (!stream_reader.Read((void*)&v, sizeof(uint16_t)))
+		{
+			return false;
+		}
+		v = (uint16_t)NTOH_16(v);
+		return true;
+	}
+
+	static int32_t GetSize(uint16_t v)
+	{
+		return sizeof(v);
+	}
+};
+
+template<>
+struct Serializer<int32_t>
+{
+	static bool Encode(StreamWriter & stream_writer, int32_t v)
+	{
+		v = (int32_t)HTON_32(v);
+		return stream_writer.Write((const void *)&v, sizeof(int32_t));
+	}
+
+	static bool Decode(StreamReader & stream_reader, int32_t & v)
+	{
+		if (!stream_reader.Read((void*)&v, sizeof(int32_t)))
+		{
+			return false;
+		}
+		v = (int32_t)NTOH_32(v);
+		return true;
+	}
+
+	static int32_t GetSize(int32_t v)
+	{
+		return sizeof(v);
+	}
+};
+
+template<>
+struct Serializer<uint32_t>
+{
+	static bool Encode(StreamWriter & stream_writer, uint32_t v)
+	{
+		v = (uint32_t)HTON_32(v);
+		return stream_writer.Write((const void *)&v, sizeof(uint32_t));
+	}
+
+	static bool Decode(StreamReader & stream_reader, uint32_t & v)
+	{
+		if (!stream_reader.Read((void*)&v, sizeof(uint32_t)))
+		{
+			return false;
+		}
+		v = (uint32_t)NTOH_32(v);
+		return true;
+	}
+
+	static int32_t GetSize(uint32_t v)
+	{
+		return sizeof(v);
+	}
+};
+
+template<>
+struct Serializer<int64_t>
+{
+	static bool Encode(StreamWriter & stream_writer, int64_t v)
+	{
+		v = (int64_t)HTON_64(v);
+		return stream_writer.Write((const void *)&v, sizeof(int64_t));
+	}
+
+	static bool Decode(StreamReader & stream_reader, int64_t & v)
+	{
+		if (!stream_reader.Read((void*)&v, sizeof(int64_t)))
+		{
+			return false;
+		}
+		v = (int64_t)NTOH_64(v);
+		return true;
+	}
+
+	static int32_t GetSize(int64_t v)
+	{
+		return sizeof(v);
+	}
+};
+
+template<>
+struct Serializer<uint64_t>
+{
+	static bool Encode(StreamWriter & stream_writer, uint64_t v)
+	{
+		v = (uint64_t)HTON_64(v);
+		return stream_writer.Write((const void *)&v, sizeof(uint64_t));
+	}
+
+	static bool Decode(StreamReader & stream_reader, uint64_t & v)
+	{
+		if (!stream_reader.Read((void*)&v, sizeof(uint64_t)))
+		{
+			return false;
+		}
+		v = (uint64_t)NTOH_64(v);
+		return true;
+	}
+
+	static int32_t GetSize(uint64_t v)
+	{
+		return sizeof(v);
+	}
+};
+
+template<>
+struct Serializer<std::string>
+{
+	static bool Encode(StreamWriter & stream_writer, const std::string & v)
+	{
+		uint16_t len = (uint16_t)HTON_16(v.length());
+
+		if (!stream_writer.Write((const void *)&len, sizeof(len)))
 		{
 			return false;
 		}
 
-		v.push_back(item);
+		return len > 0 ? stream_writer.Write((const void *)v.c_str(), (uint32_t)v.length()) : true;
 	}
 
-	return true;
-}
-
-template<typename T>
-inline int32_t GetSize(const std::vector<T> & v)
-{
-	int32_t len = sizeof(uint16_t);
-
-	for (const T & item : v)
+	static bool Decode(StreamReader & stream_reader, std::string & v)
 	{
-		len += GetSize(item);
-	}
+		v.clear();
 
-	return len;
-}
-
-template<typename T>
-inline bool Encode(StreamWriter & stream_writer, const std::list<T> & v)
-{
-	uint16_t len = (uint16_t)HTON_16(v.size());
-
-	if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
-	{
-		return false;
-	}
-
-	for (const T & item : v)
-	{
-		if (!Encode(stream_writer, item))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-template<typename T>
-inline bool Decode(StreamReader & stream_reader, std::list<T> & v)
-{
-	v.clear();
-
-	uint16_t len = 0;
-	if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
-	{
-		return false;
-	}
-
-	len = (uint16_t)NTOH_16(len);
-
-	for (int i = 0; i < len; i++)
-	{
-		T item;
-
-		if (!Decode(stream_reader, item))
+		uint16_t len = 0;
+		if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
 		{
 			return false;
 		}
 
-		v.push_back(item);
+		len = (uint16_t)NTOH_16(len);
+
+		return len > 0 ? stream_reader.Read(v, len) : true;
 	}
 
-	return true;
-}
+	static int32_t GetSize(const std::string & v)
+	{
+		return sizeof(uint16_t) + (int32_t)v.length();
+	}
+};
 
-template<typename T>
-inline int32_t GetSize(const std::list<T> & v)
+template<typename T, int Array_Size>
+struct Serializer<T[Array_Size]>
 {
-	int32_t len = sizeof(uint16_t);
-
-	for (const T & item : v)
+	static bool Encode(StreamWriter & stream_writer, const T(&v)[Array_Size])
 	{
-		len += GetSize(item);
-	}
-
-	return len;
-}
-
-
-template<typename T>
-inline bool Encode(StreamWriter & stream_writer, const std::set<T> & v)
-{
-	uint16_t len = (uint16_t)HTON_16(v.size());
-
-	if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
-	{
-		return false;
-	}
-
-	for (const T & item : v)
-	{
-		if (!Encode(stream_writer, item))
+		for (int i = 0; i < Array_Size; i++)
 		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-template<typename T>
-inline bool Decode(StreamReader & stream_reader, std::set<T> & v)
-{
-	v.clear();
-
-	uint16_t len = 0;
-	if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
-	{
-		return false;
-	}
-
-	len = (uint16_t)NTOH_16(len);
-
-	for (int i = 0; i < len; i++)
-	{
-		T item;
-
-		if (!Decode(stream_reader, item))
-		{
-			return false;
+			if (!Encoder::Encode<T>(stream_writer, v[i]))
+			{
+				return false;
+			}
 		}
 
-		v.insert(item);
+		return true;
 	}
 
-	return true;
-}
-
-template<typename T>
-inline int32_t GetSize(const std::set<T> & v)
-{
-	int32_t len = sizeof(uint16_t);
-
-	for (const T & item : v)
+	static bool Decode(StreamReader & stream_reader, T(&v)[Array_Size])
 	{
-		len += GetSize(item);
-	}
-
-	return len;
-}
-
-template<typename T>
-inline bool Encode(StreamWriter & stream_writer, const std::unordered_set<T> & v)
-{
-	uint16_t len = (uint16_t)HTON_16(v.size());
-
-	if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
-	{
-		return false;
-	}
-
-	for (const T & item : v)
-	{
-		if (!Encode(stream_writer, item))
+		for (int i = 0; i < Array_Size; i++)
 		{
-			return false;
+			if (!Decoder::Decode<T>(stream_reader, v[i]))
+			{
+				return false;
+			}
 		}
+
+		return true;
 	}
 
-	return true;
-}
+	static int32_t GetSize(const T(&v)[Array_Size])
+	{
+		int32_t len = 0;
+
+		for (int i = 0; i < Array_Size; i++)
+		{
+			len += SizeGettor::GetSize<T>(v[i]);
+		}
+
+		return len;
+	}
+};
 
 template<typename T>
-inline bool Decode(StreamReader & stream_reader, std::unordered_set<T> & v)
+struct Serializer<std::vector<T>>
 {
-	v.clear();
-
-	uint16_t len = 0;
-	if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
+	static bool Encode(StreamWriter & stream_writer, const std::vector<T> & v)
 	{
-		return false;
-	}
+		uint16_t len = (uint16_t)HTON_16(v.size());
 
-	len = (uint16_t)NTOH_16(len);
-
-	for (int i = 0; i < len; i++)
-	{
-		T item;
-
-		if (!Decode(stream_reader, item))
+		if (!stream_writer.Write((const void *)&len, sizeof(len)))
 		{
 			return false;
 		}
 
-		v.insert(item);
+		for (const T & item : v)
+		{
+			if (!Encoder::Encode<T>(stream_writer, item))
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
-	return true;
-}
+	static bool Decode(StreamReader & stream_reader, std::vector<T> & v)
+	{
+		v.clear();
+
+		uint16_t len = 0;
+		if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		if (len == 0)
+		{
+			return true;
+		}
+
+		len = (uint16_t)NTOH_16(len);
+
+		v.reserve(len);
+
+		for (int i = 0; i < len; i++)
+		{
+			T item;
+
+			if (!Decoder::Decode<T>(stream_reader, item))
+			{
+				return false;
+			}
+
+			v.push_back(item);
+		}
+
+		return true;
+	}
+
+	static int32_t GetSize(const std::vector<T> & v)
+	{
+		int32_t len = sizeof(uint16_t);
+
+		for (const T & item : v)
+		{
+			len += SizeGettor::GetSize<T>(item);
+		}
+
+		return len;
+	}
+};
 
 template<typename T>
-inline int32_t GetSize(const std::unordered_set<T> & v)
+struct Serializer<std::list<T>>
 {
-	int32_t len = sizeof(uint16_t);
-
-	for (const T & item : v)
+	static bool Encode(StreamWriter & stream_writer, const std::list<T> & v)
 	{
-		len += GetSize(item);
+		uint16_t len = (uint16_t)HTON_16(v.size());
+
+		if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		for (const T & item : v)
+		{
+			if (!Encoder::Encode<T>(stream_writer, item))
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
-	return len;
-}
+	static bool Decode(StreamReader & stream_reader, std::list<T> & v)
+	{
+		v.clear();
+
+		uint16_t len = 0;
+		if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		len = (uint16_t)NTOH_16(len);
+
+		for (int i = 0; i < len; i++)
+		{
+			T item;
+
+			if (!Decoder::Decode<T>(stream_reader, item))
+			{
+				return false;
+			}
+
+			v.push_back(item);
+		}
+
+		return true;
+	}
+
+	static int32_t GetSize(const std::list<T> & v)
+	{
+		int32_t len = sizeof(uint16_t);
+
+		for (const T & item : v)
+		{
+			len += SizeGettor::GetSize<T>(item);
+		}
+
+		return len;
+	}
+};
+
+
+template<typename T>
+struct Serializer<std::set<T>>
+{
+	static bool Encode(StreamWriter & stream_writer, const std::set<T> & v)
+	{
+		uint16_t len = (uint16_t)HTON_16(v.size());
+
+		if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		for (const T & item : v)
+		{
+			if (!Encoder::Encode<T>(stream_writer, item))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	static bool Decode(StreamReader & stream_reader, std::set<T> & v)
+	{
+		v.clear();
+
+		uint16_t len = 0;
+		if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		len = (uint16_t)NTOH_16(len);
+
+		for (int i = 0; i < len; i++)
+		{
+			T item;
+
+			if (!Decoder::Decode<T>(stream_reader, item))
+			{
+				return false;
+			}
+
+			v.insert(item);
+		}
+
+		return true;
+	}
+
+	static int32_t GetSize(const std::set<T> & v)
+	{
+		int32_t len = sizeof(uint16_t);
+
+		for (const T & item : v)
+		{
+			len += SizeGettor::GetSize<T>(item);
+		}
+
+		return len;
+	}
+};
+
+template<typename T>
+struct Serializer<std::unordered_set<T>>
+{
+	static bool Encode(StreamWriter & stream_writer, const std::unordered_set<T> & v)
+	{
+		uint16_t len = (uint16_t)HTON_16(v.size());
+
+		if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		for (const T & item : v)
+		{
+			if (!Encoder::Encode<T>(stream_writer, item))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	static bool Decode(StreamReader & stream_reader, std::unordered_set<T> & v)
+	{
+		v.clear();
+
+		uint16_t len = 0;
+		if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		len = (uint16_t)NTOH_16(len);
+
+		for (int i = 0; i < len; i++)
+		{
+			T item;
+
+			if (!Decoder::Decode<T>(stream_reader, item))
+			{
+				return false;
+			}
+
+			v.insert(item);
+		}
+
+		return true;
+	}
+
+	static int32_t GetSize(const std::unordered_set<T> & v)
+	{
+		int32_t len = sizeof(uint16_t);
+
+		for (const T & item : v)
+		{
+			len += SizeGettor::GetSize<T>(item);
+		}
+
+		return len;
+	}
+};
 
 
 template<typename T_Key, typename T_Val>
-inline bool Encode(StreamWriter & stream_writer, const std::map<T_Key, T_Val> & v)
+struct Serializer<std::map<T_Key, T_Val>>
 {
-	uint16_t len = (uint16_t)HTON_16(v.size());
-
-	if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
+	static bool Encode(StreamWriter & stream_writer, const std::map<T_Key, T_Val> & v)
 	{
-		return false;
-	}
+		uint16_t len = (uint16_t)HTON_16(v.size());
 
-	for (const auto it : v)
-	{
-		if (!Encode(stream_writer, it.first) || !Encode(stream_writer, it.second))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-template<typename T_Key, typename T_Val>
-inline bool Decode(StreamReader & stream_reader, std::map<T_Key, T_Val> & v)
-{
-	v.clear();
-
-	uint16_t len = 0;
-	if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
-	{
-		return false;
-	}
-
-	len = (uint16_t)NTOH_16(len);
-
-	for (int i = 0; i < len; i++)
-	{
-		T_Key key;
-		T_Val val;
-
-		if (!Decode(stream_reader, key) || !Decode(stream_reader, val))
+		if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
 		{
 			return false;
 		}
 
-		v.insert(std::make_pair(key, val));
-	}
-
-	return true;
-}
-
-template<typename T_Key, typename T_Val>
-inline int32_t GetSize(const std::map<T_Key, T_Val> & v)
-{
-	int32_t len = sizeof(uint16_t);
-
-	for (const auto it : v)
-	{
-		len += GetSize(it.first);
-		len += GetSize(it.second);
-	}
-
-	return len;
-}
-
-template<typename T_Key, typename T_Val>
-inline bool Encode(StreamWriter & stream_writer, const std::unordered_map<T_Key, T_Val> & v)
-{
-	uint16_t len = (uint16_t)HTON_16(v.size());
-
-	if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
-	{
-		return false;
-	}
-
-	for (const auto & it : v)
-	{
-		if (!Encode(stream_writer, it.first) || !Encode(stream_writer, it.second))
+		for (const auto it : v)
 		{
-			return false;
+			if (!Encoder::Encode<T_Key>(stream_writer, it.first) || !Encoder::Encode<T_Val>(stream_writer, it.second))
+			{
+				return false;
+			}
 		}
+
+		return true;
 	}
 
-	return true;
-}
-
-template<typename T_Key, typename T_Val>
-inline bool Decode(StreamReader & stream_reader, std::unordered_map<T_Key, T_Val> & v)
-{
-	v.clear();
-
-	uint16_t len = 0;
-	if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
+	static bool Decode(StreamReader & stream_reader, std::map<T_Key, T_Val> & v)
 	{
-		return false;
-	}
+		v.clear();
 
-	len = (uint16_t)NTOH_16(len);
-
-	for (int i = 0; i < len; i++)
-	{
-		T_Key key;
-		T_Val val;
-
-		if (!Decode(stream_reader, key) || !Decode(stream_reader, val))
+		uint16_t len = 0;
+		if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
 		{
 			return false;
 		}
 
-		v.insert(std::make_pair(key, val));
+		len = (uint16_t)NTOH_16(len);
+
+		for (int i = 0; i < len; i++)
+		{
+			T_Key key;
+			T_Val val;
+
+			if (!Decoder::Decode<T_Key>(stream_reader, key) || !Decoder::Decode<T_Val>(stream_reader, val))
+			{
+				return false;
+			}
+
+			v.insert(std::make_pair(key, val));
+		}
+
+		return true;
 	}
 
-	return true;
-}
+	static int32_t GetSize(const std::map<T_Key, T_Val> & v)
+	{
+		int32_t len = sizeof(uint16_t);
+
+		for (const auto it : v)
+		{
+			len += SizeGettor::GetSize<T_Key>(it.first);
+			len += SizeGettor::GetSize<T_Val>(it.second);
+		}
+
+		return len;
+	}
+};
 
 template<typename T_Key, typename T_Val>
-inline int32_t GetSize(const std::unordered_map<T_Key, T_Val> & v)
+struct Serializer<std::unordered_map<T_Key, T_Val>>
 {
-	int32_t len = sizeof(uint16_t);
-
-	for (const auto it : v)
+	static bool Encode(StreamWriter & stream_writer, const std::unordered_map<T_Key, T_Val> & v)
 	{
-		len += GetSize(it.first);
-		len += GetSize(it.second);
+		uint16_t len = (uint16_t)HTON_16(v.size());
+
+		if (!stream_writer.Write((const void *)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		for (const auto & it : v)
+		{
+			if (!Encoder::Encode<T_Key>(stream_writer, it.first) || !Encoder::Encode<T_Val>(stream_writer, it.second))
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
-	return len;
-}
+	static bool Decode(StreamReader & stream_reader, std::unordered_map<T_Key, T_Val> & v)
+	{
+		v.clear();
+
+		uint16_t len = 0;
+		if (!stream_reader.Read((void*)&len, sizeof(uint16_t)))
+		{
+			return false;
+		}
+
+		len = (uint16_t)NTOH_16(len);
+
+		for (int i = 0; i < len; i++)
+		{
+			T_Key key;
+			T_Val val;
+
+			if (!Decoder::Decode<T_Key>(stream_reader, key) || !Decoder::Decode<T_Val>(stream_reader, val))
+			{
+				return false;
+			}
+
+			v.insert(std::make_pair(key, val));
+		}
+
+		return true;
+	}
+
+	static int32_t GetSize(const std::unordered_map<T_Key, T_Val> & v)
+	{
+		int32_t len = sizeof(uint16_t);
+
+		for (const auto it : v)
+		{
+			len += SizeGettor::GetSize<T_Key>(it.first);
+			len += SizeGettor::GetSize<T_Val>(it.second);
+		}
+
+		return len;
+	}
+};
 
 template<typename T>
-inline bool Encode(StreamWriter & stream_writer, const std::shared_ptr<T> & v)
+struct Serializer<std::shared_ptr<T>>
 {
-	uint8_t flag = v ? 1 : 0;
-
-	if (!stream_writer.Write((const void *)&flag, sizeof(uint8_t)))
+	static bool Encode(StreamWriter & stream_writer, const std::shared_ptr<T> & v)
 	{
-		return false;
+		uint8_t flag = v ? 1 : 0;
+
+		if (!stream_writer.Write((const void *)&flag, sizeof(uint8_t)))
+		{
+			return false;
+		}
+
+		return flag == 0 ? true : Encoder::Encode<T>(stream_writer, *(v.get()));
 	}
 
-	return flag == 0 ? true : Encode(stream_writer, *(v.get()));
-}
-
-template<typename T>
-inline bool Decode(StreamReader & stream_reader, std::shared_ptr<T> & v)
-{
-	uint8_t flag;
-	if (!stream_reader.Read((void*)&flag, sizeof(uint8_t)))
+	static bool Decode(StreamReader & stream_reader, std::shared_ptr<T> & v)
 	{
-		return false;
+		uint8_t flag;
+		if (!stream_reader.Read((void*)&flag, sizeof(uint8_t)))
+		{
+			return false;
+		}
+
+		v.reset();
+
+		if (flag > 0)
+		{
+			v = std::make_shared<T>();
+			return Decoder::Decode<T>(stream_reader, *(v.get()));
+		}
+
+		return true;
 	}
 
-	v.reset();
-
-	if (flag > 0)
+	static int32_t GetSize(const std::shared_ptr<T> & v)
 	{
-		v = std::make_shared<T>();
-		return Decode(stream_reader, *(v.get()));
+		return sizeof(uint8_t) + SizeGettor::GetSize<T>(*(v.get()));
 	}
-
-	return true;
-}
-
-template<typename T>
-inline int32_t GetSize(const std::shared_ptr<T> & v)
-{
-	return sizeof(uint8_t) + GetSize(*(v.get()));
-}
+};
 
 inline bool AutoEncode(StreamWriter & stream_writer)
 {
@@ -784,7 +987,7 @@ inline bool AutoEncode(StreamWriter & stream_writer)
 template<typename T>
 inline bool AutoEncode(StreamWriter & stream_writer, const T & t)
 {
-	return Encode(stream_writer, t);
+	return Encoder::Encode<T>(stream_writer, t);
 }
 
 template<typename T, typename... T_Args>
@@ -801,7 +1004,7 @@ inline bool AutoDecode(StreamReader & stream_writer)
 template<typename T>
 inline bool AutoDecode(StreamReader & stream_reader, T & t)
 {
-	return Decode(stream_reader, t);
+	return Decoder::Decode<T>(stream_reader, t);
 }
 
 template<typename T, typename... T_Args>
@@ -818,7 +1021,7 @@ inline int32_t AutoGetSize()
 template<typename T>
 inline int32_t AutoGetSize(const T & t)
 {
-	return GetSize(t);
+	return SizeGettor::GetSize<T>(t);
 }
 
 template<typename T, typename... T_Args>
@@ -827,78 +1030,40 @@ inline int32_t AutoGetSize(const T & t, const T_Args&... args)
 	return AutoGetSize<T>(t) + AutoGetSize<T_Args...>(args...);
 }
 
-// 自定义协议
-#define SERIALIZABLE_STRUCT(S) \
-	struct S; \
-	int32_t GetSize(const S & obj); \
-	bool Encode(StreamWriter & stream_writer, const S & obj); \
-	bool Decode(StreamReader & stream_reader, S & obj); \
-	struct S
+// 序列化申明
+#define DECLARE_SERIALIZE \
+	int32_t GetSize() const; \
+	bool Encode(StreamWriter & stream_writer) const; \
+	bool Decode(StreamReader & stream_reader);
 
-// 自定义协议编解码包装宏
-#define SERIALIZE(S, ...) \
-	int32_t GetSize(const S & obj) { return AutoGetSize(__VA_ARGS__); } \
-	bool Encode(StreamWriter & stream_writer, const S & obj) { return AutoEncode(stream_writer, ##__VA_ARGS__); } \
-	bool Decode(StreamReader & stream_reader, S & obj) { return AutoDecode(stream_reader, ##__VA_ARGS__);}
+// 序列化申明(虚函数)
+#define DECLARE_VIRTUAL_SERIALIZE \
+	virtual int32_t GetSize() const; \
+	virtual bool Encode(StreamWriter & stream_writer) const; \
+	virtual bool Decode(StreamReader & stream_reader);
 
-#define SERIALIZE1(S, v1) \
-	SERIALIZE(S, obj.v1)
+// 序列化申明(存虚函数)
+#define DECLARE_PURE_VIRTUAL_SERIALIZE \
+	virtual int32_t GetSize() const = 0; \
+	virtual bool Encode(StreamWriter & stream_writer) const = 0; \
+	virtual bool Decode(StreamReader & stream_reader) = 0;
 
-#define SERIALIZE2(S, v1, v2) \
-	SERIALIZE(S, obj.v1, obj.v2)
+// 序列化定义(写在类或结构体外部)
+#define DEFINE_SERIALIZE_OUTER(S, ...) \
+	int32_t S::GetSize() const { return AutoGetSize(__VA_ARGS__); } \
+	bool S::Encode(StreamWriter & stream_writer) const { return AutoEncode(stream_writer, ##__VA_ARGS__); } \
+	bool S::Decode(StreamReader & stream_reader) { return AutoDecode(stream_reader, ##__VA_ARGS__);}
 
-#define SERIALIZE3(S, v1, v2, v3) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3)
+// 序列化定义（写在类或结构体内部）
+#define DEFINE_SERIALIZE_INNER(...) \
+	int32_t GetSize() const { return AutoGetSize(__VA_ARGS__); } \
+	bool Encode(StreamWriter & stream_writer) const { return AutoEncode(stream_writer, ##__VA_ARGS__); } \
+	bool Decode(StreamReader & stream_reader) { return AutoDecode(stream_reader, ##__VA_ARGS__);}
 
-#define SERIALIZE4(S, v1, v2, v3, v4) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4)
-
-#define SERIALIZE5(S, v1, v2, v3, v4, v5) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5)
-
-#define SERIALIZE6(S, v1, v2, v3, v4, v5, v6) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6)
-
-#define SERIALIZE7(S, v1, v2, v3, v4, v5, v6, v7) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7)
-
-#define SERIALIZE8(S, v1, v2, v3, v4, v5, v6, v7, v8) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8)
-
-#define SERIALIZE9(S, v1, v2, v3, v4, v5, v6, v7, v8, v9) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9)
-
-#define SERIALIZE10(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10)
-
-#define SERIALIZE11(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11)
-
-#define SERIALIZE12(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12)
-
-#define SERIALIZE13(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12, obj.v13)
-
-#define SERIALIZE14(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12, obj.v13, obj.v14)
-
-#define SERIALIZE15(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12, obj.v13, obj.v14, obj.v15)
-
-#define SERIALIZE16(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12, obj.v13, obj.v14, obj.v15, obj.v16)
-
-#define SERIALIZE17(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12, obj.v13, obj.v14, obj.v15, obj.v16, obj.v17)
-
-#define SERIALIZE18(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12, obj.v13, obj.v14, obj.v15, obj.v16, obj.v17, obj.v18)
-
-#define SERIALIZE19(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12, obj.v13, obj.v14, obj.v15, obj.v16, obj.v17, obj.v18, obj.v19)
-
-#define SERIALIZE20(S, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20) \
-	SERIALIZE(S, obj.v1, obj.v2, obj.v3, obj.v4, obj.v5, obj.v6, obj.v7, obj.v8, obj.v9, obj.v10, obj.v11, obj.v12, obj.v13, obj.v14, obj.v15, obj.v16, obj.v17, obj.v18, obj.v19, obj.v20)
+// 序列化定义（虚函数定义、写在类或结构体内部）
+#define DEFINE_VIRTUAL_SERIALIZE_INNER(...) \
+	virtual int32_t GetSize() const { return AutoGetSize(__VA_ARGS__); } \
+	virtual bool Encode(StreamWriter & stream_writer) const { return AutoEncode(stream_writer, ##__VA_ARGS__); } \
+	virtual bool Decode(StreamReader & stream_reader) { return AutoDecode(stream_reader, ##__VA_ARGS__);}
 
 #endif

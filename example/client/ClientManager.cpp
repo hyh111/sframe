@@ -47,7 +47,7 @@ bool ClientManager::Init()
 void ClientManager::Update()
 {
 	Error err = ErrorSuccess;
-	_ioservice->RunOnce(200, err);
+	_ioservice->RunOnce(10, err);
 	if (err)
 	{
 		LOG_ERROR << "Run IoService error: " << ErrorMessage(err).Message() << ENDL;

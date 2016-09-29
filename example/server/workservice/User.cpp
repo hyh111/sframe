@@ -5,6 +5,7 @@
 #include "util/Log.h"
 #include "serv/ServiceDispatcher.h"
 #include "../ssproto/SSMsg.h"
+#include "util/TimeHelper.h"
 
 using namespace sframe;
 
@@ -22,16 +23,17 @@ void User::OnClientData(const WorkMsg_ClientData & msg)
 
 	int32_t client_id;
 	int32_t count;
+	int64_t send_time;
 	std::string text;
 	uint32_t len = (uint32_t)data.size();
 	StreamReader stream_reader(len > 0 ? &data[0] : nullptr, len);
-	if (!AutoDecode(stream_reader, client_id, count, text))
+	if (!AutoDecode(stream_reader, client_id, count, send_time, text))
 	{
 		LOG_ERROR << "decode client data error" << ENDL;
 		return;
 	}
 
-	FLOG(_log_name) << client_id << ": " << count << " -> " << text << ENDL;
+	FLOG(_log_name) << client_id << "|" << count << "|" << send_time << "|" << TimeHelper::GetEpochMilliseconds() << "|" << text << ENDL;
 
 	char resp_text[1024];
 	sprintf(resp_text, "Client %d, you are in gate(%d), and your sessionid id is %lld", client_id, _gate_sid, _session_id);

@@ -29,14 +29,18 @@ enum WorkMsgId : uint16_t
 	kWorkMsg_End
 };
 
-SERIALIZABLE_STRUCT(GateMsg_SendToClient)
+struct GateMsg_SendToClient
 {
+	DECLARE_SERIALIZE;
+
 	int64_t session_id;
 	std::shared_ptr<std::vector<char>> client_data;
 };
 
-SERIALIZABLE_STRUCT(WorkMsg_ClientData)
+struct WorkMsg_ClientData
 {
+	DECLARE_SERIALIZE;
+
 	int32_t gate_sid;
 	int64_t session_id;
 	std::shared_ptr<std::vector<char>> client_data;

@@ -5,6 +5,7 @@
 #include "ConfigManager.h"
 #include "util/Log.h"
 #include "util/Serialization.h"
+#include "util/TimeHelper.h"
 
 Client::TimerRouine Client::kStateRoutine[kState_Count] = {
 	&Client::OnTimer_WaitConnect,
@@ -120,10 +121,11 @@ void Client::OnTimer_Working()
 		_text_index = 0;
 	}
 
+	int64_t cur_time = sframe::TimeHelper::GetEpochMilliseconds();
 	uint16_t msg_size = 0;
 	char buf[1024];
 	StreamWriter stream_writer(buf + sizeof(msg_size), 1024 - sizeof(msg_size));
-	if (!AutoEncode(stream_writer, _id, _count, config->text[_text_index]))
+	if (!AutoEncode(stream_writer, _id, _count, cur_time, config->text[_text_index]))
 	{
 		LOG_ERROR << "Encode msg error" << ENDL;
 		return;
