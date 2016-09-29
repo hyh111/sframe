@@ -124,16 +124,16 @@ void Client::OnTimer_Working()
 	int64_t cur_time = sframe::TimeHelper::GetEpochMilliseconds();
 	uint16_t msg_size = 0;
 	char buf[1024];
-	StreamWriter stream_writer(buf + sizeof(msg_size), 1024 - sizeof(msg_size));
-	if (!AutoEncode(stream_writer, _id, _count, cur_time, config->text[_text_index]))
+	sframe::StreamWriter stream_writer(buf + sizeof(msg_size), 1024 - sizeof(msg_size));
+	if (!sframe::AutoEncode(stream_writer, _id, _count, cur_time, config->text[_text_index]))
 	{
 		LOG_ERROR << "Encode msg error" << ENDL;
 		return;
 	}
 
 	msg_size = (uint16_t)stream_writer.GetStreamLength();
-	StreamWriter size_writer(buf, sizeof(msg_size));
-	if (!AutoEncode(size_writer, msg_size))
+	sframe::StreamWriter size_writer(buf, sizeof(msg_size));
+	if (!sframe::AutoEncode(size_writer, msg_size))
 	{
 		LOG_ERROR << "Encode msg error" << ENDL;
 		return;
