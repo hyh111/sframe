@@ -7,9 +7,9 @@
 #include "ClientSession.h"
 #include "serv/Service.h"
 #include "../ssproto/SSMsg.h"
-#include "util/DynamicFactory.h"
+#include "util/ObjectFactory.h"
 
-class GateService : public sframe::Service, public sframe::DynamicCreate<GateService>
+class GateService : public sframe::Service, public sframe::RegFactoryByName<GateService>
 {
 public:
 	GateService() : _new_session_id(1), _last_choosed_work_service(-1) {}

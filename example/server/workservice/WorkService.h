@@ -5,9 +5,9 @@
 #include <unordered_map>
 #include "serv/Service.h"
 #include "User.h"
-#include "util/DynamicFactory.h"
+#include "util/ObjectFactory.h"
 
-class WorkService : public sframe::Service, public sframe::DynamicCreate<WorkService>
+class WorkService : public sframe::Service, public sframe::RegFactoryByName<WorkService>
 {
 public:
 	WorkService() {}

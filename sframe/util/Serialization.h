@@ -941,19 +941,115 @@ struct Serializer<std::unordered_map<T_Key, T_Val>>
 	}
 };
 
+// 对象指针序列化器
+class ObjectPtrSerializer
+{
+public:
+	template<typename T>
+	static bool Encode(StreamWriter & stream_writer, const std::shared_ptr<T> & obj)
+	{
+		return EncodeImp<T>(decltype(match<T>(nullptr))(), stream_writer, obj);
+	}
+
+	template<typename T>
+	static bool Decode(StreamReader & stream_reader, std::shared_ptr<T> & obj)
+	{
+		return DecodeImp<T>(decltype(match<T>(nullptr))(), stream_reader, obj);
+	}
+
+	template<typename T>
+	static int32_t GetSize(const std::shared_ptr<T> & obj)
+	{
+		return GetSizeImp<T>(decltype(match<T>(nullptr))(), obj);
+	}
+
+private:
+	template<typename T>
+	static bool EncodeImp(std::false_type, StreamWriter & stream_writer, const std::shared_ptr<T> & obj)
+	{
+		return Encoder::Encode<T>(stream_writer, *obj);
+	}
+
+	template<typename T>
+	static bool EncodeImp(std::true_type, StreamWriter & stream_writer, const std::shared_ptr<T> & obj)
+	{
+		uint16_t obj_type = T::GetObjectType(obj.get());
+		obj_type = (uint16_t)HTON_16(obj_type);
+		if (!stream_writer.Write((const void *)&obj_type, sizeof(obj_type)))
+		{
+			return false;
+		}
+
+		return Encoder::Encode<T>(stream_writer, *obj);
+	}
+
+	template<typename T>
+	static bool DecodeImp(std::false_type, StreamReader & stream_reader, std::shared_ptr<T> & obj)
+	{
+		obj = std::make_shared<T>();
+		return Decoder::Decode<T>(stream_reader, *obj);
+	}
+
+	template<typename T>
+	static bool DecodeImp(std::true_type, StreamReader & stream_reader, std::shared_ptr<T> & obj)
+	{
+		uint16_t obj_type = 0;
+		if (!stream_reader.Read((void*)&obj_type, sizeof(obj_type)))
+		{
+			return false;
+		}
+		obj_type = (uint16_t)NTOH_16(obj_type);
+		// 必须有创建对象的方法，不然直接使其编译错误
+		obj = T::CreateObject(obj_type);
+		if (!obj)
+		{
+			assert(false);
+			return false;
+		}
+
+		return Decoder::Decode<T>(stream_reader, *obj);
+	}
+
+	template<typename T>
+	static int32_t GetSizeImp(std::false_type, const std::shared_ptr<T> & obj)
+	{
+		return SizeGettor::GetSize<T>(*obj);
+	}
+
+	template<typename T>
+	static int32_t GetSizeImp(std::true_type, const std::shared_ptr<T> & obj)
+	{
+		return sizeof(uint16_t) + SizeGettor::GetSize<T>(*obj);
+	}
+
+	// 匹配器
+	template<typename U, uint16_t(*)(const U *)>
+	struct MethodMatcher;
+
+	template<typename U>
+	static std::true_type match(MethodMatcher<U, &U::GetObjectType>*);
+
+	template<typename U>
+	static std::false_type match(...);
+};
+
 template<typename T>
 struct Serializer<std::shared_ptr<T>>
 {
 	static bool Encode(StreamWriter & stream_writer, const std::shared_ptr<T> & v)
 	{
 		uint8_t flag = v ? 1 : 0;
-
 		if (!stream_writer.Write((const void *)&flag, sizeof(uint8_t)))
 		{
 			return false;
 		}
 
-		return flag == 0 ? true : Encoder::Encode<T>(stream_writer, *(v.get()));
+		if (v)
+		{
+			return ObjectPtrSerializer::Encode(stream_writer, v);
+		}
+
+		return true;
 	}
 
 	static bool Decode(StreamReader & stream_reader, std::shared_ptr<T> & v)
@@ -968,8 +1064,7 @@ struct Serializer<std::shared_ptr<T>>
 
 		if (flag > 0)
 		{
-			v = std::make_shared<T>();
-			return Decoder::Decode<T>(stream_reader, *(v.get()));
+			return ObjectPtrSerializer::Decode(stream_reader, v);
 		}
 
 		return true;
@@ -977,7 +1072,12 @@ struct Serializer<std::shared_ptr<T>>
 
 	static int32_t GetSize(const std::shared_ptr<T> & v)
 	{
-		return sizeof(uint8_t) + SizeGettor::GetSize<T>(*(v.get()));
+		int32_t s = sizeof(uint8_t);
+		if (v)
+		{
+			s += ObjectPtrSerializer::GetSize(v);
+		}
+		return s;
 	}
 };
 

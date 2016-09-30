@@ -159,9 +159,6 @@
     <ClInclude Include="..\..\sframe\serv\Listener.h">
       <Filter>serv</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\sframe\util\DynamicFactory.h">
-      <Filter>util</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\sframe\util\ConditionVariable.h">
       <Filter>util</Filter>
     </ClInclude>
@@ -173,6 +170,9 @@
     </ClInclude>
     <ClInclude Include="..\..\sframe\conf\ConfigMeta.h">
       <Filter>conf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sframe\util\ObjectFactory.h">
+      <Filter>util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -243,6 +243,9 @@
       <Filter>serv</Filter>
     </ClCompile>
     <ClCompile Include="..\..\sframe\util\Timer.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\ObjectFactory.cpp">
       <Filter>util</Filter>
     </ClCompile>
   </ItemGroup>

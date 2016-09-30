@@ -14,7 +14,7 @@
 #include "workservice/WorkService.h"
 #include "util/Log.h"
 #include "util/TimeHelper.h"
-#include "util/DynamicFactory.h"
+#include "util/ObjectFactory.h"
 
 using namespace sframe;
 
@@ -29,7 +29,7 @@ bool Start()
 
 		if (serv_info->is_local_service)
 		{
-			Service * serv = DynamicFactory::Instance().Create<Service>(serv_info->service_type_name);
+			Service * serv = GlobalObjFactory::Instance().Create<Service>(serv_info->service_type_name);
 			if (serv == nullptr)
 			{
 				LOG_ERROR << "Create service failure|" << serv_info->service_type_name << "|" << serv_info->sid << std::endl;
