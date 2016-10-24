@@ -46,13 +46,6 @@
 		static k_type GetKey(const S & conf) { return conf.k_field_name; } \
 	};
 
-// 对象填充辅助宏
-#define FILLFIELD(name)                                            sframe::FillField(reader, #name, this->name);
-#define FILLFIELD_DEFAULT(name, defaultval)                        sframe::FillField(reader, #name, this->name, defaultval)
-#define FILLINDEX(index, name)                                     sframe::FillIndex(reader, (int)index, obj.name);
-#define FILLINDEX_DEFAULT(index, name, defaultval)                 sframe::FillIndex(reader, (int)index, this->name, defaultval)
-
-
 
 //////////////////// 动态配置申明相关辅助
 

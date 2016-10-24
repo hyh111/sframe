@@ -196,7 +196,7 @@ struct ObjectFiller<TableReader, std::shared_ptr<T>>
 
 // Ìî³ä±í¸ñ×Ö¶Î
 template<typename T>
-inline bool FillField(TableReader & reader, const char * field_name, T & obj, const T & default_value = T())
+inline bool Tbl_FillField(TableReader & reader, const char * field_name, T & obj, const T & default_value = T())
 {
 	std::string * str = nullptr;
 	sframe::Row * r = reader.GetCurrentRow();
@@ -206,14 +206,14 @@ inline bool FillField(TableReader & reader, const char * field_name, T & obj, co
 		return false;
 	}
 	
-	ParseConfigString(*str, obj);
+	ParseCaller::Parse(*str, obj);
 
 	return true;
 }
 
 // Ìî³ä±í¸ñ×Ö¶Î
 template<typename T>
-inline bool FillIndex(TableReader & reader, int32_t field_index, T & obj, const T & default_value = T())
+inline bool Tbl_FillIndex(TableReader & reader, int32_t field_index, T & obj, const T & default_value = T())
 {
 	std::string * str = nullptr;
 	sframe::Row * r = reader.GetCurrentRow();
@@ -223,11 +223,19 @@ inline bool FillIndex(TableReader & reader, int32_t field_index, T & obj, const 
 		return false;
 	}
 
-	ParseConfigString(*str, obj);
+	ParseCaller::Parse(*str, obj);
 
 	return true;
 }
 
 }
+
+
+// ¶ÔÏóÌî³ä¸¨Öúºê
+#define TBL_FILLFIELD(name)                                            sframe::Tbl_FillField(reader, #name, this->name);
+#define TBL_FILLFIELD_DEFAULT(name, defaultval)                        sframe::Tbl_FillField(reader, #name, this->name, defaultval)
+#define TBL_FILLINDEX(index, name)                                     sframe::Tbl_FillIndex(reader, (int)index, obj.name);
+#define TBL_FILLINDEX_DEFAULT(index, name, defaultval)                 sframe::Tbl_FillIndex(reader, (int)index, this->name, defaultval)
+
 
 #endif

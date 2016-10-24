@@ -10,17 +10,56 @@
 #include "../util/Convert.h"
 #include "../util/StringHelper.h"
 
+namespace sframe {
+
 template<typename T>
-void ParseConfigString(const std::string & str, T & obj)
+struct TblStrParser
 {
-	obj = sframe::StrToAny<T>(str);
-}
+	static void ParseTableString(const std::string & str, T & obj)
+	{
+		obj = sframe::StrToAny<T>(str);
+	}
+};
+
+class ParseCaller
+{
+public:
+	template<typename T>
+	static void Parse(const std::string & str, T & obj)
+	{
+		return call<T>(decltype(match<T>(nullptr))(), str, obj);
+	}
+
+private:
+	template<typename T>
+	static void call(std::false_type, const std::string & str, T & obj)
+	{
+		TblStrParser<T>::ParseTableString(str, obj);
+	}
+
+	template<typename T>
+	static void call(std::true_type, const std::string & str, T & obj)
+	{
+		obj.ParseTableString(str);
+	}
+
+	// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
+	template<typename U, void(U::*)(const std::string &) const>
+	struct MethodMatcher;
+
+	template<typename U>
+	static std::true_type match(MethodMatcher<U, &U::ParseTableString>*);
+
+	template<typename U>
+	static std::false_type match(...);
+};
+
 
 template<typename T_Map>
 void ParseMap(const std::string & str, T_Map & obj)
 {
 	static const char kMapItemSep = ';';
-	static const char kMapKVSep = '_';
+	static const char kMapKVSep = '#';
 
 	if (str.empty())
 	{
@@ -59,7 +98,7 @@ void ParseMap(const std::string & str, T_Map & obj)
 		{
 			valstr = std::move(item.substr(pos + 1, item.length() - pos - 1));
 		}
-		
+
 		if (keystr.empty())
 		{
 			continue;
@@ -68,8 +107,8 @@ void ParseMap(const std::string & str, T_Map & obj)
 		typename T_Map::key_type k;
 		typename T_Map::mapped_type v;
 
-		ParseConfigString(keystr, k);
-		ParseConfigString(valstr, v);
+		ParseCaller::Parse(keystr, k);
+		ParseCaller::Parse(valstr, v);
 		obj.insert(std::make_pair(k, v));
 	}
 }
@@ -77,7 +116,7 @@ void ParseMap(const std::string & str, T_Map & obj)
 template<typename T_Array>
 void ParseArray(const std::string & str, T_Array & obj)
 {
-	static const char kSep = ',';
+	static const char kSep = '|';
 
 	if (str.empty())
 	{
@@ -98,68 +137,88 @@ void ParseArray(const std::string & str, T_Array & obj)
 
 		typename T_Array::value_type v;
 
-		ParseConfigString(item, v);
+		ParseCaller::Parse(item, v);
 		obj.push_back(v);
 	}
 }
 
 template<typename T, int Array_Size>
-void ParseConfigString(const std::string & str, T(&obj)[Array_Size])
+struct TblStrParser<T[Array_Size]>
 {
-	static const char kSep = ',';
-
-	if (str.empty())
+	static void ParseTableString(const std::string & str, T(&obj)[Array_Size])
 	{
-		return;
-	}
+		static const char kSep = ',';
 
-	// 分割每个条目
-	std::string sep_str(sframe::GetCharMaxContinueInString(str, kSep), kSep);
-	std::vector<std::string> all_items;
-	sframe::SplitString(str, all_items, sep_str);
-
-	int len = (int)all_items.size() > Array_Size ? Array_Size : (int)all_items.size();
-
-	for (int i = 0; i < len; i++)
-	{
-		if (all_items[i].empty())
+		if (str.empty())
 		{
-			continue;
+			return;
 		}
 
-		ParseConfigString(all_items[i], obj[i]);
+		// 分割每个条目
+		std::string sep_str(sframe::GetCharMaxContinueInString(str, kSep), kSep);
+		std::vector<std::string> all_items;
+		sframe::SplitString(str, all_items, sep_str);
+
+		int len = (int)all_items.size() > Array_Size ? Array_Size : (int)all_items.size();
+
+		for (int i = 0; i < len; i++)
+		{
+			if (all_items[i].empty())
+			{
+				continue;
+			}
+
+			ParseCaller::Parse(all_items[i], obj[i]);
+		}
 	}
-}
+};
 
 template<typename T_Key, typename T_Val>
-void ParseConfigString(const std::string & str, std::unordered_map<T_Key, T_Val> & obj)
+struct TblStrParser<std::unordered_map<T_Key, T_Val>>
 {
-	ParseMap(str, obj);
-}
+	static void ParseTableString(const std::string & str, std::unordered_map<T_Key, T_Val> & obj)
+	{
+		ParseMap(str, obj);
+	}
+};
 
 template<typename T_Key, typename T_Val>
-void ParseConfigString(const std::string & str, std::map<T_Key, T_Val> & obj)
+struct TblStrParser<std::map<T_Key, T_Val>>
 {
-	ParseMap(str, obj);
-}
+	static void ParseTableString(const std::string & str, std::map<T_Key, T_Val> & obj)
+	{
+		ParseMap(str, obj);
+	}
+};
 
 template<typename T>
-void ParseConfigString(const std::string & str, std::vector<T> & obj)
+struct TblStrParser<std::vector<T>>
 {
-	ParseArray(str, obj);
-}
+	static void ParseTableString(const std::string & str, std::vector<T> & obj)
+	{
+		ParseArray(str, obj);
+	}
+};
 
 template<typename T>
-void ParseConfigString(const std::string & str, std::list<T> & obj)
+struct TblStrParser<std::list<T>>
 {
-	ParseArray(str, obj);
-}
+	static void ParseTableString(const std::string & str, std::list<T> & obj)
+	{
+		ParseArray(str, obj);
+	}
+};
 
 template<typename T>
-void ParseConfigString(const std::string & str, std::shared_ptr<T> & obj)
+struct TblStrParser<std::shared_ptr<T>>
 {
-	obj = std::make_shared<T>();
-	Parse(str, *(obj.get()));
+	static void ParseTableString(const std::string & str, std::shared_ptr<T> & obj)
+	{
+		obj = std::make_shared<T>();
+		ParseCaller::Parse(str, *(obj.get()));
+	}
+};
+
 }
 
 #endif

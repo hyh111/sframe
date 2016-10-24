@@ -308,7 +308,7 @@ struct ObjectFiller<const json11::Json, std::shared_ptr<T>>
 
 // ¶ÁÈ¡JSON×Ö¶Î
 template<typename T>
-inline bool FillField(const json11::Json & json, const char * field_name, T & obj, const T & default_val = T())
+inline bool Json_FillField(const json11::Json & json, const char * field_name, T & obj, const T & default_val = T())
 {
 	if (!json.is_object() || json[field_name].is_null())
 	{
@@ -327,7 +327,7 @@ inline bool FillField(const json11::Json & json, const char * field_name, T & ob
 
 // ¶ÁÈ¡JSON×Ö¶Î
 template<typename T>
-inline bool FillIndex(const json11::Json & json, int field_index, T & obj, const T & default_val = T())
+inline bool Json_FillIndex(const json11::Json & json, int field_index, T & obj, const T & default_val = T())
 {
 	if (!json.is_array() || json[field_index].is_null())
 	{
@@ -345,5 +345,13 @@ inline bool FillIndex(const json11::Json & json, int field_index, T & obj, const
 }
 
 }
+
+
+// ¶ÔÏóÌî³ä¸¨Öúºê
+#define JSON_FILLFIELD(name)                                            sframe::Json_FillField(reader, #name, this->name);
+#define JSON_FILLFIELD_DEFAULT(name, defaultval)                        sframe::Json_FillField(reader, #name, this->name, defaultval)
+#define JSON_FILLINDEX(index, name)                                     sframe::Json_FillIndex(reader, (int)index, obj.name);
+#define JSON_FILLINDEX_DEFAULT(index, name, defaultval)                 sframe::Json_FillIndex(reader, (int)index, this->name, defaultval)
+
 
 #endif

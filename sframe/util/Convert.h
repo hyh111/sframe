@@ -2,6 +2,7 @@
 #ifndef SFRAME_CONVERT_H
 #define SFRAME_CONVERT_H
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string>
@@ -11,7 +12,15 @@ namespace sframe {
 template<typename R>
 inline R StrToAny(const std::string & str)
 {
-	return (R)str;
+	assert(false);
+	return R();
+}
+
+
+template<>
+inline std::string StrToAny<std::string>(const std::string & str)
+{
+	return str;
 }
 
 template<>

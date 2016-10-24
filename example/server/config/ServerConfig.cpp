@@ -188,17 +188,17 @@ bool ServerConfig::HaveLocalService(const std::string & serv_type_name)
 
 void ServerConfig::Fill(const json11::Json & reader)
 {
-	FILLFIELD_DEFAULT(res_path, std::string("./res"));
+	JSON_FILLFIELD_DEFAULT(res_path, std::string("./res"));
 	if (res_path.empty() || *(res_path.end() - 1) != '/' || *(res_path.end() - 1) != '\\')
 	{
 		res_path.push_back('/');
 	}
 
-	FILLFIELD_DEFAULT(thread_num, 2);
+	JSON_FILLFIELD_DEFAULT(thread_num, 2);
 	thread_num = std::max(1, thread_num);
 
 	std::string str_listen_service; // 服务监听地址
-	FillField(reader, "listen_service", str_listen_service);
+	Json_FillField(reader, "listen_service", str_listen_service);
 	listen_service = std::make_shared<NetAddrInfo>();
 	if (!listen_service->ParseFormString(str_listen_service))
 	{
@@ -206,7 +206,7 @@ void ServerConfig::Fill(const json11::Json & reader)
 	}
 
 	std::string str_listen_manager; // 管理监听地址
-	FillField(reader, "listen_manager", str_listen_manager);
+	Json_FillField(reader, "listen_manager", str_listen_manager);
 	listen_manager = std::make_shared<NetAddrInfo>();
 	if (!listen_manager->ParseFormString(str_listen_manager))
 	{
@@ -214,7 +214,7 @@ void ServerConfig::Fill(const json11::Json & reader)
 	}
 
 	std::unordered_map<std::string, std::string> map_service; // 服务信息
-	FillField(reader, "service", map_service);
+	Json_FillField(reader, "service", map_service);
 	for (auto & it : map_service)
 	{
 		int32_t sid = sframe::StrToAny<int32_t>(it.first);
@@ -237,7 +237,7 @@ void ServerConfig::Fill(const json11::Json & reader)
 
 	// 自定义监听地址(服务类型->地址列表)
 	std::unordered_map<std::string, std::vector<std::string>> map_listen_custom;
-	FillField(reader, "listen_custom", map_listen_custom);
+	Json_FillField(reader, "listen_custom", map_listen_custom);
 	for (auto & pr : map_listen_custom)
 	{
 		std::string serv_type_name = pr.first;
