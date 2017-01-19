@@ -13,6 +13,9 @@
     <Filter Include="workservice">
       <UniqueIdentifier>{5d4d8693-f9dc-4398-a80b-f2254c8fb177}</UniqueIdentifier>
     </Filter>
+    <Filter Include="httpservice">
+      <UniqueIdentifier>{19b1afe0-8fa9-48ba-a4a1-8e13ec3ebc93}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\example\server\main.cpp" />
@@ -34,6 +37,12 @@
     <ClCompile Include="..\..\example\server\ssproto\SSMsg.cpp">
       <Filter>ssproto</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\example\server\httpservice\HttpService.cpp">
+      <Filter>httpservice</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\example\server\httpservice\HttpSession.cpp">
+      <Filter>httpservice</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\example\server\config\ServerConfig.h">
@@ -53,6 +62,12 @@
     </ClInclude>
     <ClInclude Include="..\..\example\server\ssproto\SSMsg.h">
       <Filter>ssproto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\example\server\httpservice\HttpService.h">
+      <Filter>httpservice</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\example\server\httpservice\HttpSession.h">
+      <Filter>httpservice</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

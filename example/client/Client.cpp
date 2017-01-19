@@ -14,7 +14,7 @@ Client::TimerRouine Client::kStateRoutine[kState_Count] = {
 };
 
 Client::Client(int32_t id, ClientManager * mgr)
-	: _id(id), _mgr(mgr), _state(kState_WaitConnect), _server_port(0), _text_index(0), _count(0) 
+	: _id(id), _mgr(mgr), _state(kState_WaitConnect), _server_port(0), _text_index(0), _count(0)
 {
 	_log_name = std::to_string(_id);
 }

@@ -135,7 +135,7 @@ inline bool Json_FillMap(const json11::Json & json, T & obj)
 			}
 
 			typename T::key_type k = sframe::StrToAny<typename T::key_type>(item.first);
-			if (!obj.insert(std::make_pair(k, v)).second)
+			if (!PutConfigInContainer::PutInMap(obj, k, v))
 			{
 				return false;
 			}
@@ -155,7 +155,7 @@ inline bool Json_FillMap(const json11::Json & json, T & obj)
 			}
 
 			typename T::key_type k = GetConfigObjKey<typename T::key_type>(v);
-			if (!obj.insert(std::make_pair(k, v)).second)
+			if (!PutConfigInContainer::PutInMap(obj, k, v))
 			{
 				return false;
 			}
@@ -206,7 +206,10 @@ inline bool Json_FillArray(const json11::Json & json, T & obj)
 				return false;
 			}
 
-			obj.push_back(v);
+			if (!PutConfigInContainer::PutInArray(obj, v))
+			{
+				return false;
+			}
 		}
 	}
 	else
@@ -217,7 +220,10 @@ inline bool Json_FillArray(const json11::Json & json, T & obj)
 			return false;
 		}
 
-		obj.push_back(v);
+		if (!PutConfigInContainer::PutInArray(obj, v))
+		{
+			return false;
+		}
 	}
 
 	return true;
@@ -257,7 +263,10 @@ inline bool Json_FillSet(const json11::Json & json, T_Set & obj)
 				return false;
 			}
 
-			obj.insert(v);
+			if (!PutConfigInContainer::PutInSet(obj, v))
+			{
+				return false;
+			}
 		}
 	}
 	else
@@ -268,7 +277,10 @@ inline bool Json_FillSet(const json11::Json & json, T_Set & obj)
 			return false;
 		}
 
-		obj.insert(v);
+		if (!PutConfigInContainer::PutInSet(obj, v))
+		{
+			return false;
+		}
 	}
 
 	return true;

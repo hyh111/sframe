@@ -65,7 +65,8 @@ inline bool Table_FillMap(TableReader & tbl, T_Map & obj)
 		}
 
 		typename T_Map::key_type k = GetConfigObjKey<typename T_Map::key_type>(v);
-		if (!obj.insert(std::make_pair(k, v)).second)
+
+		if (!PutConfigInContainer::PutInMap(obj, k, v))
 		{
 			return false;
 		}
@@ -92,7 +93,11 @@ inline bool Table_FillArray(TableReader & tbl, T_Array & obj)
 			return false;
 		}
 
-		obj.push_back(v);
+		if (!PutConfigInContainer::PutInArray(obj, v))
+		{
+			return false;
+		}
+
 		tbl.Next();
 	}
 
@@ -115,7 +120,11 @@ inline bool Table_FillSet(TableReader & tbl, T_Set & obj)
 			return false;
 		}
 
-		obj.insert(v);
+		if (!PutConfigInContainer::PutInSet(obj, v))
+		{
+			return false;
+		}
+
 		tbl.Next();
 	}
 

@@ -12,6 +12,8 @@ struct ClientConfig
 
 	void Fill(sframe::TableReader & reader);
 
+	bool PutIn(std::map<int32_t, std::shared_ptr<ClientConfig>> & m);
+
 	int32_t client_id;
 	std::string server_ip;
 	uint16_t server_port;

@@ -15,7 +15,8 @@
 
 	// 自定义监听地址
 	"listen_custom" : {
-		"GateService" : "ClientConnnectAddr@0.0.0.0:5000"
+		"GateService" : "ClientConnnectAddr@0.0.0.0:5000",
+		"HttpService" : "HttpAddr@0.0.0.0:8888"
 	},
 
 	// 服务启动信息
@@ -25,6 +26,7 @@
 		"3" : "GateService",
 		"101" : "WorkService",
 		"102" : "WorkService",
-		"103" : "WorkService"
+		"103" : "WorkService",
+		"201" : "HttpService"
 	}
 }

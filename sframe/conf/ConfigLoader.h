@@ -145,6 +145,138 @@ struct ConfigInitializer
 
 };
 
+// 将配置对象放入容器
+struct PutConfigInContainer
+{
+	template<typename T_Map, typename T_Key, typename T_Obj, bool>
+	struct PutInMapCaller
+	{
+		static bool Put(T_Map & m, T_Key & key, T_Obj & obj)
+		{
+			return m.insert(std::make_pair(key, obj)).second;
+		}
+	};
+
+	template<typename T_Map, typename T_Key, typename T_Obj>
+	struct PutInMapCaller<T_Map, T_Key, T_Obj, true>
+	{
+		static bool Put(T_Map & m, T_Key &, T_Obj & obj)
+		{
+			return obj.PutIn(m);
+		}
+	};
+
+	template<typename T_Map, typename T_Key, typename T_Obj>
+	struct PutInMapCaller<T_Map, T_Key, std::shared_ptr<T_Obj>, true>
+	{
+		static bool Put(T_Map & m, T_Key & k, std::shared_ptr<T_Obj> & obj)
+		{
+			return PutInMapCaller<T_Map, T_Key, T_Obj, true>::Put(m, k, *obj.get());
+		}
+	};
+
+	template<typename T_Set, typename T_Obj, bool>
+	struct PutInSetCaller
+	{
+		static bool Put(T_Set & m, T_Obj & obj)
+		{
+			return m.insert(obj).second;
+		}
+	};
+
+	template<typename T_Set, typename T_Obj>
+	struct PutInSetCaller<T_Set, T_Obj, true>
+	{
+		static bool Put(T_Set & m, T_Obj & obj)
+		{
+			return obj.PutIn(m);
+		}
+	};
+
+	template<typename T_Set, typename T_Obj>
+	struct PutInSetCaller<T_Set, std::shared_ptr<T_Obj>, true>
+	{
+		static bool Put(T_Set & m, std::shared_ptr<T_Obj> & obj)
+		{
+			return PutInSetCaller<T_Set, T_Obj, true>::Put(m, *obj.get());
+		}
+	};
+
+	template<typename T_Array, typename T_Obj, bool>
+	struct PutInArrayCaller
+	{
+		static bool Put(T_Array & arr, T_Obj & obj)
+		{
+			arr.push_back(obj);
+			return true;
+		}
+	};
+
+	template<typename T_Array, typename T_Obj>
+	struct PutInArrayCaller<T_Array, T_Obj, true>
+	{
+		static bool Put(T_Array & arr, T_Obj & obj)
+		{
+			return obj.PutIn(arr);
+		}
+	};
+
+	template<typename T_Array, typename T_Obj>
+	struct PutInArrayCaller<T_Array, std::shared_ptr<T_Obj>, true>
+	{
+		static bool Put(T_Array & arr, std::shared_ptr<T_Obj> & obj)
+		{
+			return PutInArrayCaller<T_Array, T_Obj, true>::Put(arr, *obj.get());
+		}
+	};
+
+	template<typename T_Container, typename T_Obj>
+	struct HaveMethod
+	{
+		// 匹配器 ———— 形如 bool T_Obj::FillObject(T_Reader & reader)
+		template<typename U, bool(U::*)(T_Container &)>
+		struct MethodMatcher;
+
+		template<typename U>
+		static int8_t match(MethodMatcher<U, &U::PutIn>*);
+
+		template<typename U>
+		static int32_t match(...);
+
+		template<typename U>
+		struct GetRealObjType
+		{
+			typedef U RealObjType;
+		};
+
+		template<typename U>
+		struct GetRealObjType<std::shared_ptr<U>>
+		{
+			typedef typename GetRealObjType<U>::RealObjType RealObjType;
+		};
+
+		static const bool value = (sizeof(match<typename GetRealObjType<T_Obj>::RealObjType>(NULL)) == 1);
+	};
+
+	template<typename T_Map, typename T_Key, typename T_Obj>
+	static bool PutInMap(T_Map & m, T_Key & key, T_Obj & obj)
+	{
+		return PutInMapCaller<T_Map, T_Key, T_Obj, HaveMethod<T_Map, T_Obj>::value>::Put(m, key, obj);
+	}
+
+	template<typename T_Array, typename T_Obj>
+	static bool PutInArray(T_Array & arr, T_Obj & obj)
+	{
+		return PutInArrayCaller<T_Array, T_Obj, HaveMethod<T_Array, T_Obj>::value>::Put(arr, obj);
+	}
+
+	template<typename T_Set, typename T_Obj>
+	static bool PutInSet(T_Set & s, T_Obj & obj)
+	{
+		return PutInSetCaller<T_Set, T_Obj, HaveMethod<T_Set, T_Obj>::value>::Put(s, obj);
+	}
+};
+
 }
 
 #endif

@@ -29,6 +29,16 @@ enum WorkMsgId : uint16_t
 	kWorkMsg_End
 };
 
+enum HttpMsgId : uint16_t
+{
+	kHttpMsg_Start = 201,
+
+	kHttpMsg_HttpRequest = kHttpMsg_Start,
+	kHttpMsg_HttpSessionClosed,
+
+	kHttpMsg_End
+};
+
 struct GateMsg_SendToClient
 {
 	DECLARE_SERIALIZE;

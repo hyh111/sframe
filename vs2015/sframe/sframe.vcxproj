@@ -57,6 +57,7 @@
     <ClInclude Include="..\..\sframe\util\Convert.h" />
     <ClInclude Include="..\..\sframe\util\Delegate.h" />
     <ClInclude Include="..\..\sframe\util\FileHelper.h" />
+    <ClInclude Include="..\..\sframe\util\Http.h" />
     <ClInclude Include="..\..\sframe\util\json11.hpp" />
     <ClInclude Include="..\..\sframe\util\Lock.h" />
     <ClInclude Include="..\..\sframe\util\Log.h" />
@@ -89,6 +90,7 @@
     <ClCompile Include="..\..\sframe\serv\ServiceDispatcher.cpp" />
     <ClCompile Include="..\..\sframe\serv\ServiceSession.cpp" />
     <ClCompile Include="..\..\sframe\util\FileHelper.cpp" />
+    <ClCompile Include="..\..\sframe\util\Http.cpp" />
     <ClCompile Include="..\..\sframe\util\json11.cpp" />
     <ClCompile Include="..\..\sframe\util\Log.cpp" />
     <ClCompile Include="..\..\sframe\util\md5.cpp" />

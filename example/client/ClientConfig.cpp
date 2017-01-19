@@ -10,3 +10,8 @@ void ClientConfig::Fill(sframe::TableReader & reader)
 	TBL_FILLFIELD(text);
 	TBL_FILLFIELD(test);
 }
+
+bool ClientConfig::PutIn(std::map<int32_t, std::shared_ptr<ClientConfig>> & m)
+{
+	return true;
+}

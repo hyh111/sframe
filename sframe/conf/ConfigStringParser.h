@@ -68,8 +68,7 @@ void ParseMap(const std::string & str, T_Map & obj)
 
 	// 分割每个条目
 	std::string sep_str(sframe::GetCharMaxContinueInString(str, kMapItemSep), kMapItemSep);
-	std::vector<std::string> all_items;
-	sframe::SplitString(str, all_items, sep_str);
+	std::vector<std::string> all_items = sframe::SplitString(str, sep_str);
 
 	for (auto const & item : all_items)
 	{
@@ -125,8 +124,7 @@ void ParseArray(const std::string & str, T_Array & obj)
 
 	// 分割每个条目
 	std::string sep_str(sframe::GetCharMaxContinueInString(str, kSep), kSep);
-	std::vector<std::string> all_items;
-	sframe::SplitString(str, all_items, sep_str);
+	std::vector<std::string> all_items = sframe::SplitString(str, sep_str);
 
 	for (auto const & item : all_items)
 	{
@@ -156,8 +154,7 @@ struct TblStrParser<T[Array_Size]>
 
 		// 分割每个条目
 		std::string sep_str(sframe::GetCharMaxContinueInString(str, kSep), kSep);
-		std::vector<std::string> all_items;
-		sframe::SplitString(str, all_items, sep_str);
+		std::vector<std::string> all_items = sframe::SplitString(str, sep_str);
 
 		int len = (int)all_items.size() > Array_Size ? Array_Size : (int)all_items.size();
 

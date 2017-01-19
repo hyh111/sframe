@@ -147,6 +147,8 @@
     <ClCompile Include="..\..\example\server\config\ServerConfig.cpp" />
     <ClCompile Include="..\..\example\server\gateservice\ClientSession.cpp" />
     <ClCompile Include="..\..\example\server\gateservice\GateService.cpp" />
+    <ClCompile Include="..\..\example\server\httpservice\HttpService.cpp" />
+    <ClCompile Include="..\..\example\server\httpservice\HttpSession.cpp" />
     <ClCompile Include="..\..\example\server\main.cpp" />
     <ClCompile Include="..\..\example\server\ssproto\SSMsg.cpp" />
     <ClCompile Include="..\..\example\server\workservice\User.cpp" />
@@ -156,6 +158,8 @@
     <ClInclude Include="..\..\example\server\config\ServerConfig.h" />
     <ClInclude Include="..\..\example\server\gateservice\ClientSession.h" />
     <ClInclude Include="..\..\example\server\gateservice\GateService.h" />
+    <ClInclude Include="..\..\example\server\httpservice\HttpService.h" />
+    <ClInclude Include="..\..\example\server\httpservice\HttpSession.h" />
     <ClInclude Include="..\..\example\server\ssproto\SSMsg.h" />
     <ClInclude Include="..\..\example\server\workservice\User.h" />
     <ClInclude Include="..\..\example\server\workservice\WorkService.h" />
