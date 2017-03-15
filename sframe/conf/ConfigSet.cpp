@@ -20,62 +20,65 @@ bool ConfigSet::Load(const std::string & path, std::vector<ConfigError> * vec_er
 	std::map<int32_t, std::shared_ptr<ConfigBase>> map_conf;
 	bool ret = true;
 
-	// 加载
-	for (auto it = _config_load_helper.begin(); it != _config_load_helper.end(); it++)
+	for (auto & pr : _config_load_helper)
 	{
-		Func_LoadConfig func_load = it->second.func_load;
-		if (!func_load)
-		{
-			assert(false);
-			continue;
-		}
-
-		std::shared_ptr<ConfigBase> conf = (this->*func_load)();
+		ConfigLoadHelper & load_helper = pr.second;
+		auto conf = LoadAndInitConfig(load_helper, vec_err_info);
 		if (!conf)
 		{
 			ret = false;
-			if (vec_err_info)
-			{
-				ConfigError err;
-				err.err_type = ConfigError::kLoadConfigError;
-				err.config_type = it->first;
-				err.config_file_name = it->second.conf_file_name;
-				vec_err_info->push_back(err);
-			}
-		}
-		else
-		{
-			map_conf[it->first] = conf;
-		}
-	}
-
-	// 初始化
-	for (auto it = map_conf.begin(); it != map_conf.end(); it++)
-	{
-		const auto & load_helper = _config_load_helper[it->first];
-		if (!it->second || !load_helper.func_init)
-		{
-			assert(false);
 			continue;
 		}
 
-		if (!(this->*load_helper.func_init)(it->second))
+		_config[load_helper.conf_id] = conf;
+	}
+
+	for (auto & load_helper : _temporary_config_load_helper)
+	{
+		auto conf = LoadAndInitConfig(load_helper, vec_err_info);
+		if (!conf)
 		{
 			ret = false;
-			if (vec_err_info)
-			{
-				ConfigError err;
-				err.err_type = ConfigError::kInitConfigError;
-				err.config_type = it->first;
-				err.config_file_name = load_helper.conf_file_name;
-				vec_err_info->push_back(err);
-			}
-		}
-		else
-		{
-			_config[it->first] = it->second;
+			continue;
 		}
 	}
 
 	return ret;
+}
+
+// 加载并初始化一个配置
+std::shared_ptr<ConfigSet::ConfigBase> ConfigSet::LoadAndInitConfig(const ConfigLoadHelper & load_helper, std::vector<ConfigError> * err_info)
+{
+	// 加载
+	auto conf = (this->*load_helper.func_load)(load_helper.conf_file_name);
+	if (!conf)
+	{
+		if (err_info)
+		{
+			ConfigError err;
+			err.err_type = ConfigError::kLoadConfigError;
+			err.config_type = load_helper.conf_id;
+			err.config_file_name = load_helper.conf_file_name;
+			err_info->push_back(err);
+		}
+
+		return NULL;
+	}
+
+	// 初始化
+	if (!(this->*load_helper.func_init)(conf))
+	{
+		if (err_info)
+		{
+			ConfigError err;
+			err.err_type = ConfigError::kInitConfigError;
+			err.config_type = load_helper.conf_id;
+			err.config_file_name = load_helper.conf_file_name;
+			err_info->push_back(err);
+		}
+
+		return NULL;
+	}
+
+	return conf;
 }

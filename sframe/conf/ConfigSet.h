@@ -51,7 +51,7 @@ public:
 		std::shared_ptr<T> val;
 	};
 
-	typedef std::shared_ptr<ConfigBase> (ConfigSet::*Func_LoadConfig)();
+	typedef std::shared_ptr<ConfigBase> (ConfigSet::*Func_LoadConfig)(const std::string &);
 
 	typedef bool (ConfigSet::*Func_InitConfig)(std::shared_ptr<ConfigBase> &);
 
@@ -59,6 +59,7 @@ public:
 
 	struct ConfigLoadHelper 
 	{
+		int32_t conf_id;
 		Func_LoadConfig func_load;
 		Func_InitConfig func_init;
 		std::string conf_file_name;
@@ -158,11 +159,21 @@ public:
 	void RegistConfig(const std::string & conf_file_name)
 	{
 		int32_t config_id = GET_CONFIGID(T);
-		assert(_config_load_helper.find(config_id) == _config_load_helper.end());
-		ConfigLoadHelper & load_helper = _config_load_helper[config_id];
+		ConfigLoadHelper load_helper;
+		load_helper.conf_id = config_id;
 		load_helper.func_load = &ConfigSet::LoadConfig<T_ConfigLoader, T>;
 		load_helper.func_init = &ConfigSet::InitConfig<T, typename CONFIG_MODEL_TYPE(T)>;
 		load_helper.conf_file_name = conf_file_name;
+
+		if (config_id < 0)
+		{
+			_temporary_config_load_helper.push_back(load_helper);
+		}
+		else
+		{
+			assert(_config_load_helper.find(config_id) == _config_load_helper.end());
+			_config_load_helper[config_id] = load_helper;
+		}
 	}
 
 	// 创建动态配置(若已存在，则返回已经存在的，类型匹配失败的话，返回nullptr)
@@ -200,16 +211,9 @@ private:
 
 	// 加载
 	template<typename T_ConfigLoader, typename T>
-	std::shared_ptr<ConfigBase> LoadConfig()
+	std::shared_ptr<ConfigBase> LoadConfig(const std::string & conf_file_name)
 	{
-		int32_t config_id = GET_CONFIGID(T);
-		auto it_load_helper = _config_load_helper.find(config_id);
-		if (it_load_helper == _config_load_helper.end())
-		{
-			return nullptr;
-		}
-
-		std::string file_full_name = _config_dir + it_load_helper->second.conf_file_name;
+		std::string file_full_name = _config_dir + conf_file_name;
 		std::shared_ptr<Config<typename CONFIG_MODEL_TYPE(T)>> o = std::make_shared<Config<typename CONFIG_MODEL_TYPE(T)>>();
 		if (!o || !T_ConfigLoader::Load(file_full_name, *((o->val).get())))
 		{
@@ -233,10 +237,14 @@ private:
 		return ConfigInitializer::Initialize<T_Obj, ConfigSet, T_Config>(*this, *(config_ele->val.get()));
 	}
 
+	// 加载并初始化一个配置
+	std::shared_ptr<ConfigBase> LoadAndInitConfig(const ConfigLoadHelper & load_helper, std::vector<ConfigError> * err_info);
+
 private:
 	std::unordered_map<int32_t, std::shared_ptr<ConfigBase>> _config;
 	std::unordered_map<int32_t, ConfigLoadHelper> _config_load_helper;
 	std::unordered_map<int32_t, std::shared_ptr<ConfigBase>> _dynamic_config;
+	std::vector<ConfigLoadHelper> _temporary_config_load_helper;
 	std::string _config_dir;
 };
 

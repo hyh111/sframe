@@ -9,7 +9,7 @@
 #include "ConfigType.h"
 #include "ClientConfig.h"
 
-class ConfigManager : public sframe::ConfigSet
+class ConfigManager
 {
 public:
 	
@@ -20,13 +20,13 @@ public:
 	static bool ReloadConfig(std::string & log_msg);
 
 	// ªÒ»°≈‰÷√ºØ
-	static std::shared_ptr<ConfigSet> GetConfigSet();
+	static std::shared_ptr<sframe::ConfigSet> GetConfigSet();
 
 private:
 
-	static void RegistAllConfig(ConfigSet & conf_set);
+	static void RegistAllConfig(sframe::ConfigSet & conf_set);
 
-	static std::shared_ptr<ConfigSet> g_cur_conf_set;
+	static std::shared_ptr<sframe::ConfigSet> g_cur_conf_set;
 
 	static std::string g_config_path;
 
