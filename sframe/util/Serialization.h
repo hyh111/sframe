@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 #include <string>
 #include <vector>
 #include <list>
@@ -941,6 +942,34 @@ struct Serializer<std::unordered_map<T_Key, T_Val>>
 	}
 };
 
+template<>
+struct Serializer<double>
+{
+	static bool Encode(StreamWriter & stream_writer, double v)
+	{
+		std::string s = std::to_string(v);
+		return Encoder::Encode<std::string>(stream_writer, s);
+	}
+
+	static bool Decode(StreamReader & stream_reader, double & v)
+	{
+		std::string s;
+		if (!Decoder::Decode<std::string>(stream_reader, s))
+		{
+			return false;
+		}
+	
+		v = strtod(s.c_str(), nullptr);
+		return true;
+	}
+
+	static int32_t GetSize(double v)
+	{
+		std::string s = std::to_string(v);
+		return SizeGettor::GetSize<std::string>(s);
+	}
+};
+
 // 对象指针序列化器
 class ObjectPtrSerializer
 {
@@ -973,7 +1002,7 @@ private:
 	template<typename T>
 	static bool EncodeImp(std::true_type, StreamWriter & stream_writer, const std::shared_ptr<T> & obj)
 	{
-		uint16_t obj_type = T::GetObjectType(obj.get());
+		uint16_t obj_type = (uint16_t)T::GetObjectType(obj.get());
 		obj_type = (uint16_t)HTON_16(obj_type);
 		if (!stream_writer.Write((const void *)&obj_type, sizeof(obj_type)))
 		{
