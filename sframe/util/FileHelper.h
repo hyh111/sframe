@@ -13,6 +13,9 @@ public:
 	// 读取文件所有内容
 	static bool ReadFile(const std::string & full_name, std::string & content);
 
+	// 写入文件
+	static size_t WriteFile(const std::string & full_name, std::string & content);
+
 	// 在全路劲中获取文件名
 	static std::string GetFileName(const char * fullname);
 

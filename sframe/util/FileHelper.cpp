@@ -57,6 +57,21 @@ bool FileHelper::ReadFile(const std::string & full_name, std::string & content)
 	return true;
 }
 
+// 写入文件
+size_t FileHelper::WriteFile(const std::string & full_name, std::string & content)
+{
+	FILE * f = fopen(full_name.c_str(), "w");
+	if (!f)
+	{
+		return 0;
+	}
+
+	size_t s = fwrite(content.c_str(), sizeof(char), content.length(), f);
+	fclose(f);
+
+	return s;
+}
+
 // 在全路劲中获取文件名
 std::string FileHelper::GetFileName(const char * fullname)
 {

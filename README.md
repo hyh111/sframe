@@ -1,4 +1,4 @@
 # sframe
 SFrame is a cross-platform distributed game server framework for c++11, and you don't need to install any third party libraries to use it. It contains functions such as network communication, service scheduling, message serialization, message distribution, configuration file reading(It use JSON11 https://github.com/dropbox/json11 to parse the json file), configuration data managing and so on.<br>
 SFrame look a functional server as a logical service node, and a service node has a unique id. You don't need to care about whether a two service nodes are in the same process. You just need to known what is the unique id of the service node you need, and you can send message to it. Sframe will determine the target service node in the current process or other processes by the unique id and your settings information.<br>
-For more, please see the example code.
+For more, please see the example code or my blog: http://blog.csdn.net/heyuhang112

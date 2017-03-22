@@ -73,6 +73,7 @@
     <ClInclude Include="..\..\sframe\util\TimeHelper.h" />
     <ClInclude Include="..\..\sframe\util\Timer.h" />
     <ClInclude Include="..\..\sframe\util\TupleHelper.h" />
+    <ClInclude Include="..\..\sframe\util\WordFilter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp" />
@@ -100,6 +101,7 @@
     <ClCompile Include="..\..\sframe\util\ShmChunk.cpp" />
     <ClCompile Include="..\..\sframe\util\StringHelper.cpp" />
     <ClCompile Include="..\..\sframe\util\Timer.cpp" />
+    <ClCompile Include="..\..\sframe\util\WordFilter.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{83DE770E-0801-4DAB-ACB1-5554E74D2E0C}</ProjectGuid>

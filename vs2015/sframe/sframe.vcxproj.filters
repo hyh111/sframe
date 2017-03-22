@@ -177,6 +177,9 @@
     <ClInclude Include="..\..\sframe\util\Http.h">
       <Filter>util</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\sframe\util\WordFilter.h">
+      <Filter>util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp">
@@ -252,6 +255,9 @@
       <Filter>util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\sframe\util\Http.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\util\WordFilter.cpp">
       <Filter>util</Filter>
     </ClCompile>
   </ItemGroup>

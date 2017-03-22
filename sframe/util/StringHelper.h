@@ -37,6 +37,30 @@ std::string TrimRight(const std::string & str);
 // 去掉两边空串
 std::string Trim(const std::string & str);
 
+// wstring -> string
+std::string WStrToStr(const std::wstring & src);
+
+// string -> wstring
+std::wstring StrToWStr(const std::string & src);
+
+// utf8 -> wchar
+size_t UTF8ToWChar(const char * str, size_t len, wchar_t * wc);
+
+// wchar -> utf8
+size_t WCharToUTF8(wchar_t wc, char * buf, size_t buf_size);
+
+// 是否合法的utf8
+bool IsValidUTF8(const std::string & str);
+
+// 是否合法的utf8
+bool IsValidUTF8(const char * str, size_t len);
+
+// wstring -> utf8
+std::string WStrToUTF8(const std::wstring & src);
+
+// utf8 -> wstring
+std::wstring UTF8ToWStr(const std::string & src);
+
 }
 
 #endif
