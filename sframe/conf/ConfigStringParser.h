@@ -145,7 +145,7 @@ struct TblStrParser<T[Array_Size]>
 {
 	static void ParseTableString(const std::string & str, T(&obj)[Array_Size])
 	{
-		static const char kSep = ',';
+		static const char kSep = '|';
 
 		if (str.empty())
 		{

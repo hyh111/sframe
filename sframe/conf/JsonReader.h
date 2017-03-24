@@ -296,7 +296,7 @@ struct ObjectFiller<const json11::Json, std::set<T>>
 	}
 };
 
-// 野割Table欺unordered_set
+// 野割JSON欺unordered_set
 template<typename T>
 struct ObjectFiller<const json11::Json, std::unordered_set<T>>
 {
