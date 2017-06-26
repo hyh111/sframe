@@ -68,7 +68,7 @@ int32_t sframe::GetCharMaxContinueInString(const std::string & str, char c)
 // ²éÕÒ×Ó´®
 int32_t sframe::FindFirstSubstr(const char * str, int32_t len, const char * sub_str)
 {
-	int32_t sub_str_len = strlen(sub_str);
+	int32_t sub_str_len = (int32_t)strlen(sub_str);
 	if (sub_str_len <= 0 || len < sub_str_len)
 	{
 		return -1;

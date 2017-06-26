@@ -97,7 +97,7 @@ int main(int argc, char * argv[])
 	}
 
 	std::string config_name = argv[1];
-	SET_LOG_DIR("./" + FileHelper::RemoveExtension(FileHelper::GetFileName(config_name)) + "_log");
+	INITIALIZE_LOG("./" + FileHelper::RemoveExtension(FileHelper::GetFileName(config_name)) + "_log", "");
 	if (!ServerConfig::Instance().Load(config_name))
 	{
 		return -1;

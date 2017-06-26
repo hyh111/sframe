@@ -8,24 +8,31 @@
 namespace sframe {
 
 // 阻塞队列
-template<typename T, int Queue_Capacity>
+template<typename T>
 class BlockingQueue
 {
 public:
-	BlockingQueue() : _stop(false) {}
+
+	static const int32_t kDefaultInitCapacity = 32;
+
+	static const int32_t kDefaultIncSize = 8;
+
+	BlockingQueue(int32_t init_capacity = kDefaultInitCapacity, int32_t inc_size = kDefaultIncSize) 
+		: _ring_queue(init_capacity, inc_size), _stop(false) {}
 
 	~BlockingQueue() {}
 
-	bool Push(const T & val)
+	void Push(const T & val)
 	{
 		AutoLock l(_lock);
-		if (_stop || !_ring_queue.Push(val))
+		if (_stop)
 		{
-			return false;
+			return;
 		}
+
+		_ring_queue.Push(val);
 		// 唤醒一个在等待的线程
 		_cond.WakeUpOne();
-		return true;
 	}
 
 	bool Pop(T * val)
@@ -53,7 +60,7 @@ public:
 	}
 
 private:
-	RingQueue<T, Queue_Capacity> _ring_queue;
+	RingQueue<T> _ring_queue;
 	Lock _lock;
 	ConditionVariable _cond;
 	bool _stop;

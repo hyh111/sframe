@@ -9,10 +9,12 @@
 #include <string>
 #include <ostream>
 #include <unordered_map>
-#include <memory>
+#include <thread>
+#include <iomanip>
 #include "Lock.h"
 #include "Singleton.h"
 #include "FileHelper.h"
+#include "BlockingQueue.h"
 
 namespace sframe{
 
@@ -33,34 +35,53 @@ enum LogLevel : int32_t
 
 static const int32_t kLogLevelCount = kLogLevel_End - kLogLevel_Begin;
 
+
 // 日志类
 class Logger : public noncopyable
 {
 public:
-    Logger(const std::string & log_name = "") 
-		: _file(nullptr), _len(0), _log_name(log_name), _file_time(0) {}
+
+	struct LogDataChunk
+	{
+		static const int32_t kDefaultChunkSize = 1024 * 4;
+
+		LogDataChunk() : cur_size(0), time(0) {}
+
+		char data[kDefaultChunkSize];
+		int32_t cur_size;
+		int64_t time;
+	};
+
+	Logger(const std::string & log_name = "");
 
     ~Logger();
 
-    // 写日志
-    void Write(const char * text, LogLevel log_lv);
+    void Write(int64_t cur_time, const char * text, int32_t len);
+
+	void Flush();
+
+	Lock & GetWriteLock()
+	{
+		return _lock;
+	}
 
 private:
-    // 准备写入
-    bool RepareWrite();
-    // 写入文件
-    void WriteInFile(const char * text);
-    // 写入控制台
-    void WriteInConsole(const char * text, LogLevel log_lv);
-	// 获取新的日志文件名
-	const std::string GetLogFileName(int64_t cur_time);
+
+	void FlushLogDataChunk(LogDataChunk * data_chunk, int64_t now);
+
+	bool IsWriteBufferHaveData();
+
+	std::string GetLogFileName(int64_t cur_time);
 
 private:
     Lock _lock;
     FILE * _file;
-    int32_t _len;
+	int64_t _open_file_time;
+	int64_t _log_file_time;
     std::string _log_name;
-	int64_t _file_time;   // 当前日志的时间
+	std::vector<LogDataChunk*> * _write_log_buffer;
+	std::vector<LogDataChunk*> * _flush_log_buffer;
+	bool _waiting_flush;
 };
 
 // 日志管理器
@@ -68,21 +89,13 @@ class LoggerMgr : public singleton<LoggerMgr>
 {
 public:
 
-	LoggerMgr() : _log_in_console(false) {}
+	LoggerMgr() : _is_running(false), _flush_log_thread(nullptr) {}
+
+	~LoggerMgr();
+
+	void Initialize(const std::string & log_dir = "", const std::string & log_base_name = "");
 
 	Logger & GetLogger(const std::string & log_name);
-
-	void SetLogDir(const std::string & dir);
-
-	void SetLogBaseName(const std::string & name)
-	{
-		_log_base_name = name;
-	}
-
-	void SetLogInConsole(bool log_in_console)
-	{
-		_log_in_console = log_in_console;
-	}
 
 	const std::string & GetLogDir() const
 	{
@@ -94,35 +107,59 @@ public:
 		return _log_base_name;
 	}
 
-	bool IsLogInConsole() const
+	bool IsRunning()
 	{
-		return _log_in_console;
+		return _is_running;
+	}
+
+	void PushNeedFlushLogger(Logger * logger)
+	{
+		if (logger)
+		{
+			_wait_flush_logger_queue.Push(logger);
+		}
 	}
 
 private:
+
+	static void ExecFlushLog(LoggerMgr * log_mgr);
+
+private:
 	Lock _lock;
+	std::thread * _flush_log_thread;
+	bool _is_running;
 	Logger _default_logger;
-	std::unordered_map<std::string, std::shared_ptr<Logger>> _loggers;
+	std::unordered_map<std::string, Logger *> _loggers;
 	std::string _log_dir;
 	std::string _log_base_name;
-	bool _log_in_console;
+	BlockingQueue<Logger *> _wait_flush_logger_queue;
 };
 
-// 日志缓冲区
-class LogBuf : public std::streambuf
-{
-	static const int32_t kMaxBufferLen = 1024;
-public:
-	LogBuf(Logger & logger, LogLevel lv);
 
-	~LogBuf() {}
+class LogStreamBuf : public std::streambuf
+{
+	static const int32_t kMaxBufferLen = 255;
+public:
+	LogStreamBuf(Logger & logger, int64_t cur_time);
+
+	~LogStreamBuf() {}
+
+	int64_t GetCurTime() const
+	{
+		return _cur_time;
+	}
+
+protected:
+
+	std::streambuf::int_type overflow(std::streambuf::int_type c) override;
 
 	int sync() override;
 
 private:
+	int64_t _cur_time;
 	Logger & _logger;
-	LogLevel _lv;
-	char _buf[kMaxBufferLen + 2];
+	char _buf[kMaxBufferLen + 1];
+	std::vector<std::vector<char> > _vec_ext_buf;
 };
 
 // 日志流
@@ -136,15 +173,14 @@ public:
 	~LogStream();
 
 private:
-	LogBuf _log_buf;
+	LogStreamBuf _log_buf;
     LogLevel _log_lv;
 };
 
 #define ENDL std::endl;
 
-// 设置相关
-#define SET_LOG_BASENAME(name)    sframe::LoggerMgr::Instance().SetLogBaseName((name))
-#define SET_LOG_DIR(dir)          sframe::LoggerMgr::Instance().SetLogDir((dir))
+// 初始化日志模块
+#define INITIALIZE_LOG(log_dir, log_base_name) sframe::LoggerMgr::Instance().Initialize((log_dir), (log_base_name))
 
 // 按级别日志
 #define LOG_LEVEL(lv) sframe::LogStream("", lv) \

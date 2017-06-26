@@ -1,11 +1,10 @@
 
 #include <stdio.h>
 #include <thread>
+#include <iostream>
 #include "ConfigManager.h"
 #include "ClientManager.h"
 #include "util/Log.h"
-#include "net/SendBuffer.h"
-#include "util/TimeHelper.h"
 
 bool g_running = true;
 
@@ -19,7 +18,7 @@ void Exec()
 
 int main()
 {
-	SET_LOG_DIR("./client_log");
+	INITIALIZE_LOG("./client_log", "");
 
 	std::string err;
 	if (!ConfigManager::InitializeConfig("./client_data", err))

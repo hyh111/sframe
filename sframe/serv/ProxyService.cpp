@@ -7,17 +7,14 @@
 
 using namespace sframe;
 
-ProxyService::ProxyService() :  _session_num(0), _listening(false)
+ProxyService::ProxyService() :  _session_num(0), _session_id_queue(kMaxSessionNumber), _listening(false)
 {
 	memset(_session, 0, sizeof(_session));
 
 	// 初始化session_id队列
 	for (int i = 1; i <= kMaxSessionNumber; i++)
 	{
-		if (!_session_id_queue.Push(i))
-		{
-			assert(false);
-		}
+		_session_id_queue.Push(i);
 	}
 }
 
@@ -168,10 +165,7 @@ void ProxyService::OnMsg_SessionClosed(bool by_self, int32_t session_id)
 	delete _session[session_id];
 	_session[session_id] = nullptr;
 	_session_num--;
-	if (!_session_id_queue.Push(session_id))
-	{
-		assert(false);
-	}
+	_session_id_queue.Push(session_id);
 
 	// 删除其他记录
 	auto it_sid = _sessionid_to_sid.find(session_id);

@@ -94,7 +94,7 @@ void ServiceDispatcher::ExecWorker(ServiceDispatcher * dispatcher)
 }
 
 
-ServiceDispatcher::ServiceDispatcher() : _max_sid(0), _running(false), _io_thread(nullptr)
+ServiceDispatcher::ServiceDispatcher() : _max_sid(0), _running(false), _io_thread(nullptr), _dispach_service_queue(kMaxServiceId + 1)
 {
 	memset(_services, 0, sizeof(_services));
 	_ioservice = IoService::Create();

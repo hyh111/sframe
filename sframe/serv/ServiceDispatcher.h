@@ -149,16 +149,16 @@ private:
 	void RepareProxyServer();
 
 private:
-    Service * _services[kMaxServiceId + 1];       // index:0为特殊的代理服务
-    int32_t _max_sid;                             // 当前最大的服务ID
-	std::vector<int32_t> _local_sid;              // 本地所有服务ID
-    bool _running;                                // 是否正在运行
-    std::vector<std::thread*> _logic_threads;     // 所有逻辑线程
-	std::thread * _io_thread;                     // IO线程（IO操作，已经周期定时检测）
-	std::shared_ptr<IoService> _ioservice;        // IO服务指针
-	std::vector<Listener*> _listeners;            // 监听器
-	BlockingQueue<int32_t, kMaxServiceId> _dispach_service_queue;    // 服务调度队列
-	std::vector<CycleTimer*> _cycle_timers;                          // 周期定时器列表
+    Service * _services[kMaxServiceId + 1];           // index:0为特殊的代理服务
+    int32_t _max_sid;                                 // 当前最大的服务ID
+	std::vector<int32_t> _local_sid;                  // 本地所有服务ID
+    bool _running;                                    // 是否正在运行
+    std::vector<std::thread*> _logic_threads;         // 所有逻辑线程
+	std::thread * _io_thread;                         // IO线程（IO操作，已经周期定时检测）
+	std::shared_ptr<IoService> _ioservice;            // IO服务指针
+	std::vector<Listener*> _listeners;                // 监听器
+	BlockingQueue<int32_t> _dispach_service_queue;    // 服务调度队列
+	std::vector<CycleTimer*> _cycle_timers;           // 周期定时器列表
 };
 
 static ServiceDispatcher & GetServiceDispatcher()
