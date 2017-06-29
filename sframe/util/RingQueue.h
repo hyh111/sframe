@@ -3,9 +3,33 @@
 #define SFRAME_RING_QUEUE_H
 
 #include <inttypes.h>
+#include <string.h>
 #include <algorithm>
+#include <type_traits>
 
 namespace sframe {
+
+// 拷贝数据
+template<typename T, bool>
+struct CopyDataHelper
+{
+	static void Copy(T * dst, const T * src, size_t len)
+	{
+		memcpy(dst, src, sizeof(dst[0]) * len);
+	}
+};
+
+template<typename T>
+struct CopyDataHelper<T, false>
+{
+	static void Copy(T * dst, const T * src, size_t len)
+	{
+		for (size_t i = 0; i < len; i++)
+		{
+			dst[i] = src[i];
+		}
+	}
+};
 
 // 环形队列
 template<typename T>
@@ -20,8 +44,10 @@ public:
 	static const int32_t kDefaultIncSize = 8;
 
 	RingQueue(int32_t init_capacity = kDefaultInitCapacity, int32_t inc_size = kDefaultIncSize)
-		: _capacity(std::max(1, init_capacity)), _inc_size(std::max(1, inc_size)), _head(0), _tail(0), _len(0)
+		: _head(0), _tail(0), _len(0)
 	{
+		_capacity = std::max(1, init_capacity);
+		_inc_size = std::max(1, inc_size);
 		_queue = new T[_capacity];
 	}
 
@@ -90,20 +116,10 @@ private:
 
 		int32_t new_capacity = _capacity + _inc_size;
 		T * new_queue = new T[new_capacity];
-		int32_t cur_copy_index = 0;
-
-		for (int32_t i = _head; i < _capacity; i++)
-		{
-			new_queue[cur_copy_index++] = _queue[i];
-		}
-
-		for (int32_t i = 0; i < _head; i++)
-		{
-			new_queue[cur_copy_index++] = _queue[i];
-		}
-
-		assert(cur_copy_index == _len);
-
+		
+		size_t first_copt_len = _capacity - _head;
+		CopyData(new_queue, _queue + _head, first_copt_len);
+		CopyData(new_queue + first_copt_len, _queue, _head);
 		delete[] _queue;
 		_queue = new_queue;
 		_capacity = new_capacity;
@@ -129,23 +145,22 @@ private:
 			if (_head < _tail)
 			{
 				assert(_tail - _head == _len);
-				for (int i = _head; i < _tail; i++)
-				{
-					_queue[i] = q._queue[i];
-				}
+				CopyData(_queue + _head, q._queue + _head, _len);
 			}
 			else
 			{
 				assert((_capacity - _head) + _tail == _len);
-				for (int i = _head; i < _capacity; i++)
-				{
-					_queue[i] = q._queue[i];
-				}
-				for (int i = 0; i < _tail; i++)
-				{
-					_queue[i] = q._queue[i];
-				}
+				CopyData(_queue + _head, q._queue + _head, _capacity - _head);
+				CopyData(_queue, q._queue, _tail);
 			}
+		}
+	}
+
+	void CopyData(T * dst, const T * src, size_t len)
+	{
+		if (len > 0)
+		{
+			sframe::CopyDataHelper<T, std::is_pod<T>::value>::Copy(dst, src, len);
 		}
 	}
 

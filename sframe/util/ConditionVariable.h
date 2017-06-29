@@ -27,7 +27,7 @@ public:
 
 	~ConditionVariable() {}
 
-	void Wait(AutoLock & lock)
+	void Wait(const AutoLock & lock) const
 	{
 		if (!SleepConditionVariableCS(&_cond_var, &lock.GetLock()->_critical_section, INFINITE))
 		{
@@ -35,7 +35,7 @@ public:
 		}
 	}
 
-	bool Wait(AutoLock & lock, uint32_t milliseconds)
+	bool Wait(const AutoLock & lock, uint32_t milliseconds) const
 	{
 		if (!SleepConditionVariableCS(&_cond_var, &lock.GetLock()->_critical_section, (DWORD)milliseconds))
 		{
@@ -50,18 +50,18 @@ public:
 		return true;
 	}
 
-	void WakeUpOne()
+	void WakeUpOne() const
 	{
 		WakeConditionVariable(&_cond_var);
 	}
 
-	void WakeUpAll()
+	void WakeUpAll() const
 	{
 		WakeAllConditionVariable(&_cond_var);
 	}
 
 private:
-	CONDITION_VARIABLE _cond_var;
+	mutable CONDITION_VARIABLE _cond_var;
 };
 
 #else
@@ -79,7 +79,7 @@ public:
 		}
 	}
 
-	void Wait(AutoLock & lock)
+	void Wait(const AutoLock & lock) const
 	{
 		if (pthread_cond_wait(&_cond_var, &lock.GetLock()->_mutex) != 0)
 		{
@@ -87,7 +87,7 @@ public:
 		}
 	}
 
-	bool Wait(AutoLock & lock, uint32_t milliseconds)
+	bool Wait(const AutoLock & lock, uint32_t milliseconds) const
 	{
 		timeval now;
 		gettimeofday(&now, NULL);
@@ -110,7 +110,7 @@ public:
 		return true;
 	}
 
-	void WakeUpOne()
+	void WakeUpOne() const
 	{
 		if (pthread_cond_signal(&_cond_var) != 0)
 		{
@@ -118,7 +118,7 @@ public:
 		}
 	}
 
-	void WakeUpAll()
+	void WakeUpAll() const
 	{
 		if (pthread_cond_broadcast(&_cond_var) != 0)
 		{
@@ -127,7 +127,7 @@ public:
 	}
 
 private:
-	pthread_cond_t _cond_var;
+	mutable pthread_cond_t _cond_var;
 };
 
 #endif

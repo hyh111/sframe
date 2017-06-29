@@ -26,18 +26,18 @@ public:
         DeleteCriticalSection(&this->_critical_section);
     }
 
-    void lock()
+    void lock() const
     {
         EnterCriticalSection(&this->_critical_section);
     }
 
-    void unlock()
+    void unlock() const
     {
         LeaveCriticalSection(&this->_critical_section);
     }
 
 private:
-    CRITICAL_SECTION _critical_section;
+    mutable CRITICAL_SECTION _critical_section;
 };
 
 #else
@@ -57,17 +57,17 @@ public:
 		}
 	}
 
-    void lock()
+    void lock() const
     {
         pthread_mutex_lock(&_mutex);
     }
 
-    void unlock()
+    void unlock() const
     {
         pthread_mutex_unlock(&_mutex);
     }
 private:
-    pthread_mutex_t _mutex;
+	mutable pthread_mutex_t _mutex;
 };
 
 #endif
@@ -75,7 +75,7 @@ private:
 class AutoLock
 {
 public:
-    AutoLock(Lock & lock) : _lock(&lock)
+    AutoLock(const Lock & lock) : _lock(&lock)
     {
         _lock->lock();
     }
@@ -85,13 +85,13 @@ public:
         _lock->unlock();
     }
 
-	Lock * GetLock()
+	const Lock * GetLock() const
 	{
 		return _lock;
 	}
 
 private:
-	Lock * _lock;
+	const Lock * _lock;
 };
 
 #define AUTO_LOCK(_lc) sframe::AutoLock l((_lc))
