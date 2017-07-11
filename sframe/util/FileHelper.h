@@ -2,6 +2,7 @@
 #ifndef __FILE_HELPER_H__
 #define __FILE_HELPER_H__
 
+#include <vector>
 #include <string>
 
 namespace sframe {
@@ -36,6 +37,23 @@ public:
 
 	// 递归创建
 	static bool MakeDirectoryRecursive(const std::string & path);
+
+	enum ScanType
+	{
+		kScanType_All,
+		kScanType_OnlyDirectory,
+		kScanType_OnlyNotDirectory,
+	};
+
+	// 扫描目录
+	// dir_path   :   目录路径，不能包含通配符
+	// match_name :   名字匹配，支持通配符，比如要扫描 /data 目录下，所有符合*.cpp的名字的内容，调用ScanDirectory("/data", "*.cpp")
+	static std::vector<std::string> ScanDirectory(const std::string & dir_path, const std::string & match_name = "", ScanType scan_type = kScanType_All);
+
+	// 展开通配符(* ?)
+	// path: 路径，最后是否以/结尾，表示文件，否则为目录
+	// parent_dir: 所在目录
+	static std::vector<std::string> ExpandWildcard(const std::string & path, const std::string & parent_dir = "");
 };
 
 }

@@ -65,6 +65,12 @@ public:
 	// 连接操作完成
 	void OnConnected(Error err) override;
 
+	// 获取SessionId
+	int32_t GetSessionId()
+	{
+		return _session_id;
+	}
+
 private:
 
 	// 开始连接定时器

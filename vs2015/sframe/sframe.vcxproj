@@ -95,7 +95,6 @@
     <ClCompile Include="..\..\sframe\util\json11.cpp" />
     <ClCompile Include="..\..\sframe\util\Log.cpp" />
     <ClCompile Include="..\..\sframe\util\md5.cpp" />
-    <ClCompile Include="..\..\sframe\util\ObjectFactory.cpp" />
     <ClCompile Include="..\..\sframe\util\ObjectPool.cpp" />
     <ClCompile Include="..\..\sframe\util\RandomHelper.cpp" />
     <ClCompile Include="..\..\sframe\util\ShmChunk.cpp" />

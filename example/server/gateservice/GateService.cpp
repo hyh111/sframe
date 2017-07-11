@@ -37,8 +37,6 @@ void GateService::OnNewConnection(const sframe::ListenAddress & listen_addr_info
 		return;
 	}
 
-	assert(work_service <= sframe::ServiceDispatcher::kMaxServiceId);
-
 	int64_t cur_sid = GetServiceId();
 	int64_t sessionid = _new_session_id++;
 	sessionid = sessionid | (cur_sid << 32);

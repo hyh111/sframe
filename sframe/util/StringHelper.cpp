@@ -5,6 +5,10 @@
 #include <locale>
 #include "StringHelper.h"
 
+#ifdef __GNUC__
+#include <cxxabi.h>
+#endif
+
 // 分割字符串
 std::vector<std::string> sframe::SplitString(const std::string & str, const std::string & sep)
 {
@@ -434,3 +438,151 @@ std::wstring sframe::UTF8ToWStr(const std::string& src)
 
 	return wstr;
 }
+
+static bool CompareCharacter(char c1, char c2, bool ignore_case)
+{
+	static const char diff = 'a' - 'A';
+
+	if (ignore_case)
+	{
+		// 全部转换为小写
+		if (c1 >= 'A' && c1 <= 'Z')
+		{
+			c1 += diff;
+		}
+		if (c2 >= 'A' && c2 <= 'Z')
+		{
+			c2 += diff;
+		}
+	}
+
+	return c1 == c2;
+}
+
+// 是否匹配通配符（?和*）
+// str     :   不带通配符的字符串
+// match   :   带通配符的字符串
+bool sframe::MatchWildcardStr(const std::string & str, const std::string & match, bool ignore_case)
+{
+	bool have_star = false;
+	size_t str_index = 0;
+	size_t match_index = 0;
+
+	while (str_index < str.size() && match_index < match.size())
+	{
+		char match_char = match[match_index];
+
+		if (match_char == '*')
+		{
+			match_index++;
+			if (match_index >= match.size())
+			{
+				return true;
+			}
+			have_star = true;
+		}
+		else if (!have_star)
+		{
+			if (match_char != '?' && !CompareCharacter(match_char, str[str_index], ignore_case))
+			{
+				return false;
+			}
+			str_index++;
+			match_index++;
+		}
+		else
+		{
+			bool find_ok = false;
+
+			while (str_index < str.size())
+			{
+				size_t i = str_index;
+				size_t j = match_index;
+
+				for (; i < str.size() && j < match.size(); i++, j++)
+				{
+					if (match[j] == '*' || (match[j] != '?' && !CompareCharacter(str[i], match[j], ignore_case)))
+					{
+						break;
+					}
+				}
+
+				if (j >= match.size())
+				{
+					if (i >= str.size())
+					{
+						return true;
+					}
+				}
+				else if (match[j] == '*')
+				{
+					match_index = j;
+					str_index = i;
+					find_ok = true;
+					break;
+				}
+
+				str_index++;
+			}
+
+			if (!find_ok)
+			{
+				assert(str_index >= str.size());
+				return false;
+			}
+		}
+	}
+
+	assert(match_index >= match.size() || str_index >= str.size());
+
+	if (str_index < str.size())
+	{
+		return false;
+	}
+
+	while (match_index < match.size())
+	{
+		if (match[match_index] != '*')
+		{
+			break;
+		}
+		match_index++;
+	}
+
+	return match_index >= match.size();
+}
+
+#ifndef __GNUC__
+
+// 解析类型名称（转换为 A::B::C 的形式）
+std::string sframe::ReadTypeName(const char * name)
+{
+	const char * p = strstr(name, " ");
+	if (p)
+	{
+		size_t prev_len = (size_t)(p - name);
+		if (memcmp(name, "class", prev_len) == 0 ||
+			memcmp(name, "struct", prev_len) == 0 ||
+			memcmp(name, "enum", prev_len) == 0 ||
+			memcmp(name, "union", prev_len) == 0)
+		{
+			p += 1;
+			return std::string(p);
+		}
+	}
+
+	return std::string(name);
+}
+
+#else
+
+// 解析类型名称（转换为 A::B::C 的形式）
+std::string sframe::ReadTypeName(const char * name)
+{
+	char * real_name = abi::__cxa_demangle(name, nullptr, nullptr, nullptr);
+	std::string real_name_string(real_name);
+	free(real_name);
+	return real_name_string;
+}
+
+#endif

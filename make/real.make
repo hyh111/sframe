@@ -3,7 +3,7 @@ CC             := gcc
 CXX            := g++
 
 ifeq ($(VER),debug)
-	VER_FLAGS  := -g -DDEBUG
+	VER_FLAGS  := -DDEBUG
 	OBJS_DIR   := ./obj/debug
 else
 	VER_FLAGS  := -O3

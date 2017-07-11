@@ -79,11 +79,17 @@ void ServiceDispatcher::ExecWorker(ServiceDispatcher * dispatcher)
         while (dispatcher->_running)
         {
 			// 处理服务消息
-			cur_sid = -1;
-			if (dispatcher->_dispach_service_queue.Pop(&cur_sid))
+			Service * s = nullptr;
+			if (dispatcher->_dispach_service_queue.Pop(&s))
 			{
-				assert(cur_sid >= 0 && cur_sid <= kMaxServiceId && dispatcher->_services[cur_sid]);
-				dispatcher->_services[cur_sid]->Process();
+				if (s)
+				{
+					s->Process();
+				}
+				else
+				{
+					assert(false);
+				}
 			}
         }
     }
@@ -94,22 +100,22 @@ void ServiceDispatcher::ExecWorker(ServiceDispatcher * dispatcher)
 }
 
 
-ServiceDispatcher::ServiceDispatcher() : _max_sid(0), _running(false), _io_thread(nullptr), _dispach_service_queue(kMaxServiceId + 1)
+ServiceDispatcher::ServiceDispatcher() : _running(false), _io_thread(nullptr), _dispach_service_queue(128, 16)
 {
-	memset(_services, 0, sizeof(_services));
+	memset(_services_arr, 0, sizeof(_services_arr));
 	_ioservice = IoService::Create();
 	assert(_ioservice);
 }
 
 ServiceDispatcher::~ServiceDispatcher()
 {
-    for (int i = 0; i <= _max_sid; i++)
-    {
-        if (_services[i])
-        {
-            delete _services[i];
-        }
-    }
+	for (auto & it : _all_service)
+	{
+		if (it.second)
+		{
+			delete it.second;
+		}
+	}
 
     for (auto t : _logic_threads)
     {
@@ -128,12 +134,19 @@ ServiceDispatcher::~ServiceDispatcher()
 }
 
 // 发消息
+void ServiceDispatcher::SendMsg(Service * s, const std::shared_ptr<Message> & msg)
+{
+	if (s)
+	{
+		s->PushMsg(msg);
+	}
+}
+
+// 发消息
 void ServiceDispatcher::SendMsg(int32_t sid, const std::shared_ptr<Message> & msg)
 {
-	if (sid >= 0 && sid <= kMaxServiceId && _services[sid])
-	{
-		_services[sid]->PushMsg(msg);
-	}
+	Service *s = GetService(sid);
+	SendMsg(s, msg);
 }
 
 // 设置远程服务监听地址
@@ -201,18 +214,23 @@ bool ServiceDispatcher::Start(int32_t thread_num)
 	_running = true;
 
 	// 初始化所有服务，并设置循环周期
-	for (int i = 0; i <= _max_sid; i++)
+	for (auto & pr_service : _all_service)
 	{
-		if (_services[i] != nullptr)
+		Service * s = pr_service.second;
+		if (s != nullptr)
 		{
 			// 初始化
-			_services[i]->Init();
+			s->Init();
 			// 设置周期
-			int32_t period = _services[i]->GetCyclePeriod();
+			int32_t period = s->GetCyclePeriod();
 			if (period > 0)
 			{
-				_cycle_timers.push_back(new CycleTimer(i, period));
+				_cycle_timers.push_back(new CycleTimer(s->GetServiceId(), period));
 			}
+		}
+		else
+		{
+			assert(false);
 		}
 	}
 
@@ -254,13 +272,18 @@ void ServiceDispatcher::Stop()
 
 	// 确定所有服务的销毁优先级批次
 	std::map<int32_t, std::vector<Service*>> destroy_priority_to_service;
-	for (int i = 0; i <= _max_sid; i++)
+	for (auto & pr_service : _all_service)
 	{
-		if (_services[i] != nullptr)
+		Service * s = pr_service.second;
+		if (s != nullptr)
 		{
-			int32_t priority = _services[i]->GetDestroyPriority();
+			int32_t priority = s->GetDestroyPriority();
 			priority = priority > 0 ? priority : 0;
-			destroy_priority_to_service[priority].push_back(_services[i]);
+			destroy_priority_to_service[priority].push_back(s);
+		}
+		else
+		{
+			assert(false);
 		}
 	}
 
@@ -305,24 +328,35 @@ void ServiceDispatcher::Stop()
 }
 
 // 调度服务(将指定服务压入调度队列)
-void ServiceDispatcher::Dispatch(int32_t sid)
+void ServiceDispatcher::Dispatch(Service * s)
 {
-	assert(sid >= 0 && sid <= kMaxServiceId && _services[sid]);
-	_dispach_service_queue.Push(sid);
+	if (s)
+	{
+		_dispach_service_queue.Push(s);
+	}
+	else
+	{
+		assert(false);
+	}
 }
 
 // 注册工作服务
 bool ServiceDispatcher::RegistService(int32_t sid, Service * service)
 {
-	if (_running || !service || sid < 1 || sid > kMaxServiceId || _services[sid])
+	if (_running || !service || sid == 0 || _all_service.find(sid) != _all_service.end())
 	{
 		return false;
 	}
 
 	service->SetServiceId(sid);
-	_max_sid = sid > _max_sid ? sid : _max_sid;
 	_local_sid.push_back(sid);
-	_services[sid] = service;
+	_all_service[sid] = service;
+
+	// 若ID在[1,kServiceArrLen)区间中，拷贝一份在_service_arr
+	if (sid > 0 && sid < kServiceArrLen)
+	{
+		_services_arr[sid] = service;
+	}
 
 	return true;
 }
@@ -335,9 +369,8 @@ bool ServiceDispatcher::RegistRemoteService(int32_t sid, const std::string & rem
 		return false;
 	}
 
-	RepareProxyServer();
-
-	int32_t session_id = ((ProxyService*)_services[0])->RegistSession(sid, remote_ip, remote_port);
+	ProxyService* proxy_service = (ProxyService*)RepareProxyServer();
+	int32_t session_id = proxy_service->RegistSession(sid, remote_ip, remote_port);
 	if (session_id <= 0)
 	{
 		return false;
@@ -347,11 +380,32 @@ bool ServiceDispatcher::RegistRemoteService(int32_t sid, const std::string & rem
 }
 
 // 准备代理服务
-void ServiceDispatcher::RepareProxyServer()
+Service * ServiceDispatcher::RepareProxyServer()
 {
-	if (_services[0] == nullptr)
+	if (_services_arr[0] == nullptr)
 	{
-		_services[0] = new ProxyService();
-		assert(_services[0]);
+		assert(_all_service.find(0) == _all_service.end());
+		_services_arr[0] = new ProxyService();
+		assert(_services_arr[0]);
+		_all_service[0] = _services_arr[0];
 	}
+
+	return _services_arr[0];
+}
+
+// 获取服务
+Service * ServiceDispatcher::GetService(int32_t sid) const
+{
+	if (sid >= 0 && sid < kServiceArrLen)
+	{
+		return _services_arr[sid];
+	}
+
+	auto it = _all_service.find(sid);
+	if (it != _all_service.end())
+	{
+		return it->second;
+	}
+
+	return nullptr;
 }

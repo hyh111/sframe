@@ -14,10 +14,10 @@ class ConfigManager
 public:
 	
 	// 初始化
-	static bool InitializeConfig(const std::string & path, std::string & log_msg);
+	static bool InitializeConfig(const std::string & path);
 
 	// 重新加载
-	static bool ReloadConfig(std::string & log_msg);
+	static bool ReloadConfig();
 
 	// 获取配置集
 	static std::shared_ptr<sframe::ConfigSet> GetConfigSet();

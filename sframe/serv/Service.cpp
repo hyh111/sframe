@@ -16,7 +16,7 @@ void MessageQueue::Push(const std::shared_ptr<Message> & msg)
 	{
 		_state = kServiceState_WaitProcess;
 		// 调度服务
-		ServiceDispatcher::Instance().Dispatch(_related_service->GetServiceId());
+		ServiceDispatcher::Instance().Dispatch(_related_service);
 	}
 }
 
@@ -43,7 +43,7 @@ void MessageQueue::EndProcess()
 	{
 		_state = kServiceState_WaitProcess;
 		// 调度服务
-		ServiceDispatcher::Instance().Dispatch(_related_service->GetServiceId());
+		ServiceDispatcher::Instance().Dispatch(_related_service);
 	}
 	else
 	{

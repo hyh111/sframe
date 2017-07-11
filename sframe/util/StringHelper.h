@@ -61,6 +61,14 @@ std::string WStrToUTF8(const std::wstring & src);
 // utf8 -> wstring
 std::wstring UTF8ToWStr(const std::string & src);
 
+// 是否匹配通配符（?和*）
+// str     :   不带通配符的字符串
+// match   :   带通配符的字符串
+bool MatchWildcardStr(const std::string & real_name, const std::string & wildcard_name, bool ignore_case = false);
+
+// 解析类型名称（转换为 A::B::C 的形式）
+std::string ReadTypeName(const char * name);
+
 }
 
 #endif

@@ -4,7 +4,7 @@
 #include "conf/csv.h"
 #include "conf/TableLoader.h"
 #include "conf/JsonLoader.h"
-
+#include "util/Log.h"
 
 using namespace sframe;
 
@@ -21,7 +21,7 @@ std::string ConfigManager::g_config_path;
 sframe::Lock ConfigManager::g_conf_set_lock;
 
 // 初始化
-bool ConfigManager::InitializeConfig(const std::string & path, std::string & log_msg)
+bool ConfigManager::InitializeConfig(const std::string & path)
 {
 	g_config_path = path;
 	if (g_config_path.empty() || *(g_config_path.end() - 1) != '/')
@@ -29,11 +29,11 @@ bool ConfigManager::InitializeConfig(const std::string & path, std::string & log
 		g_config_path.push_back('/');
 	}
 
-	return ReloadConfig(log_msg);
+	return ReloadConfig();
 }
 
 // 重新加载
-bool ConfigManager::ReloadConfig(std::string & log_msg)
+bool ConfigManager::ReloadConfig()
 {
 	if (g_config_path.empty())
 	{
@@ -49,15 +49,13 @@ bool ConfigManager::ReloadConfig(std::string & log_msg)
 	}
 
 	RegistAllConfig(*conf_set);
-	std::vector<ConfigError> vec_err_info;
-	if (!conf_set->Load(g_config_path, &vec_err_info))
+	std::vector<std::string> vec_err_msg;
+	if (!conf_set->Load(g_config_path, &vec_err_msg))
 	{
-		std::ostringstream oss;
-		for (auto it = vec_err_info.begin(); it < vec_err_info.end(); it++)
+		for (const std::string err : vec_err_msg)
 		{
-			oss << it->config_file_name << (it->err_type == ConfigError::kLoadConfigError ? "(load)" : "(init)");
+			LOG_ERROR << err << std::endl;
 		}
-		log_msg = oss.str();
 
 		return false;
 	}

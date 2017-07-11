@@ -7,24 +7,18 @@
 
 using namespace sframe;
 
-ProxyService::ProxyService() :  _session_num(0), _session_id_queue(kMaxSessionNumber), _listening(false)
+ProxyService::ProxyService() : _have_no_session(true), _listening(false), _cur_max_session_id(0), _session_id_first_loop(true)
 {
-	memset(_session, 0, sizeof(_session));
-
-	// 初始化session_id队列
-	for (int i = 1; i <= kMaxSessionNumber; i++)
-	{
-		_session_id_queue.Push(i);
-	}
+	memset(_quick_find_session_arr, 0, sizeof(_quick_find_session_arr));
 }
 
 ProxyService::~ProxyService()
 {
-	for (int i = 1; i <= kMaxSessionNumber; i++)
+	for (auto & pr : _all_sessions)
 	{
-		if (_session[i] != nullptr)
+		if (pr.second)
 		{
-			delete _session[i];
+			delete pr.second;
 		}
 	}
 }
@@ -39,18 +33,18 @@ void ProxyService::Init()
 
 void ProxyService::OnDestroy()
 {
-	for (int i = 1; i <= kMaxSessionNumber; i++)
+	for (auto & pr : _all_sessions)
 	{
-		if (_session[i] != nullptr)
+		if (pr.second)
 		{
-			_session[i]->Close();
+			pr.second->Close();
 		}
 	}
 }
 
 bool ProxyService::IsDestroyCompleted() const
 {
-	return (_session_num <= 0);
+	return _have_no_session;
 }
 
 // 处理周期定时器
@@ -68,19 +62,15 @@ void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const
 		LOG_WARN << "Set tcp nodelay error|" << err.Code() << "|" << sframe::ErrorMessage(err).Message() << ENDL;
 	}
 
-	int32_t session_id = -1;
-	if (!_session_id_queue.Pop(&session_id))
+	int32_t session_id = GetNewSessionId();
+	if (session_id < 0)
 	{
 		sock->Close();
-		LOG_ERROR << "ServiceSession number upper limit|session number|" << _session_num << ENDL;
+		LOG_ERROR << "ServiceSession number upper limit|session number|" << _all_sessions.size() << ENDL;
 		return;
 	}
 
-	assert(_session[session_id] == nullptr);
-	_session[session_id] = new ServiceSession(session_id, this, sock);
-	_session_num++;
-	_session[session_id]->SetTimerManager(&_timer_mgr);
-	_session[session_id]->Init();
+	AddServiceSession(session_id, new ServiceSession(session_id, this, sock));
 }
 
 // 代理服务消息
@@ -93,9 +83,16 @@ void ProxyService::OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessa
 	}
 
 	int32_t sessionid = it->second;
-	assert(sessionid > 0 && sessionid <= kMaxSessionNumber && _session[sessionid]);
-	// 调用发送
-	_session[sessionid]->SendData(msg);
+	ServiceSession * session = GetServiceSession(sessionid);
+	if (session)
+	{
+		// 调用发送
+		session->SendData(msg);
+	}
+	else
+	{
+		assert(false);
+	}
 }
 
 #define MAKE_ADDR_INFO(ip, port) ((((int64_t)(ip) & 0xffffffff) << 16) | ((int64_t)(port) & 0xffff))
@@ -112,30 +109,30 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 	}
 
 	int32_t session_id = -1;
+	ServiceSession * session = nullptr;
 	SocketAddr sock_addr(remote_ip.c_str(), remote_port);
 	int64_t addr_info = MAKE_ADDR_INFO(sock_addr.GetIp(), sock_addr.GetPort());
 	auto it_session_id = _session_addr_to_sessionid.find(addr_info);
 	if (it_session_id == _session_addr_to_sessionid.end())
 	{
 		// 若没有相同目的地址的session，新建一个
-		if (!_session_id_queue.Pop(&session_id))
+		session_id = GetNewSessionId();
+		if (session_id < 0)
 		{
 			return -1;
 		}
 
-		assert(_session[session_id] == nullptr);
-		_session[session_id] = new ServiceSession(session_id, this, remote_ip, remote_port);
-		_session_num++;
-		_session[session_id]->SetTimerManager(&_timer_mgr);
-		_session[session_id]->Init();
+		session = new ServiceSession(session_id, this, remote_ip, remote_port);
+		AddServiceSession(session_id, session);
 		_session_addr_to_sessionid[addr_info] = session_id;
 	}
 	else
 	{
 		session_id = it_session_id->second;
+		session = GetServiceSession(session_id);
 	}
 
-	assert(session_id > 0 && session_id <= kMaxSessionNumber && _session[session_id]);
+	assert(session && session_id == session->GetSessionId());
 	// 添加会话包含的服务
 	_sessionid_to_sid[session_id].insert(sid);
 	// 添加sid到sessionid的映射
@@ -144,28 +141,116 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 	return session_id;
 }
 
-ServiceSession * ProxyService::GetServiceSessionById(int32_t session_id)
+static const int32_t kMaxSessionId = 2000000000;
+
+int32_t ProxyService::GetNewSessionId()
 {
-	assert(session_id > 0 && session_id <= kMaxSessionNumber);
-	return _session[session_id];
+	assert(_cur_max_session_id < kMaxSessionId);
+
+	int32_t session_id = -1;
+
+	if (_session_id_first_loop)
+	{
+		session_id = (++_cur_max_session_id);
+		if (_cur_max_session_id >= kMaxSessionId)
+		{
+			_cur_max_session_id = 0;
+			_session_id_first_loop = false;
+		}
+	}
+	else
+	{
+		int32_t old_max_session_id = _cur_max_session_id;
+		while (true)
+		{
+			session_id = (++_cur_max_session_id);
+			if (_cur_max_session_id >= kMaxSessionId)
+			{
+				_cur_max_session_id = 0;
+			}
+
+			if (_all_sessions.find(session_id) == _all_sessions.end())
+			{
+				break;
+			}
+			if (_cur_max_session_id == old_max_session_id)
+			{
+				session_id = -1;
+				break;
+			}
+		}
+	}
+
+	return session_id;
 }
 
+ServiceSession * ProxyService::GetServiceSession(int32_t session_id)
+{
+	if (session_id >= 0 && session_id < kQuickFindSessionArrLen)
+	{
+		return _quick_find_session_arr[session_id];
+	}
+
+	auto it = _all_sessions.find(session_id);
+	return it == _all_sessions.end() ? nullptr : it->second;
+}
+
+void ProxyService::AddServiceSession(int32_t session_id, ServiceSession * session)
+{
+	if (!_all_sessions.insert(std::make_pair(session_id, session)).second)
+	{
+		assert(false);
+		return;
+	}
+
+	if (session_id >= 0 && session_id < kQuickFindSessionArrLen)
+	{
+		assert(_quick_find_session_arr[session_id] == nullptr);
+		_quick_find_session_arr[session_id] = session;
+	}
+
+	session->SetTimerManager(&_timer_mgr);
+	session->Init();
+	_have_no_session = false;
+}
+
+void ProxyService::DeleteServiceSession(int32_t session_id)
+{
+	auto it = _all_sessions.find(session_id);
+	if (it == _all_sessions.end())
+	{
+		assert(false);
+		return;
+	}
+
+	delete it->second;
+	_all_sessions.erase(it);
+
+	if (session_id >= 0 && session_id < kQuickFindSessionArrLen)
+	{
+		assert(_quick_find_session_arr[session_id]);
+		_quick_find_session_arr[session_id] = nullptr;
+	}
+
+	if (_all_sessions.empty())
+	{
+		_have_no_session = true;
+	}
+}
 
 void ProxyService::OnMsg_SessionClosed(bool by_self, int32_t session_id)
 {
-	assert(_session[session_id]);
+	ServiceSession * session = GetServiceSession(session_id);
+	assert(session && session->GetSessionId() == session_id);
 
 	// 是否要删除session
-	if (!_session[session_id]->TryFree())
+	if (!session->TryFree())
 	{
 		return;
 	}
 
 	// 删除session
-	delete _session[session_id];
-	_session[session_id] = nullptr;
-	_session_num--;
-	_session_id_queue.Push(session_id);
+	DeleteServiceSession(session_id);
 
 	// 删除其他记录
 	auto it_sid = _sessionid_to_sid.find(session_id);
@@ -190,7 +275,7 @@ void ProxyService::OnMsg_SessionClosed(bool by_self, int32_t session_id)
 
 void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_ptr<std::vector<char>> & data)
 {
-	assert(_session[session_id]);
+	assert(GetServiceSession(session_id) != nullptr);
 
 	std::vector<char> & vec_data = *data;
 	char * p = &vec_data[0];
@@ -245,6 +330,14 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 
 void ProxyService::OnMsg_SessionConnectCompleted(int32_t session_id, bool success)
 {
-	assert(_session[session_id]);
-	_session[session_id]->DoConnectCompleted(success);
+	ServiceSession * session = GetServiceSession(session_id);
+	if (session)
+	{
+		session->DoConnectCompleted(success);
+	}
+	else
+	{
+		assert(false);
+	}
 }
+

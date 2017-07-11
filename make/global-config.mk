@@ -2,5 +2,5 @@
 MFLAGS       :=
 VER          := debug
 AR           := ar
-CPPFLAGS     := -pthread
+CPPFLAGS     := -pthread -g
 CXXFLAGS     := -std=c++11

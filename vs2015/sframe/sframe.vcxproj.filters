@@ -251,9 +251,6 @@
     <ClCompile Include="..\..\sframe\util\Timer.cpp">
       <Filter>util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sframe\util\ObjectFactory.cpp">
-      <Filter>util</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\sframe\util\Http.cpp">
       <Filter>util</Filter>
     </ClCompile>

@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include "Singleton.h"
+#include "StringHelper.h"
 
 namespace sframe {
 
@@ -118,9 +119,6 @@ public:
 template <typename T, typename T_Factory, typename T_Factory::KeyType key>
 typename RegFactory<T, T_Factory, key>::Registor RegFactory<T, T_Factory, key>::s_registor;
 
-
-// 解析类型名称（转换为 A::B::C 的形式）
-std::string ReadTypeName(const char * name);
 
 // 注册到工厂，通过类名
 // 工厂必须定义了单例方法 static Factory & Factory::Instance()
