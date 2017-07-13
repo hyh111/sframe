@@ -45,10 +45,11 @@ struct ServerConfig : public sframe::singleton<ServerConfig>
 
 	bool HaveLocalService(const std::string & serv_type_name);
 
+	std::string server_name;                  // 服务器名称
 	std::string res_path;                     // 资源目录
 	int32_t thread_num;                       // 线程数量
 	std::shared_ptr<NetAddrInfo> listen_service;                                 // 远程服务监听地址
-	std::shared_ptr<NetAddrInfo> listen_manager;                                 // 管理地址
+	std::shared_ptr<NetAddrInfo> listen_admin;                                 // 管理地址
 	std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>> services;          // 服务信息（sid -> 服务信息）
 	std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>>> type_to_services;  // 类型->该类型所有服务信息
 	std::unordered_map<std::string, std::vector<ListenAddrInfo>> listen_custom;  // 自定义监听

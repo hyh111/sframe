@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <queue>
+#include "AdminCmd.h"
 #include "ServiceSession.h"
 #include "Service.h"
 #include "../util/RingQueue.h"
@@ -45,6 +46,9 @@ public:
 	// 返回会话ID（大于0的整数），否则为失败
 	int32_t RegistSession(int32_t sid, const std::string & remote_ip, uint16_t remote_port);
 
+	// 注册管理命令处理方法
+	void RegistAdminCmd(const std::string & cmd, const AdminCmdHandleFunc & func);
+
 private:
 
 	int32_t GetNewSessionId();
@@ -61,6 +65,10 @@ private:
 
 	void OnMsg_SessionConnectCompleted(int32_t session_id, bool success);
 
+	void OnMsg_AdminCommand(int32_t admin_session_id, const std::shared_ptr<sframe::HttpRequest> & http_req);
+
+	void OnMsg_SendAdminCommandResponse(int32_t admin_session_id, const std::string & data, const  std::shared_ptr<sframe::HttpRequest> & http_req);
+
 private:
 
 	static const int kQuickFindSessionArrLen = 512;
@@ -75,6 +83,7 @@ private:
 	TimerManager _timer_mgr;                                                    // 定时器管理
 	int32_t _cur_max_session_id;
 	bool _session_id_first_loop;
+	std::unordered_map<std::string, AdminCmdHandleFunc> _map_admin_cmd_func;    // 管理命令处理方法
 };
 
 }

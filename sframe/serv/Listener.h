@@ -13,16 +13,27 @@
 
 namespace sframe {
 
-// 连接派发策略
-class ConnDistributeStrategy
+// TCP连接处理器
+class TcpConnHandler
 {
 public:
-	ConnDistributeStrategy()
+	TcpConnHandler() {}
+
+	virtual ~TcpConnHandler() {}
+
+	virtual void HandleTcpConn(const std::shared_ptr<TcpSocket> & sock, const ListenAddress & listen_addr) = 0;
+};
+
+// 服务TCP连接处理器——将连接发送给指定的服务来处理
+class ServiceTcpConnHandler : public TcpConnHandler
+{
+public:
+	ServiceTcpConnHandler()
 	{
 		_it_cur_sid = _handle_services.begin();
 	}
 
-	virtual ~ConnDistributeStrategy() {}
+	~ServiceTcpConnHandler() {}
 
 	void SetHandleServices(const std::set<int32_t> & handle_services)
 	{
@@ -36,7 +47,7 @@ public:
 		return _handle_services;
 	}
 
-	virtual int32_t DistributeHandleService(const std::shared_ptr<TcpSocket> & sock);
+	void HandleTcpConn(const std::shared_ptr<TcpSocket> & sock, const ListenAddress & listen_addr) override;
 
 private:
 	std::set<int32_t> _handle_services;
@@ -48,41 +59,9 @@ class Listener : public TcpAcceptor::Monitor, public noncopyable
 {
 public:
 
-	Listener(const std::string & ip, uint16_t port, int32_t handle_service)
-	{
-		_running.store(false);
-		_addr.ip = ip;
-		_addr.port = port;
-		_distribute_strategy = new ConnDistributeStrategy();
-		_distribute_strategy->SetHandleServices(std::set<int32_t> {handle_service});
-	}
+	Listener(const std::string & ip, uint16_t port, const std::string & desc_name, std::shared_ptr<TcpConnHandler> conn_handler);
 
-	Listener(const std::string & ip, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy = nullptr)
-	{
-		_running.store(false);
-		_addr.ip = ip;
-		_addr.port = port;
-		if (distribute_strategy == nullptr)
-		{
-			_distribute_strategy = new ConnDistributeStrategy();
-		}
-		_distribute_strategy->SetHandleServices(handle_services);
-	}
-
-	~Listener()
-	{
-		delete _distribute_strategy;
-	}
-
-	void SetDescName(const std::string & desc_name)
-	{
-		_addr.desc_name = desc_name;
-	}
-
-	bool IsRunning() const
-	{
-		return _running.load();
-	}
+	~Listener() {}
 
 	bool Start();
 
@@ -94,11 +73,17 @@ public:
 	// 停止
 	void OnClosed(Error err) override;
 
+
+	bool IsRunning() const
+	{
+		return _running;
+	}
+
 private:
 	ListenAddress _addr;
 	std::shared_ptr<TcpAcceptor> _acceptor;
-	ConnDistributeStrategy * _distribute_strategy;
-	std::atomic_bool _running;
+	std::shared_ptr<TcpConnHandler> _conn_handler;
+	bool _running;
 };
 
 }

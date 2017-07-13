@@ -22,10 +22,26 @@ class Http
 {
 public:
 
+	typedef std::unordered_map<std::string, std::string> Param;
+
 	typedef std::unordered_map<std::string, std::vector<std::string>> Header;
 
 	// 标准化头部属性Key
 	static std::string StandardizeHeaderKey(const std::string & key);
+
+	// URL编码
+	static std::string UrlEncode(const std::string & str);
+
+	// URL解码
+	static std::string UrlDecode(const std::string & str);
+
+	// 解析HTTP参数
+	static Http::Param ParseHttpParam(const std::string para_str);
+
+	// HttpParam转换为string
+	static std::string HttpParamToString(const Http::Param & para);
+
+
 
 	Http() {}
 
@@ -59,7 +75,6 @@ protected:
 class HttpRequest : public Http
 {
 public:
-	static const int kMaxUrlLen = 4096;
 
 	HttpRequest();
 
@@ -100,7 +115,6 @@ private:
 class HttpResponse : public Http
 {
 public:
-	static const int kMaxUrlLen = 4096;
 
 	HttpResponse();
 
@@ -136,6 +150,8 @@ private:
 
 class HttpDecoder
 {
+public:
+
 	enum DecodeState
 	{
 		kDecodeState_FirstLine = 0,       // 正在第一行
@@ -144,26 +160,11 @@ class HttpDecoder
 		kDecodeState_Completed = 3,       // 解析完成
 	};
 
-public:
-	HttpDecoder(int32_t http_type);
-
-	~HttpDecoder() {}
-
 	void Reset();
 
 	bool IsDecodeCompleted() const
 	{
 		return _state == kDecodeState_Completed;
-	}
-
-	std::shared_ptr<HttpRequest> GetHttpRequest() const
-	{
-		return _http_request;
-	}
-
-	std::shared_ptr<HttpResponse> GetHttpResponse() const
-	{
-		return _http_response;
 	}
 
 	// 解析
@@ -176,6 +177,22 @@ public:
 	// 解析
 	// 返回解析了的有效数据数据的长度
 	size_t Decode(const char * data, size_t len, std::string & err_msg);
+
+protected:
+
+	HttpDecoder(int32_t http_type);
+
+	virtual ~HttpDecoder() {}
+
+	std::shared_ptr<HttpRequest> GetHttpRequest() const
+	{
+		return _http_request;
+	}
+
+	std::shared_ptr<HttpResponse> GetHttpResponse() const
+	{
+		return _http_response;
+	}
 
 private:
 	size_t DecodeFirstLine(const char * data, size_t len, std::string & err_msg);
@@ -193,6 +210,34 @@ private:
 	int32_t _state;
 	int32_t _remain_content_len;      // -1.chunked不确定长度; -2.内容知道连接关闭才读完; >0.定长
 	std::vector<std::string> _data_list;
+};
+
+class HttpRequestDecoder : public HttpDecoder
+{
+public:
+
+	HttpRequestDecoder() : HttpDecoder(kHttpType_Request) {}
+
+	~HttpRequestDecoder() {}
+
+	std::shared_ptr<HttpRequest> GetResult() const
+	{
+		return GetHttpRequest();
+	}
+};
+
+class HttpResponseDecoder : public HttpDecoder
+{
+public:
+
+	HttpResponseDecoder() : HttpDecoder(kHttpType_Response) {}
+
+	~HttpResponseDecoder() {}
+
+	std::shared_ptr<HttpResponse> GetResult() const
+	{
+		return GetHttpResponse();
+	}
 };
 
 }

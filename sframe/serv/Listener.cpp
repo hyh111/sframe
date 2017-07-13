@@ -5,29 +5,45 @@
 
 using namespace sframe;
 
-int32_t ConnDistributeStrategy::DistributeHandleService(const std::shared_ptr<TcpSocket> & sock)
+void ServiceTcpConnHandler::HandleTcpConn(const std::shared_ptr<TcpSocket> & sock, const ListenAddress & listen_addr)
 {
 	if (_handle_services.empty())
 	{
-		assert(false);
-		return -1;
+		return;
 	}
+
+	int32_t hand_sid = -1;
 
 	if (_handle_services.size() == 1)
 	{
-		return *(_handle_services.begin());
+		hand_sid = *(_handle_services.begin());
 	}
-
-	int32_t sid = *_it_cur_sid;
-	_it_cur_sid++;
-	if (_it_cur_sid == _handle_services.end())
+	else
 	{
-		_it_cur_sid = _handle_services.begin();
+		hand_sid = *_it_cur_sid;
+		_it_cur_sid++;
+		if (_it_cur_sid == _handle_services.end())
+		{
+			_it_cur_sid = _handle_services.begin();
+		}
 	}
+	
+	assert(hand_sid >= 0);
 
-	return sid;
+	std::shared_ptr<NewConnectionMessage> new_conn_msg = std::make_shared<NewConnectionMessage>(sock, listen_addr);
+	GetServiceDispatcher().SendMsg(hand_sid, new_conn_msg);
 }
 
+
+
+Listener::Listener(const std::string & ip, uint16_t port, const std::string & desc_name, std::shared_ptr<TcpConnHandler> conn_handler)
+{
+	_running = false;
+	_addr.ip = ip;
+	_addr.port = port;
+	_addr.desc_name = desc_name;
+	_conn_handler = conn_handler;
+}
 
 bool Listener::Start()
 {
@@ -47,7 +63,7 @@ bool Listener::Start()
 	}
 
 	LOG_INFO << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") started" << std::endl;
-	_running.store(true);
+	_running = true;
 
 	return true;
 }
@@ -70,15 +86,13 @@ void Listener::OnAccept(std::shared_ptr<TcpSocket> socket, Error err)
 		return;
 	}
 
-	int32_t handle_sid = _distribute_strategy->DistributeHandleService(socket);
-	if (handle_sid < 0)
+	if (!_conn_handler)
 	{
-		assert(false);
+		LOG_ERROR << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") have no connection handler" << std::endl;
 		return;
 	}
 
-	std::shared_ptr<NewConnectionMessage> new_conn_msg = std::make_shared<NewConnectionMessage>(socket, _addr);
-	GetServiceDispatcher().SendMsg(handle_sid, new_conn_msg);
+	_conn_handler->HandleTcpConn(socket, _addr);
 }
 
 // ֹͣ
@@ -94,5 +108,5 @@ void Listener::OnClosed(Error err)
 		LOG_INFO << "Listener " << _addr.ip << ':' << _addr.port << "(" << _addr.desc_name << ") stoped" << std::endl;
 	}
 
-	_running.store(false);
+	_running = false;
 }

@@ -350,7 +350,7 @@ class TimerManager
 {
 public:
 	static const int32_t kMilliSecOneTick = 1;                  // 一个tick多少毫秒
-																// executor: 执行方法，返回下次多少毫秒后执行，小于0为停止当前的timer
+
 	TimerManager() : _exec_time(0), _cur_exec_timer(nullptr)
 	{
 		_add_timer_cache.reserve(128);

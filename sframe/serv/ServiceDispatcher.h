@@ -15,6 +15,7 @@
 #include "../util/Serialization.h"
 #include "Message.h"
 #include "ProxyServiceMsg.h"
+#include "AdminCmd.h"
 
 namespace sframe{
 
@@ -68,26 +69,17 @@ public:
 	template<typename... T_Args>
 	void SendServiceMsg(int32_t src_sid, int32_t dest_sid, int64_t session_key, uint16_t msg_id, T_Args&... args);
 
-	// 获取IO服务
-	const std::shared_ptr<IoService> & GetIoService() const
-	{
-		return _ioservice;
-	}
-
-	// 指定服务ID是否是本地服务
-	bool IsLocalService(int32_t sid) const
-	{
-		return (std::find(_local_sid.begin(), _local_sid.end(), sid) != _local_sid.end());
-	}
-
 	// 设置远程服务监听地址
 	void SetServiceListenAddr(const std::string & ip, uint16_t port);
 
-	// 设置自定义监听地址
-	void SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy = nullptr);
+	// 设置服务器管理监听地址
+	void SetAdminListenAddr(const std::string & ip, uint16_t port);
 
 	// 设置自定义监听地址
-	void SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, int32_t handle_service);
+	bool SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy = nullptr);
+
+	// 设置自定义监听地址
+	bool SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, int32_t handle_service);
 
     // 开始
     bool Start(int32_t thread_num);
@@ -103,6 +95,21 @@ public:
 
 	// 注册远程服务
 	bool RegistRemoteService(int32_t sid, const std::string & remote_ip, uint16_t remote_port);
+
+	// 注册管理命令处理方法
+	void RegistAdminCmd(const std::string & cmd, const AdminCmdHandleFunc & func);
+
+	// 获取IO服务
+	const std::shared_ptr<IoService> & GetIoService() const
+	{
+		return _ioservice;
+	}
+
+	// 指定服务ID是否是本地服务
+	bool IsLocalService(int32_t sid) const
+	{
+		return (std::find(_local_sid.begin(), _local_sid.end(), sid) != _local_sid.end());
+	}
 
 
 private:
@@ -148,7 +155,8 @@ void ServiceDispatcher::SendMsg(int32_t sid, const std::shared_ptr<T> & msg)
 template<typename... T_Args>
 void ServiceDispatcher::SendInsideServiceMsg(int32_t src_sid, int32_t dest_sid, int64_t session_key, uint16_t msg_id, T_Args&... args)
 {
-	std::shared_ptr<InsideServiceMessage<T_Args...>> msg = std::make_shared<InsideServiceMessage<T_Args...>>(args...);
+	std::shared_ptr<InsideServiceMessage<typename std::decay<T_Args>::type ...>> msg =
+		std::make_shared<InsideServiceMessage<typename std::decay<T_Args>::type ...>>(std::forward<T_Args>(args)...);
 	msg->src_sid = src_sid;
 	msg->dest_sid = dest_sid;
 	msg->session_key = session_key;

@@ -142,6 +142,27 @@ void ServiceSession::SendData(const std::shared_ptr<ProxyServiceMessage> & msg)
 	}
 }
 
+// 发送数据
+void ServiceSession::SendData(const std::string & data)
+{
+	if (_state == ServiceSession::kSessionState_Running)
+	{
+		assert(_socket);
+		_socket->Send(data.data(), data.length());
+	}
+}
+
+// 获取地址
+std::string ServiceSession::GetRemoteAddrText() const
+{
+	if (!_socket)
+	{
+		return std::string();
+	}
+
+	return SocketAddrText(_socket->GetRemoteAddress()).Text();
+}
+
 // 接收到数据
 // 返回剩余多少数据
 int32_t ServiceSession::OnReceived(char * data, int32_t len)
@@ -184,12 +205,12 @@ void ServiceSession::OnClosed(bool by_self, sframe::Error err)
 {
 	if (err)
 	{
-		LOG_INFO << "Connection with server(" << SocketAddrText(_socket->GetRemoteAddress()).Text() 
-			<< ") closed with error(" << err.Code() << "): " << sframe::ErrorMessage(err).Message() << ENDL;
+		LOG_INFO << "Connection with " << SocketAddrText(_socket->GetRemoteAddress()).Text() 
+			<< " closed with error(" << err.Code() << "): " << sframe::ErrorMessage(err).Message() << ENDL;
 	}
 	else
 	{
-		LOG_INFO << "Connection with server(" << SocketAddrText(_socket->GetRemoteAddress()).Text() << ") closed" << ENDL;
+		LOG_INFO << "Connection with " << SocketAddrText(_socket->GetRemoteAddress()).Text() << " closed" << ENDL;
 	}
 
 	std::shared_ptr<InsideServiceMessage<bool, int32_t>> msg = std::make_shared<InsideServiceMessage<bool, int32_t>>(by_self, _session_id);
@@ -247,4 +268,34 @@ void ServiceSession::StartConnect()
 	_socket->SetMonitor(this);
 	_socket->SetTcpNodelay(true);
 	_socket->Connect(sframe::SocketAddr(_remote_ip.c_str(), _remote_port));
+}
+
+
+
+// 接收到数据
+// 返回剩余多少数据
+int32_t AdminSession::OnReceived(char * data, int32_t len)
+{
+	assert(data && len > 0 && GetState() == kSessionState_Running);
+
+	int32_t session_id = GetSessionId();
+
+	std::string err_msg;
+	size_t readed = _http_decoder.Decode(data, len, err_msg);
+	if (!err_msg.empty())
+	{
+		LOG_ERROR << "AdminSession(" << session_id << ") decode http request error|" << err_msg << std::endl;
+		// 关闭连接
+		return -1;
+	}
+
+	if (_http_decoder.IsDecodeCompleted())
+	{
+		std::shared_ptr<sframe::HttpRequest> http_req = _http_decoder.GetResult();
+		_http_decoder.Reset();
+		assert(http_req);
+		ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, 0, kProxyServiceMsgId_AdminCommand, session_id, http_req);
+	}
+
+	return len - (int32_t)readed;
 }

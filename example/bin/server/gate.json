@@ -1,4 +1,7 @@
 {
+	// 服务器名称
+	"server_name" : "GateServer",
+
 	// 资源目录
 	"res_path" : "./resourse",
 
@@ -9,7 +12,7 @@
 	"listen_service" : "0.0.0.0:5002",
 
 	// 管理连接监听地址
-	"listen_manager" : "0.0.0.0:6003",
+	"listen_admin" : "0.0.0.0:6003",
 
 	// 自定义监听地址
 	"listen_custom" : {

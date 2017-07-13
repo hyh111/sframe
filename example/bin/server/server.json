@@ -1,4 +1,7 @@
 {
+	// 服务器名称
+	"server_name" : "Server",
+
 	/* 资源目录*/
 	"res_path" : "./resourse",
 
@@ -11,7 +14,7 @@
 	//"listen_service" : "0.0.0.0:5001",
 
 	// 管理连接监听地址
-	"listen_manager" : "0.0.0.0:6001",
+	"listen_admin" : "0.0.0.0:6001",
 
 	// 自定义监听地址
 	"listen_custom" : {

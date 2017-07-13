@@ -40,7 +40,7 @@ private:
 	HttpService * _http_service;
 	std::shared_ptr<sframe::TcpSocket> _sock;
 	int64_t _session_id;
-	sframe::HttpDecoder _http_decoder;
+	sframe::HttpRequestDecoder _http_decoder;
 };
 
 #endif

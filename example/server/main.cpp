@@ -22,6 +22,38 @@
 
 using namespace sframe;
 
+
+void AdminCmd_GetServerInfo(const sframe::AdminCmd & cmd)
+{
+	std::ostringstream oss;
+	oss << "Server Name : " << ServerConfig::Instance().server_name << std::endl;
+
+	if (cmd.GetCmdParam("all") == "1")
+	{
+		oss << "Service Info :" << std::endl;
+
+		for (auto & pr_service_type : ServerConfig::Instance().type_to_services)
+		{
+			for (auto & pr : pr_service_type.second)
+			{
+				if (pr.second)
+				{
+					oss << "    " << pr.second->service_type_name << '(' << pr.second->sid << ")  "
+						<< (pr.second->is_local_service ? "local" : "remote");
+					if (!pr.second->is_local_service)
+					{
+						oss << "  addr(" << pr.second->remote_addr.ip << ':' << pr.second->remote_addr.port << ')';
+					}
+					oss << std::endl;
+				}
+			}
+		}
+	}
+
+	cmd.SendResponse(oss.str());
+}
+
+
 bool Start()
 {
 	std::unordered_map<std::string, std::set<int32_t>> local_service;
@@ -66,7 +98,16 @@ bool Start()
 	{
 		ServiceDispatcher::Instance().SetServiceListenAddr(
 			ServerConfig::Instance().listen_service->ip,
-			ServerConfig::Instance().listen_service->port);
+			ServerConfig::Instance().listen_service->port
+		);
+	}
+
+	if (ServerConfig::Instance().listen_admin)
+	{
+		ServiceDispatcher::Instance().SetAdminListenAddr(
+			ServerConfig::Instance().listen_admin->ip,
+			ServerConfig::Instance().listen_admin->port
+		);
 	}
 
 	for (const auto & pr : ServerConfig::Instance().listen_custom)
@@ -82,6 +123,9 @@ bool Start()
 			ServiceDispatcher::Instance().SetCustomListenAddr(addr_info.desc, addr_info.addr.ip, addr_info.addr.port, it->second);
 		}
 	}
+
+	// ◊¢≤·π‹¿Ì√¸¡Ó
+	ServiceDispatcher::Instance().RegistAdminCmd("get_server_info", &AdminCmd_GetServerInfo);
 
 	if (!ServiceDispatcher::Instance().Start(ServerConfig::Instance().thread_num))
 	{

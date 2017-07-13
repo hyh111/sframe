@@ -42,6 +42,7 @@
     <ClInclude Include="..\..\sframe\net\win\IoUnit.h" />
     <ClInclude Include="..\..\sframe\net\win\TcpAcceptor_Win.h" />
     <ClInclude Include="..\..\sframe\net\win\TcpSocket_Win.h" />
+    <ClInclude Include="..\..\sframe\serv\AdminCmd.h" />
     <ClInclude Include="..\..\sframe\serv\Listener.h" />
     <ClInclude Include="..\..\sframe\serv\Message.h" />
     <ClInclude Include="..\..\sframe\serv\MessageDecoder.h" />
@@ -85,6 +86,7 @@
     <ClCompile Include="..\..\sframe\net\win\IoService_Win.cpp" />
     <ClCompile Include="..\..\sframe\net\win\TcpAcceptor_Win.cpp" />
     <ClCompile Include="..\..\sframe\net\win\TcpSocket_Win.cpp" />
+    <ClCompile Include="..\..\sframe\serv\AdminCmd.cpp" />
     <ClCompile Include="..\..\sframe\serv\Listener.cpp" />
     <ClCompile Include="..\..\sframe\serv\ProxyService.cpp" />
     <ClCompile Include="..\..\sframe\serv\Service.cpp" />

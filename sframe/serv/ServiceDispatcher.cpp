@@ -50,8 +50,7 @@ void ServiceDispatcher::ExecIO(ServiceDispatcher * dispatcher)
 
 			if (min_next_timer_time > 0)
 			{
-				int64_t next_timer_after_millisec = min_next_timer_time - now;
-				assert(next_timer_after_millisec > 0);
+				int64_t next_timer_after_millisec = min_next_timer_time > now ? min_next_timer_time - now : 0;
 				wait_timeout = wait_timeout > next_timer_after_millisec ? next_timer_after_millisec : wait_timeout;
 			}
 			
@@ -153,46 +152,64 @@ void ServiceDispatcher::SendMsg(int32_t sid, const std::shared_ptr<Message> & ms
 void ServiceDispatcher::SetServiceListenAddr(const std::string & ip, uint16_t port)
 {
 	RepareProxyServer();
-	Listener * listener = new Listener(ip, port, 0);
+	std::shared_ptr<ServiceTcpConnHandler> conn_handler = std::make_shared<ServiceTcpConnHandler>();
+	conn_handler->SetHandleServices(std::set<int32_t>{0});
+	Listener * listener = new Listener(ip, port, "ServConnectAddr", conn_handler);
 	assert(listener);
-	listener->SetDescName("ServiceConnectAddr");
+	_listeners.push_back(listener);
+}
+
+// 设置服务器管理监听地址
+void ServiceDispatcher::SetAdminListenAddr(const std::string & ip, uint16_t port)
+{
+	RepareProxyServer();
+	std::shared_ptr<ServiceTcpConnHandler> conn_handler = std::make_shared<ServiceTcpConnHandler>();
+	conn_handler->SetHandleServices(std::set<int32_t>{0});
+	Listener * listener = new Listener(ip, port, "AdminAddr", conn_handler);
+	assert(listener);
 	_listeners.push_back(listener);
 }
 
 // 设置自定义监听地址
-void ServiceDispatcher::SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy)
+bool ServiceDispatcher::SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, const std::set<int32_t> & handle_services, ConnDistributeStrategy * distribute_strategy)
 {
 	if (handle_services.empty())
 	{
-		return;
+		return false;
 	}
 
 	for (auto it = handle_services.begin(); it != handle_services.end(); it++)
 	{
 		if (*it <= 0)
 		{
-			return;
+			return false;
 		}
 	}
 
-	Listener * listener = new Listener(ip, port, handle_services, distribute_strategy);
+	std::shared_ptr<ServiceTcpConnHandler> conn_handler = std::make_shared<ServiceTcpConnHandler>();
+	conn_handler->SetHandleServices(handle_services);
+	Listener * listener = new Listener(ip, port, desc_name, conn_handler);
 	assert(listener);
-	listener->SetDescName(desc_name);
 	_listeners.push_back(listener);
+
+	return true;
 }
 
 // 设置自定义监听地址
-void ServiceDispatcher::SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, int32_t handle_service)
+bool ServiceDispatcher::SetCustomListenAddr(const std::string & desc_name, const std::string & ip, uint16_t port, int32_t handle_service)
 {
 	if (handle_service <= 0)
 	{
-		return;
+		return false;
 	}
 
-	Listener * listener = new Listener(ip, port, handle_service);
+	std::shared_ptr<ServiceTcpConnHandler> conn_handler = std::make_shared<ServiceTcpConnHandler>();
+	conn_handler->SetHandleServices(std::set<int32_t>{handle_service});
+	Listener * listener = new Listener(ip, port, "ServConnectAddr", conn_handler);
 	assert(listener);
-	listener->SetDescName(desc_name);
 	_listeners.push_back(listener);
+
+	return true;
 }
 
 // 开始
@@ -377,6 +394,18 @@ bool ServiceDispatcher::RegistRemoteService(int32_t sid, const std::string & rem
 	}
 
 	return true;
+}
+
+// 注册管理命令处理方法
+void ServiceDispatcher::RegistAdminCmd(const std::string & cmd, const AdminCmdHandleFunc & func)
+{
+	if (cmd.empty())
+	{
+		return;
+	}
+
+	ProxyService* proxy_service = (ProxyService*)RepareProxyServer();
+	proxy_service->RegistAdminCmd(cmd, func);
 }
 
 // 准备代理服务

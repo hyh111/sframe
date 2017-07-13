@@ -114,7 +114,7 @@ template<typename... Data_Type>
 class InsideServiceMessage : public ServiceMessage
 {
 public:
-	InsideServiceMessage(Data_Type&... datas) : _data(datas...){}
+	InsideServiceMessage(const Data_Type&... datas) : _data(datas...){}
 
 	// 获取消息类型
 	MessageType GetType() const override

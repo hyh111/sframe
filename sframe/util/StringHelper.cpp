@@ -157,9 +157,9 @@ std::string sframe::ToLower(const std::string & str)
 }
 
 // È¥µôÍ·²¿¿Õ´®
-std::string sframe::TrimLeft(const std::string & str)
+std::string sframe::TrimLeft(const std::string & str, char c)
 {
-	size_t pos = str.find_first_not_of(' ');
+	size_t pos = str.find_first_not_of(c);
 	if (pos == std::string::npos)
 	{
 		return "";
@@ -169,9 +169,9 @@ std::string sframe::TrimLeft(const std::string & str)
 }
 
 // È¥µôÎ²²¿¿Õ´®
-std::string sframe::TrimRight(const std::string & str)
+std::string sframe::TrimRight(const std::string & str, char c)
 {
-	size_t pos = str.find_last_not_of(' ');
+	size_t pos = str.find_last_not_of(c);
 	if (pos == std::string::npos)
 	{
 		return "";
@@ -181,9 +181,9 @@ std::string sframe::TrimRight(const std::string & str)
 }
 
 // È¥µôÁ½±ß¿Õ´®
-std::string sframe::Trim(const std::string & str)
+std::string sframe::Trim(const std::string & str, char c)
 {
-	return TrimLeft(TrimRight(str));
+	return TrimLeft(TrimRight(str, c), c);
 }
 
 // wstring -> string
@@ -586,3 +586,82 @@ std::string sframe::ReadTypeName(const char * name)
 }
 
 #endif
+
+
+bool sframe::ParseCommandLine(const std::string & data, std::string & cmd_name, std::vector<std::string> & cmd_param)
+{
+	std::vector<char> word_buf;
+	word_buf.reserve(128);
+
+	int32_t double_quotation_mark_num = 0;
+
+	for (size_t i = 0; i <= data.size(); i++)
+	{
+		bool word_end = false;
+		char c = '\0';
+
+		if (i < data.size())
+		{
+			c = data[i];
+
+			switch (c)
+			{
+			case ' ':
+				if (double_quotation_mark_num == 1)
+				{
+					word_buf.push_back(c);
+				}
+				else
+				{
+					word_end = true;
+				}
+				break;
+
+			case '\\':
+				if (i < data.size() - 1 && data[i + 1] == '"')
+				{
+					i++;
+					c = data[i];
+				}
+				word_buf.push_back(c);
+				break;
+
+			case '"':
+				if (double_quotation_mark_num == 1)
+				{
+					double_quotation_mark_num = 0;
+				}
+				else
+				{
+					double_quotation_mark_num = 1;
+				}
+				break;
+
+			default:
+				word_buf.push_back(c);
+				break;
+			}
+		}
+		else
+		{
+			word_end = true;
+		}
+
+		if (word_end && !word_buf.empty())
+		{
+			if (cmd_name.empty())
+			{
+				cmd_name = std::string(word_buf.data(), word_buf.size());
+			}
+			else
+			{
+				cmd_param.push_back(std::string(word_buf.data(), word_buf.size()));
+			}
+			word_buf.clear();
+		}
+	}
+
+	assert(word_buf.empty());
+
+	return (!cmd_name.empty());
+}

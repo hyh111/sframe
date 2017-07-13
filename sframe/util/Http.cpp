@@ -33,6 +33,153 @@ std::string Http::StandardizeHeaderKey(const std::string & key)
 	return standardized_key;
 }
 
+// URL编码
+std::string Http::UrlEncode(const std::string & str)
+{
+	static char sHexTable[17] = "0123456789ABCDEF";
+
+	std::ostringstream oss;
+
+	for (size_t i = 0; i < str.length(); i++)
+	{
+		char cur_char = str[i];
+		if (cur_char == '-' || cur_char == '_' || cur_char == '.' ||
+			(cur_char >= '0' && cur_char <= '9') ||
+			(cur_char >= 'a' && cur_char <= 'z') ||
+			(cur_char >= 'A' && cur_char <= 'Z'))
+		{
+			oss << cur_char;
+		}
+		else
+		{
+			oss << '%' << (sHexTable[(cur_char >> 4) & 0x0f]) << (sHexTable[(cur_char & 0x0f)]);
+		}
+	}
+
+	return oss.str();
+}
+
+// URL解码
+std::string Http::UrlDecode(const std::string & str)
+{
+	std::ostringstream oss;
+	size_t pos = 0;
+
+	while (pos < str.length())
+	{
+		char cur_char = str[pos];
+		if (cur_char == '%')
+		{
+			if (pos + 2 >= str.length())
+			{
+				break;
+			}
+
+			char c1 = str[pos + 1];
+			c1 = (c1 >= 'a' && c1 <= 'z') ? c1 - 32 : c1;
+			char c2 = str[pos + 2];
+			c2 = (c2 >= 'a' && c2 <= 'z') ? c2 - 32 : c2;
+
+			cur_char = (((c1 >= 'A' ? (c1 - 'A' + 10) : (c1 - '0')) << 4) & 0xf0);
+			cur_char += ((c2 >= 'A' ? (c2 - 'A' + 10) : (c2 - '0')) & 0x0f);
+			oss << cur_char;
+
+			pos += 3;
+		}
+		else
+		{
+			oss << cur_char;
+			pos++;
+		}
+	}
+
+	return oss.str();
+}
+
+// 解析HTTP参数
+Http::Param Http::ParseHttpParam(const std::string para_str)
+{
+	Http::Param para;
+
+	size_t cur_word_start_pos = para_str.find_first_not_of(' ');
+	if (cur_word_start_pos == std::string::npos)
+	{
+		return para;
+	}
+
+	std::string k;
+	size_t i = 0;
+
+	for (; i < para_str.length(); i++)
+	{
+		char c = para_str[i];
+
+		switch (c)
+		{
+		case '=':
+
+			if (i > cur_word_start_pos)
+			{
+				k = UrlDecode(para_str.substr(cur_word_start_pos, i - cur_word_start_pos));
+			}
+			cur_word_start_pos = i + 1;
+
+			break;
+
+		case '&':
+
+			assert(i >= cur_word_start_pos);
+			if (!k.empty())
+			{
+				para[std::move(k)] = UrlDecode(para_str.substr(cur_word_start_pos, i - cur_word_start_pos));
+			}
+			else if (i > cur_word_start_pos)
+			{
+				para[UrlDecode(para_str.substr(cur_word_start_pos, i - cur_word_start_pos))] = std::string();
+			}
+			cur_word_start_pos = i + 1;
+
+			break;
+		}
+	}
+
+	assert(i == para_str.length() && i >= cur_word_start_pos);
+	if (!k.empty())
+	{
+		para[std::move(k)] = UrlDecode(para_str.substr(cur_word_start_pos, i - cur_word_start_pos));
+	}
+	else if (i > cur_word_start_pos)
+	{
+		para[UrlDecode(para_str.substr(cur_word_start_pos, i - cur_word_start_pos))] = std::string();
+	}
+
+	return para;
+}
+
+// HttpParam转换为string
+std::string Http::HttpParamToString(const Http::Param & para)
+{
+	std::ostringstream oss;
+
+	for (Http::Param::const_iterator it = para.begin(); it != para.end(); it++)
+	{
+		if (it->first.empty())
+		{
+			continue;
+		}
+
+		if (it != para.begin())
+		{
+			oss << '&';
+		}
+		oss << UrlEncode(it->first) << '=' << UrlEncode(it->second);
+	}
+
+	return oss.str();
+}
+
+
+
 
 const std::string & Http::GetHeader(const std::string & key) const
 {
@@ -87,6 +234,7 @@ void Http::SetContent(std::string && data)
 std::string Http::ToString() const
 {
 	std::ostringstream oss;
+	bool have_conetnt_len = false;
 
 	WriteFirstLine(oss);
 	for (auto & pr : _header)
@@ -97,19 +245,28 @@ std::string Http::ToString() const
 			continue;
 		}
 
-		if (pr.first == "Content-Length")
+		if (pr.first == "Content-Length" && !pr.second.empty())
 		{
-			oss << "Content-Length: " << _content.length() << "\r\n";
+			have_conetnt_len = true;
 		}
-		else
+
+		for (const std::string & v : pr.second)
 		{
-			for (const std::string & v : pr.second)
-			{
-				oss << pr.first << ": " << v << "\r\n";
-			}
+			oss << pr.first << ": " << v << "\r\n";
 		}
 	}
+
+	if (!have_conetnt_len)
+	{
+		oss << "Content-Length: " << _content.length() << "\r\n";
+	}
+
 	oss << "\r\n";
+
+	if (!_content.empty())
+	{
+		oss << _content;
+	}
 
 	return oss.str();
 }
@@ -187,10 +344,7 @@ HttpResponse::HttpResponse() : _proto_ver("HTTP/1.1"), _status_code(200), _statu
 
 void HttpResponse::SetProtoVersion(const std::string & proto_version)
 {
-	if (!proto_version.empty())
-	{
-		_proto_ver = proto_version;
-	}
+	_proto_ver = proto_version;
 }
 
 const std::string & HttpResponse::GetProtoVersion() const
@@ -221,7 +375,11 @@ const std::string & HttpResponse::GetStatusDesc() const
 void HttpResponse::WriteFirstLine(std::ostringstream & oss) const
 {
 	assert(!_proto_ver.empty() && !_status_desc.empty());
-	oss << _proto_ver << ' ' << _status_code << ' ' << _status_desc << "\r\n";
+	if (!_proto_ver.empty())
+	{
+		oss << _proto_ver << ' ';
+	}
+	oss << _status_code << ' ' << _status_desc << "\r\n";
 }
 
 

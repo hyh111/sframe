@@ -4,7 +4,7 @@
 #include "util/Log.h"
 
 HttpSession::HttpSession(HttpService * http_service, const std::shared_ptr<sframe::TcpSocket> & sock, int64_t session_id)
-	: _http_service(http_service), _sock(sock), _session_id(session_id), _http_decoder(sframe::kHttpType_Request)
+	: _http_service(http_service), _sock(sock), _session_id(session_id)
 {
 	_sock->SetMonitor(this);
 	_sock->StartRecv();
@@ -25,7 +25,7 @@ int32_t HttpSession::OnReceived(char * data, int32_t len)
 
 	if (_http_decoder.IsDecodeCompleted())
 	{
-		std::shared_ptr<sframe::HttpRequest> http_req = _http_decoder.GetHttpRequest();
+		std::shared_ptr<sframe::HttpRequest> http_req = _http_decoder.GetResult();
 		_http_decoder.Reset();
 		assert(http_req);
 		_http_service->SendInsideServiceMsg(_http_service->GetServiceId(), _session_id, kHttpMsg_HttpRequest, http_req);
@@ -58,7 +58,14 @@ void HttpSession::StartClose()
 
 void HttpSession::OnMsg_HttpRequest(std::shared_ptr<sframe::HttpRequest> http_req)
 {
-	std::string req_method = http_req->GetMethod();
+	sframe::HttpResponse http_resp;
+	http_resp.SetProtoVersion(http_req->GetProtoVersion());
+	http_resp.SetStatusCode(200);
+	http_resp.SetStatusDesc("OK");
+	http_resp.SetHeader("Connection", "Keep-Alive");
+	http_resp.SetContent("Hello world");
+	std::string data = http_resp.ToString();
+	_sock->Send(data.data(), data.length());
 }
 
 void HttpSession::OnMsg_HttpSessionClosed()

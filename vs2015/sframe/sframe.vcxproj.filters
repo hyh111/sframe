@@ -180,6 +180,9 @@
     <ClInclude Include="..\..\sframe\util\WordFilter.h">
       <Filter>util</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\sframe\serv\AdminCmd.h">
+      <Filter>serv</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sframe\conf\ConfigSet.cpp">
@@ -256,6 +259,9 @@
     </ClCompile>
     <ClCompile Include="..\..\sframe\util\WordFilter.cpp">
       <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sframe\serv\AdminCmd.cpp">
+      <Filter>serv</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

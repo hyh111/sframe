@@ -188,6 +188,7 @@ bool ServerConfig::HaveLocalService(const std::string & serv_type_name)
 
 void ServerConfig::Fill(const json11::Json & reader)
 {
+	JSON_FILLFIELD_DEFAULT(server_name, std::string("<Unknown>"));
 	JSON_FILLFIELD_DEFAULT(res_path, std::string("./res"));
 	if (res_path.empty() || *(res_path.end() - 1) != '/' || *(res_path.end() - 1) != '\\')
 	{
@@ -205,12 +206,12 @@ void ServerConfig::Fill(const json11::Json & reader)
 		listen_service.reset();
 	}
 
-	std::string str_listen_manager; // 管理监听地址
-	Json_FillField(reader, "listen_manager", str_listen_manager);
-	listen_manager = std::make_shared<NetAddrInfo>();
-	if (!listen_manager->ParseFormString(str_listen_manager))
+	std::string str_listen_admin; // 管理监听地址
+	Json_FillField(reader, "listen_admin", str_listen_admin);
+	listen_admin = std::make_shared<NetAddrInfo>();
+	if (!listen_admin->ParseFormString(str_listen_admin))
 	{
-		listen_manager.reset();
+		listen_admin.reset();
 	}
 
 	std::unordered_map<std::string, std::string> map_service; // 服务信息

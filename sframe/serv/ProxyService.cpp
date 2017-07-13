@@ -7,6 +7,7 @@
 
 using namespace sframe;
 
+
 ProxyService::ProxyService() : _have_no_session(true), _listening(false), _cur_max_session_id(0), _session_id_first_loop(true)
 {
 	memset(_quick_find_session_arr, 0, sizeof(_quick_find_session_arr));
@@ -29,6 +30,8 @@ void ProxyService::Init()
 	this->RegistInsideServiceMessageHandler(kProxyServiceMsgId_SessionClosed, &ProxyService::OnMsg_SessionClosed, this);
 	this->RegistInsideServiceMessageHandler(kProxyServiceMsgId_SessionRecvData, &ProxyService::OnMsg_SessionRecvData, this);
 	this->RegistInsideServiceMessageHandler(kProxyServiceMsgId_SessionConnectCompleted, &ProxyService::OnMsg_SessionConnectCompleted, this);
+	this->RegistInsideServiceMessageHandler(kProxyServiceMsgId_AdminCommand, &ProxyService::OnMsg_AdminCommand, this);
+	this->RegistInsideServiceMessageHandler(kProxyServiceMsgId_SendAdminCommandResponse, &ProxyService::OnMsg_SendAdminCommandResponse, this);
 }
 
 void ProxyService::OnDestroy()
@@ -56,6 +59,8 @@ void ProxyService::OnCycleTimer()
 // 新连接到来
 void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock)
 {
+	static const std::string admin_addr_desc = "AdminAddr";
+
 	Error err = sock->SetTcpNodelay(true);
 	if (err)
 	{
@@ -70,7 +75,14 @@ void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const
 		return;
 	}
 
-	AddServiceSession(session_id, new ServiceSession(session_id, this, sock));
+	if (listen_addr_info.desc_name == admin_addr_desc)
+	{
+		AddServiceSession(session_id, new AdminSession(session_id, this, sock));
+	}
+	else
+	{
+		AddServiceSession(session_id, new ServiceSession(session_id, this, sock));
+	}
 }
 
 // 代理服务消息
@@ -140,6 +152,13 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 
 	return session_id;
 }
+
+// 注册管理命令处理处理方法
+void ProxyService::RegistAdminCmd(const std::string & cmd, const AdminCmdHandleFunc & func)
+{
+	_map_admin_cmd_func[cmd] = func;
+}
+
 
 static const int32_t kMaxSessionId = 2000000000;
 
@@ -341,3 +360,77 @@ void ProxyService::OnMsg_SessionConnectCompleted(int32_t session_id, bool succes
 	}
 }
 
+void ProxyService::OnMsg_AdminCommand(int32_t admin_session_id, const std::shared_ptr<sframe::HttpRequest> & http_req)
+{
+	ServiceSession * session = GetServiceSession(admin_session_id);
+	if (session == nullptr)
+	{
+		assert(false);
+		LOG_ERROR << "Cannot fand session " << admin_session_id << std::endl;
+		return;
+	}
+
+	// 只支持GET
+	if (http_req->GetMethod() != "GET")
+	{
+		HttpResponse http_resp;
+		http_resp.SetProtoVersion(http_req->GetProtoVersion());
+		http_resp.SetStatusCode(405);
+		http_resp.SetStatusDesc("Method Not Allowed");
+		http_resp.SetHeader("Connection", "Keep-Alive");
+		http_resp.SetHeader("Allow", "GET");
+		session->SendData(http_resp.ToString());
+		LOG_ERROR << "Recv method not allowed admin cmd from client(" << session->GetRemoteAddrText() << ")|" << http_req->GetMethod() << std::endl;
+		return;
+	}
+
+	AdminCmd admin_cmd(admin_session_id);
+	if (!admin_cmd.Parse(http_req))
+	{
+		HttpResponse http_resp;
+		http_resp.SetProtoVersion(http_req->GetProtoVersion());
+		http_resp.SetStatusCode(400);
+		http_resp.SetStatusDesc("Bad Request");
+		http_resp.SetHeader("Connection", "Keep-Alive");
+		session->SendData(http_resp.ToString());
+		LOG_ERROR << "Recv invalid admin cmd from client(" << session->GetRemoteAddrText() << ")|" << http_req->GetMethod() << '|'
+			<< http_req->GetRequestUrl() << '|' << http_req->GetRequestParam() << std::endl;
+		return;
+	}
+
+	auto it = _map_admin_cmd_func.find(admin_cmd.GetCmdName());
+	if (it == _map_admin_cmd_func.end())
+	{
+		HttpResponse http_resp;
+		http_resp.SetProtoVersion(http_req->GetProtoVersion());
+		http_resp.SetStatusCode(404);
+		http_resp.SetStatusDesc("Not Found");
+		http_resp.SetHeader("Connection", "Keep-Alive");
+		session->SendData(http_resp.ToString());
+		LOG_ERROR << "Recv unknown admin cmd from client(" << session->GetRemoteAddrText() << ")|" << admin_cmd.ToString() << std::endl;
+		return;
+	}
+
+	LOG_INFO << "Recv admin cmd from client(" << session->GetRemoteAddrText() << ")|" << admin_cmd.ToString() << std::endl;
+
+	// 调用处理函数
+	it->second(admin_cmd);
+}
+
+void ProxyService::OnMsg_SendAdminCommandResponse(int32_t admin_session_id, const std::string & data, const std::shared_ptr<sframe::HttpRequest> & http_req)
+{
+	ServiceSession * session = GetServiceSession(admin_session_id);
+	if (session)
+	{
+		HttpResponse http_resp;
+		if (http_req)
+		{
+			http_resp.SetProtoVersion(http_req->GetProtoVersion());
+		}
+		http_resp.SetStatusCode(200);
+		http_resp.SetStatusDesc("OK");
+		http_resp.SetHeader("Connection", "Keep-Alive");
+		http_resp.SetContent(data);
+		session->SendData(http_resp.ToString());
+	}
+}

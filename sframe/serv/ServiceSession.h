@@ -7,6 +7,7 @@
 #include "../net/net.h"
 #include "../util/Singleton.h"
 #include "../util/Timer.h"
+#include "../util/Http.h"
 
 namespace sframe {
 
@@ -25,14 +26,14 @@ public:
 		kSessionState_Running,           // 运行中
 	};
 
-	static const int32_t kReconnectInterval = 5000;       // 自动重连间隔
+	static const int32_t kReconnectInterval = 3000;       // 自动重连间隔
 
 public:
 	ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port);
 
 	ServiceSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<TcpSocket> & sock);
 
-	~ServiceSession(){}
+	virtual ~ServiceSession(){}
 
 	void Init();
 
@@ -48,27 +49,33 @@ public:
 	// 发送数据
 	void SendData(const std::shared_ptr<ProxyServiceMessage> & msg);
 
-	// 获取状态
-	SessionState GetState() const
-	{
-		return _state;
-	}
+	// 发送数据
+	void SendData(const std::string & data);
+
+	// 获取地址
+	std::string GetRemoteAddrText() const;
 
 	// 接收到数据
 	// 返回剩余多少数据
-	int32_t OnReceived(char * data, int32_t len) override;
+	virtual int32_t OnReceived(char * data, int32_t len) override;
 
 	// Socket关闭
 	// by_self: true表示主动请求的关闭操作
-	void OnClosed(bool by_self, Error err) override;
+	virtual void OnClosed(bool by_self, Error err) override;
 
 	// 连接操作完成
-	void OnConnected(Error err) override;
+	virtual void OnConnected(Error err) override;
 
 	// 获取SessionId
 	int32_t GetSessionId()
 	{
 		return _session_id;
+	}
+
+	// 获取状态
+	SessionState GetState() const
+	{
+		return _state;
 	}
 
 private:
@@ -92,6 +99,25 @@ private:
 	bool _reconnect;
 	std::string _remote_ip;
 	uint16_t _remote_port;
+};
+
+
+// 管理会话
+class AdminSession : public ServiceSession
+{
+public:
+
+	AdminSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<TcpSocket> & sock)
+		: ServiceSession(id, proxy_service, sock) {}
+
+	virtual ~AdminSession() {}
+
+	// 接收到数据
+	// 返回剩余多少数据
+	virtual int32_t OnReceived(char * data, int32_t len) override;
+
+private:
+	sframe::HttpRequestDecoder _http_decoder;
 };
 
 }

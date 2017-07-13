@@ -29,13 +29,13 @@ std::string ToUpper(const std::string & str);
 std::string ToLower(const std::string & str);
 
 // 去掉头部空串
-std::string TrimLeft(const std::string & str);
+std::string TrimLeft(const std::string & str, char c = ' ');
 
 // 去掉尾部空串
-std::string TrimRight(const std::string & str);
+std::string TrimRight(const std::string & str, char c = ' ');
 
 // 去掉两边空串
-std::string Trim(const std::string & str);
+std::string Trim(const std::string & str, char c = ' ');
 
 // wstring -> string
 std::string WStrToStr(const std::wstring & src);
@@ -68,6 +68,8 @@ bool MatchWildcardStr(const std::string & real_name, const std::string & wildcar
 
 // 解析类型名称（转换为 A::B::C 的形式）
 std::string ReadTypeName(const char * name);
+
+bool ParseCommandLine(const std::string & data, std::string & cmd_name, std::vector<std::string> & cmd_param);
 
 }
 
