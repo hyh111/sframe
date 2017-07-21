@@ -50,7 +50,7 @@ public:
 	void SendData(const std::shared_ptr<ProxyServiceMessage> & msg);
 
 	// 发送数据
-	void SendData(const std::string & data);
+	void SendData(const char * data, size_t len);
 
 	// 获取地址
 	std::string GetRemoteAddrText() const;

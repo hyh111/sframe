@@ -99,16 +99,13 @@ public:
 	// 注册管理命令处理方法
 	void RegistAdminCmd(const std::string & cmd, const AdminCmdHandleFunc & func);
 
+	// 指定服务ID是否是本地服务
+	bool IsLocalService(int32_t sid) const;
+
 	// 获取IO服务
 	const std::shared_ptr<IoService> & GetIoService() const
 	{
 		return _ioservice;
-	}
-
-	// 指定服务ID是否是本地服务
-	bool IsLocalService(int32_t sid) const
-	{
-		return (std::find(_local_sid.begin(), _local_sid.end(), sid) != _local_sid.end());
 	}
 
 
@@ -128,11 +125,10 @@ private:
 
 private:
 
-	static const int32_t kServiceArrLen = 65536;                  // 服务数组长度
+	static const int32_t kServiceArrLen = 10000;                  // 服务数组长度
 
 	std::unordered_map<int32_t, Service*> _all_service;           // 所有的本地服务
     Service * _services_arr[kServiceArrLen];                      // 服务数组，将sid小于kServiceArrLen的服务，拷贝一份在数组中，便于快速查找
-	std::vector<int32_t> _local_sid;                              // 本地所有服务ID
     bool _running;                                                // 是否正在运行
     std::vector<std::thread*> _logic_threads;                     // 所有逻辑线程
 	std::thread * _io_thread;                                     // IO线程（IO操作，已经周期定时检测）

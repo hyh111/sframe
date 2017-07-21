@@ -137,18 +137,18 @@ void ServiceSession::SendData(const std::shared_ptr<ProxyServiceMessage> & msg)
 		}
 		else
 		{
-			LOG_ERROR << "Serialize mesage error" << std::endl;
+			LOG_ERROR << "Serialize mesage error, the package size more than 65536" << std::endl;
 		}
 	}
 }
 
 // ·¢ËÍÊý¾Ý
-void ServiceSession::SendData(const std::string & data)
+void ServiceSession::SendData(const char * data, size_t len)
 {
-	if (_state == ServiceSession::kSessionState_Running)
+	if (_state == ServiceSession::kSessionState_Running && data && len > 0)
 	{
 		assert(_socket);
-		_socket->Send(data.data(), data.length());
+		_socket->Send(data, len);
 	}
 }
 

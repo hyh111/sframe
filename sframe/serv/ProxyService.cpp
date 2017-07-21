@@ -292,9 +292,17 @@ void ProxyService::OnMsg_SessionClosed(bool by_self, int32_t session_id)
 	}
 }
 
+static const uint16_t kMaxPackSize = 65536 - sizeof(uint16_t);
+
 void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_ptr<std::vector<char>> & data)
 {
-	assert(GetServiceSession(session_id) != nullptr);
+	ServiceSession * session = GetServiceSession(session_id);
+	if (session == nullptr)
+	{
+		assert(false);
+		LOG_ERROR << "ServiceSession not existed|" << session_id << std::endl;
+		return;
+	}
 
 	std::vector<char> & vec_data = *data;
 	char * p = &vec_data[0];
@@ -308,43 +316,73 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 	uint16_t msg_id = 0;
 	if (!AutoDecode(reader, src_sid, dest_sid, msg_session_key, msg_id))
 	{
-		LOG_ERROR << "decode net service message error" << std::endl;
+		LOG_ERROR << "Recv from remote server(" << session->GetRemoteAddrText() << "), but decode error" << std::endl;
 		return;
 	}
 
 	// 源服务ID是否和本地服务ID冲突
 	if (ServiceDispatcher::Instance().IsLocalService(src_sid))
 	{
-		LOG_ERROR << "service message, src_id conflict with local service|" << src_sid << std::endl;
-		return;
-	}
-
-	// 本地是否有目标服务
-	if (!ServiceDispatcher::Instance().IsLocalService(dest_sid))
-	{
-		LOG_ERROR << "service message, have no local service|" << dest_sid << std::endl;
+		LOG_ERROR << "Recv from remote server(" << session->GetRemoteAddrText()
+			<< "), but src_id conflict with local service " << src_sid << std::endl;
 		return;
 	}
 
 	// 查找远程服务是否已经关联了session，若还没有关联，在这里关联
-	auto it_sid_to_sessionid = _sid_to_sessionid.find(src_sid);
-	if (it_sid_to_sessionid == _sid_to_sessionid.end())
+	// 关联远程服务ID与Session
+	if (_sid_to_sessionid.insert(std::make_pair(src_sid, session_id)).second)
 	{
-		_sid_to_sessionid[src_sid] = session_id;
 		_sessionid_to_sid[session_id].insert(src_sid);
 	}
 
-	// 封装消息并发送到目标本地服务
-	int32_t data_len = (int32_t)len - (int32_t)reader.GetReadedLength();
-	assert(data_len >= 0);
-	std::shared_ptr<NetServiceMessage> msg = std::make_shared<NetServiceMessage>();
-	msg->dest_sid = dest_sid;
-	msg->src_sid = src_sid;
-	msg->session_key = msg_session_key;
-	msg->msg_id = msg_id;
-	msg->data = std::move(vec_data);
-	// 发送到目标服务
-	ServiceDispatcher::Instance().SendMsg(dest_sid, msg);
+	if (ServiceDispatcher::Instance().IsLocalService(dest_sid))
+	{
+		// 封装消息并发送到目标本地服务
+		int32_t data_len = (int32_t)len - (int32_t)reader.GetReadedLength();
+		assert(data_len >= 0);
+		std::shared_ptr<NetServiceMessage> msg = std::make_shared<NetServiceMessage>();
+		msg->dest_sid = dest_sid;
+		msg->src_sid = src_sid;
+		msg->session_key = msg_session_key;
+		msg->msg_id = msg_id;
+		msg->data = std::move(vec_data);
+		// 发送到目标服务
+		ServiceDispatcher::Instance().SendMsg(dest_sid, msg);
+	}
+	else
+	{
+		// 是否有对应的远程服务会话
+		auto it = _sid_to_sessionid.find(dest_sid);
+		if (it == _sid_to_sessionid.end())
+		{
+			LOG_ERROR << "Recv from remote server(" << session->GetRemoteAddrText()
+				<< "), but can not find dest service " << dest_sid << std::endl;
+			return;
+		}
+
+		// 转发到远程服务
+		ServiceSession * other_session = GetServiceSession(it->second);
+		if (other_session)
+		{
+			uint16_t msg_size = (uint16_t)vec_data.size();
+			if (msg_size >= kMaxPackSize)
+			{
+				// 在发送网络消息处有检测，这里一般不可能发生
+				msg_size = kMaxPackSize;
+			}
+			msg_size = HTON_16(msg_size);
+			// 调用发送
+			other_session->SendData((const char *)&msg_size, sizeof(uint16_t));
+			other_session->SendData(vec_data.data(), msg_size);
+
+			LOG_WARN << "Recv from remote server(" << session->GetRemoteAddrText() << "), but there is no local service " 
+				<< dest_sid << ", has been forwarded the message to other server(" << other_session->GetRemoteAddrText() << ')' << std::endl;
+		}
+		else
+		{
+			assert(false);
+		}
+	}
 }
 
 void ProxyService::OnMsg_SessionConnectCompleted(int32_t session_id, bool success)
@@ -379,7 +417,8 @@ void ProxyService::OnMsg_AdminCommand(int32_t admin_session_id, const std::share
 		http_resp.SetStatusDesc("Method Not Allowed");
 		http_resp.SetHeader("Connection", "Keep-Alive");
 		http_resp.SetHeader("Allow", "GET");
-		session->SendData(http_resp.ToString());
+		std::string resp_content = http_resp.ToString();
+		session->SendData(resp_content.data(), resp_content.length());
 		LOG_ERROR << "Recv method not allowed admin cmd from client(" << session->GetRemoteAddrText() << ")|" << http_req->GetMethod() << std::endl;
 		return;
 	}
@@ -392,7 +431,8 @@ void ProxyService::OnMsg_AdminCommand(int32_t admin_session_id, const std::share
 		http_resp.SetStatusCode(400);
 		http_resp.SetStatusDesc("Bad Request");
 		http_resp.SetHeader("Connection", "Keep-Alive");
-		session->SendData(http_resp.ToString());
+		std::string resp_content = http_resp.ToString();
+		session->SendData(resp_content.data(), resp_content.length());
 		LOG_ERROR << "Recv invalid admin cmd from client(" << session->GetRemoteAddrText() << ")|" << http_req->GetMethod() << '|'
 			<< http_req->GetRequestUrl() << '|' << http_req->GetRequestParam() << std::endl;
 		return;
@@ -406,7 +446,8 @@ void ProxyService::OnMsg_AdminCommand(int32_t admin_session_id, const std::share
 		http_resp.SetStatusCode(404);
 		http_resp.SetStatusDesc("Not Found");
 		http_resp.SetHeader("Connection", "Keep-Alive");
-		session->SendData(http_resp.ToString());
+		std::string resp_content = http_resp.ToString();
+		session->SendData(resp_content.data(), resp_content.length());
 		LOG_ERROR << "Recv unknown admin cmd from client(" << session->GetRemoteAddrText() << ")|" << admin_cmd.ToString() << std::endl;
 		return;
 	}
@@ -430,7 +471,8 @@ void ProxyService::OnMsg_SendAdminCommandResponse(int32_t admin_session_id, cons
 		http_resp.SetStatusCode(200);
 		http_resp.SetStatusDesc("OK");
 		http_resp.SetHeader("Connection", "Keep-Alive");
-		http_resp.SetContent(data);
-		session->SendData(http_resp.ToString());
+		http_resp.SetContent(data); 
+		std::string resp_content = http_resp.ToString();
+		session->SendData(resp_content.data(), resp_content.length());
 	}
 }

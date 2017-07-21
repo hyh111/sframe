@@ -10,6 +10,8 @@
 
 using namespace sframe;
 
+static const int32_t kMaxWaitMiliseconds = 20000;
+
 // IO线程函数
 void ServiceDispatcher::ExecIO(ServiceDispatcher * dispatcher)
 {
@@ -19,7 +21,6 @@ void ServiceDispatcher::ExecIO(ServiceDispatcher * dispatcher)
 
 		while (dispatcher->_ioservice->IsOpen())
 		{
-			int64_t wait_timeout = 20000;
 			int64_t now = TimeHelper::GetSteadyMiliseconds();
 
 			// 检测定时器
@@ -48,14 +49,15 @@ void ServiceDispatcher::ExecIO(ServiceDispatcher * dispatcher)
 				}
 			}
 
+			int64_t wait_timeout_milisec = kMaxWaitMiliseconds;
 			if (min_next_timer_time > 0)
 			{
 				int64_t next_timer_after_millisec = min_next_timer_time > now ? min_next_timer_time - now : 0;
-				wait_timeout = wait_timeout > next_timer_after_millisec ? next_timer_after_millisec : wait_timeout;
+				wait_timeout_milisec = wait_timeout_milisec > next_timer_after_millisec ? next_timer_after_millisec : wait_timeout_milisec;
 			}
 			
 			Error err = ErrorSuccess;
-			dispatcher->_ioservice->RunOnce((int32_t)wait_timeout, err);
+			dispatcher->_ioservice->RunOnce((int32_t)wait_timeout_milisec, err);
 			if (err)
 			{
 				LOG_ERROR << "Run IoService error: " << ErrorMessage(err).Message() << ENDL;
@@ -366,9 +368,7 @@ bool ServiceDispatcher::RegistService(int32_t sid, Service * service)
 	}
 
 	service->SetServiceId(sid);
-	_local_sid.push_back(sid);
 	_all_service[sid] = service;
-
 	// 若ID在[1,kServiceArrLen)区间中，拷贝一份在_service_arr
 	if (sid > 0 && sid < kServiceArrLen)
 	{
@@ -406,6 +406,12 @@ void ServiceDispatcher::RegistAdminCmd(const std::string & cmd, const AdminCmdHa
 
 	ProxyService* proxy_service = (ProxyService*)RepareProxyServer();
 	proxy_service->RegistAdminCmd(cmd, func);
+}
+
+// 指定服务ID是否是本地服务
+bool ServiceDispatcher::IsLocalService(int32_t sid) const
+{
+	return (sid != 0 && GetService(sid) != nullptr);
 }
 
 // 准备代理服务
