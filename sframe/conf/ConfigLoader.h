@@ -86,7 +86,7 @@ struct ConfigInitializer
 	template<typename T, int, typename... T_Args>
 	struct Caller
 	{
-		static bool Call(T_Args & ... args)
+		static bool Call(T & obj, T_Args & ... args)
 		{
 			return true;
 		}
@@ -95,18 +95,18 @@ struct ConfigInitializer
 	template<typename T, typename... T_Args>
 	struct Caller<T, 1, T_Args...>
 	{
-		static bool Call(T_Args & ... args)
+		static bool Call(T & obj, T_Args & ... args)
 		{
-			return T::Initialize(args...);
+			return obj.Initialize(args...);
 		}
 	};
 
 	template<typename T, typename... T_Args>
 	struct Caller<T, 2, T_Args...>
 	{
-		static bool Call(T_Args & ... args)
+		static bool Call(T & obj, T_Args & ... args)
 		{
-			T::Initialize(args...);
+			obj.Initialize(args...);
 			return true;
 		}
 	};
@@ -115,11 +115,11 @@ struct ConfigInitializer
 	struct InitializerType
 	{
 		// 匹配器——带返回值的初始化方法
-		template<bool(*)(T_Args & ...)>
+		template<bool(T::*)(T_Args & ...)>
 		struct MethodMatcher_WithReturnedValue;
 
 		// 匹配器——带返回值的初始化方法
-		template<void(*)(T_Args & ...)>
+		template<void(T::*)(T_Args & ...)>
 		struct MethodMatcher_WithNoReturnedValue;
 
 		template<typename U>
@@ -138,9 +138,9 @@ struct ConfigInitializer
 	};
 
 	template<typename T, typename... T_Args>
-	static bool Initialize(T_Args & ... args)
+	static bool Initialize(T & obj, T_Args & ... args)
 	{
-		return Caller<T, InitializerType<T, T_Args...>::value, T_Args...>::Call(args...);
+		return Caller<T, InitializerType<T, T_Args...>::value, T_Args...>::Call(obj, args...);
 	}
 
 };

@@ -7,6 +7,28 @@
 using namespace sframe;
 
 
+struct LoadItem
+{
+	int32_t conf_id;
+	ConfigSet::ConfUnit * conf_unit;
+	ConfigSet::ConfigLoadHelper * load_helper;
+};
+
+
+
+ConfigSet::ConfigSet()
+{
+	memset(&_quick_find_arr, 0, sizeof(_quick_find_arr));
+}
+
+ConfigSet::~ConfigSet()
+{
+	for (auto & pr : _config)
+	{
+		delete pr.second;
+	}
+}
+
 // 加载(全部成功返回true, 只要有一个失败都会返回false)
 // 出错时，err_info会返回出错的配置信息
 bool ConfigSet::Load(const std::string & path, std::vector<std::string> * vec_err_msg)
@@ -17,70 +39,99 @@ bool ConfigSet::Load(const std::string & path, std::vector<std::string> * vec_er
 	}
 
 	_config_dir = path;
+	std::vector<LoadItem> vec_load_items;
+	vec_load_items.reserve(_config_load_helper.size() + _temporary_config_load_helper.size());
 
-	std::map<int32_t, std::shared_ptr<ConfigSet::ConfigBase>> map_conf;
 	bool ret = true;
 
+	// 加载配置
 	for (auto & pr : _config_load_helper)
 	{
-		ConfigLoadHelper & load_helper = pr.second;
-		auto conf = LoadAndInitConfig(load_helper, vec_err_msg);
-		if (!conf)
+		LoadItem item;
+		item.conf_id = pr.first;
+		item.load_helper = &pr.second;
+
+		// 加载
+		std::vector<std::string> vec_err_files;
+		item.conf_unit = (this->*item.load_helper->func_load)(item.load_helper->conf_file_name, &vec_err_files);
+		if (item.conf_unit == nullptr)
 		{
 			ret = false;
+			if (vec_err_msg)
+			{
+				std::ostringstream oss;
+				for (const std::string & cur_file_name : vec_err_files)
+				{
+					oss << "Load config error, file(" << cur_file_name << ")" << std::endl;
+				}
+				vec_err_msg->push_back(oss.str());
+			}
 			continue;
 		}
 
-		_config[load_helper.conf_id] = conf;
+		vec_load_items.push_back(item);
+
+		// 保存下来
+		if (_config.insert(std::make_pair(item.conf_id, item.conf_unit)).second)
+		{
+			if (item.conf_id >= 0 && item.conf_id < kQuickFindArrLen)
+			{
+				_quick_find_arr[item.conf_id] = item.conf_unit;
+			}
+		}
+		else
+		{
+			assert(false);
+		}
 	}
 
+	// 加载临时配置
 	for (auto & load_helper : _temporary_config_load_helper)
 	{
-		auto conf = LoadAndInitConfig(load_helper, vec_err_msg);
-		if (!conf)
+		LoadItem item;
+		item.conf_id = load_helper.conf_id;
+		item.load_helper = &load_helper;
+
+		// 加载
+		std::vector<std::string> vec_err_files;
+		item.conf_unit = (this->*item.load_helper->func_load)(item.load_helper->conf_file_name, &vec_err_files);
+		if (item.conf_unit == nullptr)
 		{
 			ret = false;
+			if (vec_err_msg)
+			{
+				std::ostringstream oss;
+				for (const std::string & cur_file_name : vec_err_files)
+				{
+					oss << "Load config error, file(" << cur_file_name << ")" << std::endl;
+				}
+				vec_err_msg->push_back(oss.str());
+			}
 			continue;
+		}
+
+		vec_load_items.push_back(item);
+	}
+
+	if (!ret)
+	{
+		return false;
+	}
+
+	// 初始化所有配置
+	for (auto & load_item : vec_load_items)
+	{
+		if (!(this->*load_item.load_helper->func_init)(load_item.conf_unit))
+		{
+			ret = false;
+			if (vec_err_msg)
+			{
+				std::ostringstream oss;
+				oss << "Init config error, conf(" << load_item.load_helper->conf_type_name << ")" << std::endl;
+				vec_err_msg->push_back(oss.str());
+			}
 		}
 	}
 
 	return ret;
-}
-
-// 加载并初始化一个配置
-std::shared_ptr<ConfigSet::ConfigBase> ConfigSet::LoadAndInitConfig(const ConfigLoadHelper & load_helper, std::vector<std::string> * vec_err_msg)
-{
-	std::vector<std::string> err_files;
-
-	// 加载
-	auto conf = (this->*load_helper.func_load)(load_helper.conf_file_name, vec_err_msg ? &err_files : nullptr);
-	if (!conf)
-	{
-		if (vec_err_msg)
-		{
-			for (const std::string & f : err_files)
-			{
-				std::ostringstream oss;
-				oss << "Load config error, config type(" << load_helper.conf_type_name << "), config file(" << f << ')';
-				vec_err_msg->push_back(oss.str());
-			}
-		}
-
-		return NULL;
-	}
-
-	// 初始化
-	if (!(this->*load_helper.func_init)(conf))
-	{
-		if (vec_err_msg)
-		{
-			std::ostringstream oss;
-			oss << "Initialize config error, config type(" << load_helper.conf_type_name << ')';
-			vec_err_msg->push_back(oss.str());
-		}
-
-		return NULL;
-	}
-
-	return conf;
 }

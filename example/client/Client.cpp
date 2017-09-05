@@ -95,7 +95,7 @@ void Client::OnTimer_WaitConnect()
 {
 	assert(_sock == nullptr);
 	_sock = sframe::TcpSocket::Create(_mgr->GetIoService());
-	auto config = ConfigManager::GetConfigSet()->GetMapConfigItem<ClientConfig>(_id);
+	auto config = ConfigManager::GetConfigSet()->GetMapConfigItem<ClientConfigModule>(_id);
 	assert(config != nullptr);
 	_server_ip = config->server_ip;
 	_server_port = config->server_port;
@@ -108,7 +108,7 @@ void Client::OnTimer_WaitConnect()
 void Client::OnTimer_Working()
 {
 	assert(_sock);
-	auto config = ConfigManager::GetConfigSet()->GetMapConfigItem<ClientConfig>(_id);
+	auto config = ConfigManager::GetConfigSet()->GetMapConfigItem<ClientConfigModule>(_id);
 	assert(config != nullptr);
 
 	if (config->text.empty())

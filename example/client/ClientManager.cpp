@@ -9,7 +9,7 @@ using namespace sframe;
 
 bool ClientManager::Init()
 {
-	auto config = ConfigManager::GetConfigSet()->GetConfig<ClientConfig>();
+	auto config = ConfigManager::GetConfigSet()->GetConfig<ClientConfigModule>();
 	if (config == nullptr)
 	{
 		return false;

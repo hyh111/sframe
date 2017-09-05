@@ -10,7 +10,7 @@ using namespace sframe;
 
 void ConfigManager::RegistAllConfig(ConfigSet & conf_set)
 {
-	conf_set.RegistConfig<TableLoader<CSV>, ClientConfig>("client_config.csv");
+	conf_set.RegistConfigModule<TableLoader<CSV>, ClientConfigModule>("client_config.csv");
 }
 
 

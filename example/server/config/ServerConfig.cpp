@@ -4,7 +4,7 @@
 #include <sstream>
 #include <memory>
 #include "ServerConfig.h"
-#include "conf/JsonReader.h"
+#include "conf/JsonLoader.h"
 #include "util/FileHelper.h"
 #include "util/Log.h"
 #include "util/Convert.h"
@@ -87,84 +87,9 @@ bool ServiceInfo::ParseFormString(const std::string & data)
 	return true;
 }
 
-// È¥×¢ÊÍ
-std::string RemoveComments(const std::string & data)
-{
-	int cur_state = 0;   // 0 ²»ÊÇ×¢ÊÍ, 1 ÐÐ×¢ÊÍ, 2¶Î×¢ÊÍ 
-	std::ostringstream oss;
-	auto it = data.begin();
-	while (it < data.end())
-	{
-		char c = *it;
-		if (cur_state == 1)
-		{
-			if (c == '\n')
-			{
-				// ÐÐ×¢ÊÍ½áÊø
-				cur_state = 0;
-			}
-		}
-		else if (cur_state == 2)
-		{
-			if (c == '*' &&  it < data.end() - 1 && (*(it + 1)) == '/')
-			{
-				it++;
-				// ¶Î×¢ÊÍ½áÊø
-				cur_state = 0;
-			}
-		}
-		else
-		{
-			if (c == '/' && it < data.end() - 1)
-			{
-				char next = *(it + 1);
-				if (next == '/')
-				{
-					cur_state = 1;
-					it += 2;
-					continue;
-				}
-				else if (next == '*')
-				{
-					cur_state = 2;
-					it += 2;
-					continue;
-				}
-			}
-
-			oss << c;
-		}
-
-		it++;
-	}
-
-	return oss.str();
-}
-
 bool ServerConfig::Load(const std::string & filename)
 {
-	std::string content;
-	if (!FileHelper::ReadFile(filename, content))
-	{
-		LOG_ERROR << "Open config file(" << filename << ") error" << ENDL;
-		return false;
-	}
-
-	std::string err;
-	std::string real_content = RemoveComments(content);
-	json11::Json json = json11::Json::parse(real_content, err);
-	if (!err.empty())
-	{
-		LOG_ERROR << "Parse config file(" << filename << ") error: " << err << ENDL;
-		return false;
-	}
-
-	if (!ConfigLoader::Load<const json11::Json>(json, *this))
-	{
-		return false;
-	}
-
-	return true;
+	return sframe::JsonLoader::Load(filename, *this);
 }
 
 bool ServerConfig::HaveLocalService(const std::string & serv_type_name)
