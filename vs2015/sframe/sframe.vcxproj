@@ -99,6 +99,7 @@
     <ClCompile Include="..\..\sframe\util\md5.cpp" />
     <ClCompile Include="..\..\sframe\util\ObjectPool.cpp" />
     <ClCompile Include="..\..\sframe\util\RandomHelper.cpp" />
+    <ClCompile Include="..\..\sframe\util\Serialization.cpp" />
     <ClCompile Include="..\..\sframe\util\ShmChunk.cpp" />
     <ClCompile Include="..\..\sframe\util\StringHelper.cpp" />
     <ClCompile Include="..\..\sframe\util\Timer.cpp" />

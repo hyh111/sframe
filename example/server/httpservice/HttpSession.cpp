@@ -65,7 +65,7 @@ void HttpSession::OnMsg_HttpRequest(std::shared_ptr<sframe::HttpRequest> http_re
 	http_resp.SetHeader("Connection", "Keep-Alive");
 	http_resp.SetContent("Hello world");
 	std::string data = http_resp.ToString();
-	_sock->Send(data.data(), data.length());
+	_sock->Send(data.data(), (int32_t)data.length());
 }
 
 void HttpSession::OnMsg_HttpSessionClosed()

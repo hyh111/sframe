@@ -17,7 +17,7 @@ namespace sframe {
 
 #ifndef __GNUC__
 
-class ConditionVariable
+class ConditionVariable : public noncopyable
 {
 public:
 	ConditionVariable()
@@ -66,7 +66,7 @@ private:
 
 #else
 
-class ConditionVariable
+class ConditionVariable : public noncopyable
 {
 public:
 	ConditionVariable() : _cond_var(PTHREAD_COND_INITIALIZER) {}

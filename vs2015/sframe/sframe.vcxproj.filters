@@ -263,5 +263,8 @@
     <ClCompile Include="..\..\sframe\serv\AdminCmd.cpp">
       <Filter>serv</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\sframe\util\Serialization.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -19,11 +19,7 @@ struct ClientConfig
 };
 
 
-//MAP_CONFIG_MODULE(ClientConfigModule, int32_t, ClientConfig, kConfigId_ClientConfig);
+MAP_CONFIG_MODULE(ClientConfigModule, int32_t, ClientConfig, kConfigId_ClientConfig);
 
-struct ClientConfigModule : public sframe::MapConfigModule<int32_t, ClientConfig, kConfigId_ClientConfig>
-{
-
-};
 
 #endif

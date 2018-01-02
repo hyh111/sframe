@@ -12,6 +12,8 @@
 #include <memory>
 #include "../util/TupleHelper.h"
 #include "../util/Serialization.h"
+#include "../util/Log.h"
+#include "../util/StringHelper.h"
 
 namespace sframe{
 
@@ -145,7 +147,7 @@ public:
 	}
 
 	// 序列化
-	virtual bool Serialize(char * buf, int32_t * len) = 0;
+	virtual bool Serialize(std::string & str_buf) = 0;
 };
 
 // 具体的代理服务消息
@@ -156,43 +158,43 @@ public:
 	ProxyServiceMessageT(Data_Type&... datas) : _data(datas...) {}
 
 	// 序列化
-	bool Serialize(char * buf, int32_t * len) override
+	bool Serialize(std::string & str_buf) override
 	{
-		if (buf == nullptr || len == nullptr || (*len) < 0)
-		{
-			return false;
-		}
-
-		_buf = buf;
-		_len = len;
-
+		_str_buf = &str_buf;
 		return UnfoldTuple(this, _data);
 	}
 
 	template<typename... Args>
 	bool DoUnfoldTuple(Args&&... args)
 	{
-		assert(_buf && _len && (*_len) >= 0);
-		uint16_t msg_size = 0;
-		StreamWriter writer(_buf + sizeof(msg_size), (uint32_t)(*_len) - sizeof(msg_size));
-		if (!AutoEncode(writer, src_sid, dest_sid, session_key, msg_id, args...))
+		assert(_str_buf);
+		size_t msg_size = AutoGetSize(src_sid, dest_sid, session_key, msg_id, args...);
+		size_t size_field_size = StreamWriter::GetSizeFieldSize(msg_size);
+		size_t buf_size = msg_size + size_field_size;
+		size_t old_buf_size = _str_buf->size();
+		_str_buf->resize(old_buf_size + buf_size);
+		StreamWriter writer(&(*_str_buf)[0] + old_buf_size, buf_size);
+		if (!writer.WriteSizeField(msg_size) || !AutoEncode(writer, src_sid, dest_sid, session_key, msg_id, args...))
 		{
+			LOG_ERROR << "Serialize mesage error|MsgId|" << msg_id << "|SrcServiceId|" << src_sid << "|DestServiceId|" << dest_sid
+				<< "|SessionKey|" << session_key << "|MsgSize|" << msg_size << "|SizeFieldSize|" << size_field_size
+				<< "|BufSize|" << buf_size << "|StreamWriterPos|" << writer.GetStreamLength() <<std::endl;
 			return false;
 		}
 
-		msg_size = (uint16_t)writer.GetStreamLength();
-		msg_size = HTON_16(msg_size);
-		memcpy(_buf, (void*)&msg_size, sizeof(msg_size));
-
-		(*_len) = (int32_t)writer.GetStreamLength() + (int32_t)sizeof(msg_size);
+		if (buf_size != writer.GetStreamLength())
+		{
+			LOG_ERROR << "MsgSize error|MsgId|" << msg_id << "|SrcServiceId|" << src_sid << "|DestServiceId|" << dest_sid
+				<< "|SessionKey|" << session_key << "|MsgSize|" << msg_size << "|SizeFieldSize|" << size_field_size
+				<< "|BufSize|" << buf_size << "|StreamWriterPos|" << writer.GetStreamLength() << std::endl;
+		}
 
 		return true;
 	}
 
 private:
 	std::tuple<Data_Type...> _data;
-	char * _buf;
-	int32_t * _len;
+	std::string * _str_buf;
 };
 
 // 销毁服务消息

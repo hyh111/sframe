@@ -700,7 +700,7 @@ size_t HttpDecoder::DecodeContent(const char * data, size_t len, std::string & e
 		if (readed > 0)
 		{
 			_data_list.push_back(std::string(data, readed));
-			_remain_content_len -= readed;
+			_remain_content_len -= (int32_t)readed;
 		}
 	}
 	else if (_remain_content_len == -1)

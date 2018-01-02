@@ -10,13 +10,14 @@ using namespace sframe;
 
 ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port)
 	: _session_id(id), _remote_ip(remote_ip), _remote_port(remote_port), _proxy_service(proxy_service), 
-	_state(kSessionState_Initialize),  _reconnect(true)
+	_state(kSessionState_Initialize),  _reconnect(true), _cur_msg_size(0), _cur_msg_readed_size(0)
 {
 	assert(!remote_ip.empty() && proxy_service);
 }
 
 ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<sframe::TcpSocket> & sock)
-	: _session_id(id), _socket(sock), _state(kSessionState_Running), _proxy_service(proxy_service), _reconnect(false)
+	: _session_id(id), _socket(sock), _state(kSessionState_Running), _proxy_service(proxy_service), 
+	_reconnect(false), _cur_msg_size(0), _cur_msg_readed_size(0)
 {
 	assert(sock != nullptr && proxy_service);
 }
@@ -94,13 +95,12 @@ void ServiceSession::DoConnectCompleted(bool success)
 	assert(_socket->IsOpen());
 
 	// 之前缓存的数据立即发送出去
-	char data[65536];
-	int32_t len = 65536;
 	for (auto & msg : _msg_cache)
 	{
-		if (msg->Serialize(data, &len))
+		std::string data;
+		if (msg->Serialize(data))
 		{
-			_socket->Send(data, len);
+			_socket->Send(data.data(), (int32_t)data.size());
 		}
 		else
 		{
@@ -129,15 +129,10 @@ void ServiceSession::SendData(const std::shared_ptr<ProxyServiceMessage> & msg)
 	{
 		assert(_socket);
 		// 直接发送
-		char data[65536];
-		int32_t len = 65536;
-		if (msg->Serialize(data, &len))
+		std::string data;
+		if (msg->Serialize(data))
 		{
-			_socket->Send(data, len);
-		}
-		else
-		{
-			LOG_ERROR << "Serialize mesage error, the package size more than 65536" << std::endl;
+			_socket->Send(data.c_str(), (int32_t)data.size());
 		}
 	}
 }
@@ -148,7 +143,7 @@ void ServiceSession::SendData(const char * data, size_t len)
 	if (_state == ServiceSession::kSessionState_Running && data && len > 0)
 	{
 		assert(_socket);
-		_socket->Send(data, len);
+		_socket->Send(data, (int32_t)len);
 	}
 }
 
@@ -170,33 +165,56 @@ int32_t ServiceSession::OnReceived(char * data, int32_t len)
 	assert(data && len > 0 && _state == kSessionState_Running);
 
 	char * p = data;
-	int32_t surplus = len;
+	size_t surplus = (int32_t)len;
 
-	while (true)
+	while (surplus > 0)
 	{
-		uint16_t msg_size = 0;
-		StreamReader msg_size_reader(p, surplus);
-		if (!AutoDecode(msg_size_reader, msg_size) ||
-			surplus - msg_size_reader.GetReadedLength() < msg_size)
+		if (_cur_msg_size > 0)
 		{
-			break;
+			assert(_cur_msg_data && _cur_msg_size > _cur_msg_readed_size);
+
+			size_t cur_msg_remain_size = _cur_msg_size - _cur_msg_readed_size;
+			size_t read_size = std::min(surplus, cur_msg_remain_size);
+
+			memcpy(_cur_msg_data->data() + _cur_msg_readed_size, p, read_size);
+			p += read_size;
+			surplus -= read_size;
+			_cur_msg_readed_size += read_size;
+
+			if (_cur_msg_readed_size >= _cur_msg_size)
+			{
+				ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, 0, kProxyServiceMsgId_SessionRecvData, _session_id, _cur_msg_data);
+				_cur_msg_data.reset();
+				_cur_msg_size = 0;
+				_cur_msg_readed_size = 0;
+			}
 		}
-
-		p += msg_size_reader.GetReadedLength();
-		surplus -= msg_size_reader.GetReadedLength();
-
-		std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>(msg_size);
-		if (msg_size > 0)
+		else
 		{
-			memcpy(&(*data)[0], p, msg_size);
-			p += msg_size;
-			surplus -= msg_size;
+			assert(!_cur_msg_data && _cur_msg_readed_size == 0);
+
+			StreamReader msg_size_reader(p, surplus);
+			if (!msg_size_reader.ReadSizeField(_cur_msg_size))
+			{
+				_cur_msg_size = 0;
+				break;
+			}
+
+			assert(msg_size_reader.GetReadedLength() <= surplus);
+			p += msg_size_reader.GetReadedLength();
+			surplus -= msg_size_reader.GetReadedLength();
+
+			_cur_msg_data = std::make_shared<std::vector<char>>(_cur_msg_size);
+
+			if (_cur_msg_size == 0)
+			{
+				ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, 0, kProxyServiceMsgId_SessionRecvData, _session_id, _cur_msg_data);
+				_cur_msg_data.reset();
+			}
 		}
-			
-		ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, 0, kProxyServiceMsgId_SessionRecvData, _session_id, data);
 	}
 
-	return surplus;
+	return (int32_t)surplus;
 }
 
 // Socket关闭

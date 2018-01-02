@@ -15,7 +15,7 @@ int32_t ClientSession::OnReceived(char * data, int32_t len)
 	char * p = data;
 	int32_t surplus = len;
 
-	while (true)
+	while (surplus > 0)
 	{
 		uint16_t msg_size = 0;
 		StreamReader msg_size_reader(p, surplus);
@@ -26,7 +26,7 @@ int32_t ClientSession::OnReceived(char * data, int32_t len)
 		}
 
 		p += msg_size_reader.GetReadedLength();
-		surplus -= msg_size_reader.GetReadedLength();
+		surplus -= (int32_t)msg_size_reader.GetReadedLength();
 
 		std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>(msg_size);
 		if (msg_size > 0)

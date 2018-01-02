@@ -99,6 +99,9 @@ private:
 	bool _reconnect;
 	std::string _remote_ip;
 	uint16_t _remote_port;
+	std::shared_ptr<std::vector<char>> _cur_msg_data;
+	size_t _cur_msg_size;
+	size_t _cur_msg_readed_size;
 };
 
 

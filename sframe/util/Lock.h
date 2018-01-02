@@ -9,11 +9,13 @@
 #include <pthread.h>
 #endif
 
+#include "Singleton.h"
+
 namespace sframe {
 
 #ifndef __GNUC__
 // Windows锁实现
-class Lock
+class Lock : public noncopyable
 {
 	friend class ConditionVariable;
 public:
@@ -43,7 +45,7 @@ private:
 #else
 
 // Linux锁实现
-class Lock
+class Lock : public noncopyable
 {
 	friend class ConditionVariable;
 public:
@@ -72,7 +74,7 @@ private:
 
 #endif
 
-class AutoLock
+class AutoLock : public noncopyable
 {
 public:
     AutoLock(const Lock & lock) : _lock(&lock)

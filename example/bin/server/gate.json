@@ -6,7 +6,7 @@
 	"res_path" : "./resourse",
 
 	// 线程数量
-	"thread_num" : 4,
+	"thread_num" : 1,
 
 	// 远程服务连接监听地址
 	"listen_service" : "0.0.0.0:5002",
