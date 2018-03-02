@@ -239,6 +239,8 @@ std::vector<std::string> FileHelper::ScanDirectory(const std::string & dir_path,
 	case sframe::FileHelper::kScanType_OnlyNotDirectory:
 		selector = &SelectOnlyNotDir;
 		break;
+	default:
+		break;
 	}
 
 	struct dirent **namelist;

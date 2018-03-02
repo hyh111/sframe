@@ -101,10 +101,10 @@ class GetConfigObjKey_Warpper
 	struct MethodMatcher;
 
 	template<typename R, typename T>
-	static std::true_type match(MethodMatcher<R, T, &T::GetKey>*) {}
+	static std::true_type match(MethodMatcher<R, T, &T::GetKey>*) { return std::true_type(); }
 
 	template<typename R, typename T>
-	static std::false_type match(...) {}
+	static std::false_type match(...) { return std::false_type(); }
 
 	template<typename R, typename T>
 	inline static R call(std::false_type, T & obj)

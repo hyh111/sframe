@@ -717,7 +717,7 @@ size_t HttpDecoder::DecodeContent(const char * data, size_t len, std::string & e
 
 			while (surplus >= 2 && !(p[0] == '\r' && p[1] == '\n'))
 			{
-				if (chunk_len_str_len < (sizeof(chunk_len_str) - 1))
+				if (chunk_len_str_len < ((int)sizeof(chunk_len_str) - 1))
 				{
 					chunk_len_str[chunk_len_str_len++] = p[0];
 				}

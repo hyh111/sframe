@@ -31,7 +31,7 @@ void ServiceTcpConnHandler::HandleTcpConn(const std::shared_ptr<TcpSocket> & soc
 	assert(hand_sid >= 0);
 
 	std::shared_ptr<NewConnectionMessage> new_conn_msg = std::make_shared<NewConnectionMessage>(sock, listen_addr);
-	GetServiceDispatcher().SendMsg(hand_sid, new_conn_msg);
+	sframe::ServiceDispatcher::Instance().SendMsg(hand_sid, new_conn_msg);
 }
 
 

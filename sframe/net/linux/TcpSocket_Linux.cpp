@@ -41,7 +41,7 @@ std::shared_ptr<TcpSocket_Linux> TcpSocket_Linux::Create(const std::shared_ptr<I
 
 TcpSocket_Linux::TcpSocket_Linux(const std::shared_ptr<IoService> & io_service)
 	: IoUnit(io_service), _add_evt(false), _io_msg_send_and_conn(kIoMsgType_SendData), _io_msg_close(kIoMsgType_Close),
-	  _io_msg_notify_err(kIoMsgType_NotifyError), _cur_events(EPOLLET), _recv_len(0), _last_error(0), _tcp_nodelay(false)
+	  _io_msg_notify_err(kIoMsgType_NotifyError), _last_error(0), _cur_events(EPOLLET), _recv_len(0), _tcp_nodelay(false)
 {}
 
 // 连接
@@ -146,8 +146,6 @@ Error TcpSocket_Linux::SetTcpNodelay(bool on)
 
 void TcpSocket_Linux::OnEvent(IoEvent io_evt)
 {
-	uint32_t evts = io_evt;
-
 	int error = 0;
 	socklen_t error_len = sizeof(error);
 	State s = GetState();

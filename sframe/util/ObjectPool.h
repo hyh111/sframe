@@ -47,10 +47,10 @@ class MaxObjectPoolSize
 	struct MethodMatcher;
 
 	template<typename T>
-	static std::true_type match(MethodMatcher<&T::GetObjectPoolSize>*) {}
+	static std::true_type match(MethodMatcher<&T::GetObjectPoolSize>*) { return std::true_type(); }
 
 	template<typename T>
-	static std::false_type match(...) {}
+	static std::false_type match(...) { return std::false_type(); }
 
 	template<typename T>
 	inline static int32_t call(std::false_type)

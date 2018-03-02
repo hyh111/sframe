@@ -154,7 +154,7 @@ void IoService_Linux::Close()
 	_msgs.push_back(nullptr);
 	uint64_t c = 1;
 	int ret = write(_msg_evt_fd, &c, sizeof(c));
-	assert(ret >= sizeof(c));
+	assert(ret >= (int)sizeof(c));
 }
 
 // 添加监听事件
@@ -206,5 +206,5 @@ void IoService_Linux::PostIoMsg(const IoMsg & io_msg)
     _msgs.push_back((IoMsg*)&io_msg);
 	uint64_t c = 1;
 	int ret = write(_msg_evt_fd, &c, sizeof(c));
-	assert(ret >= sizeof(c));
+	assert(ret >= (int)sizeof(c));
 }

@@ -81,9 +81,9 @@ public:
 
 	// 获取服务的循环定时器周期，重写此方法返回大于0的值(ms)设置循环周期
 	virtual int32_t GetCyclePeriod() const { return 0; }
-
+	
 public:
-    Service() : _sid(0), _msg_queue(this), _sender_sid(0), _cur_session_key(0), _cur_time(0), _destroyed(false) {}
+    Service() : _sid(0), _cur_time(0), _msg_queue(this), _sender_sid(0), _cur_session_key(0), _destroyed(false) {}
 
     virtual ~Service() {}
 

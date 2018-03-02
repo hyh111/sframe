@@ -20,6 +20,11 @@ namespace sframe{
 class TimeHelper
 {
 public:
+
+	static const int32_t kOneDaySeconds = 24 * 60 * 60;
+
+	static const int32_t kOneWeekDays = 7;
+
 	// 获取稳定的时间(从开机到现在的微妙，不能手动修改的时间)
 	static int64_t GetSteadyMicroseconds()
 	{
@@ -87,7 +92,6 @@ public:
 	// cross_day_off_secs: 跨天偏移秒数(相对于00:00:00的秒数),取值范围：[0,86400)
 	static int32_t GetLocalDay(int64_t time, int32_t cross_day_off_secs = 0)
 	{
-		static const int32_t kOneDaySeconds = 24 * 60 * 60;
 		time += UtcOffset();
 		cross_day_off_secs = std::min(kOneDaySeconds - 1, std::max(0, cross_day_off_secs));
 		return (int32_t)(std::max((int64_t)0, (time - cross_day_off_secs)) / kOneDaySeconds);
@@ -99,7 +103,6 @@ public:
 	// cross_day_off_secs: 跨天偏移秒数(相对于00:00:00的秒数),取值范围：[0,86400)
 	static int32_t GetLocalWeek(int64_t time, int32_t cross_week_off_day = 0, int32_t cross_day_off_secs = 0)
 	{
-		static const int32_t kOneWeekDays = 7;
 		int32_t day = GetLocalDay(time, cross_day_off_secs);
 		cross_week_off_day = std::min(kOneWeekDays - 1, std::max(0, cross_week_off_day));
 		return (std::max(0, (day + 3 - cross_week_off_day)) / kOneWeekDays);
@@ -121,6 +124,23 @@ public:
 	{
 		return (GetLocalWeek(time1, cross_week_off_day, cross_day_off_secs) ==
 			GetLocalWeek(time2, cross_week_off_day, cross_day_off_secs));
+	}
+
+	// 获取给定的时间当天的开始的时间
+	// time: 给定时间，返回的是此时间那一天的起始时间
+	// cross_day_off_secs: 跨天偏移秒数
+	static int64_t GetDayBeginSeconds(int64_t time, int32_t cross_day_off_secs)
+	{
+		cross_day_off_secs = std::min(kOneDaySeconds - 1, std::max(0, cross_day_off_secs));
+		time -= cross_day_off_secs;
+
+		struct tm t;
+		LocalTime(time, &t);
+		t.tm_hour = 0;
+		t.tm_min = 0;
+		t.tm_sec = 0;
+
+		return (int64_t)mktime(&t) + cross_day_off_secs;
 	}
 
     // 线程睡眠

@@ -10,10 +10,10 @@
 using namespace sframe;
 
 User::User(int32_t work_sid, int32_t gate_sid, int64_t session_id) 
-	: _work_sid(work_sid), _gate_sid(gate_sid), _session_id(session_id)
+	: _work_sid(work_sid), _session_id(session_id), _gate_sid(gate_sid)
 {
 	char file_name[256];
-	sprintf(file_name, "user_%d_%lld.txt", _gate_sid, _session_id);
+	sprintf(file_name, "user_%d_%lld.txt", _gate_sid, (long long)_session_id);
 	_log_name = file_name;
 }
 
@@ -36,7 +36,7 @@ void User::OnClientData(const WorkMsg_ClientData & msg)
 	FLOG(_log_name) << client_id << "|" << count << "|" << send_time << "|" << TimeHelper::GetEpochMilliseconds() << "|" << text << ENDL;
 
 	char resp_text[1024];
-	sprintf(resp_text, "Client %d, you are in gate(%d), and your sessionid id is %lld", client_id, _gate_sid, _session_id);
+	sprintf(resp_text, "Client %d, you are in gate(%d), and your sessionid id is %lld", client_id, _gate_sid, (long long)_session_id);
 	int resp_text_len = (int)strlen(resp_text);
 
 	GateMsg_SendToClient resp_msg;

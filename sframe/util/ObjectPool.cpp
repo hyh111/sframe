@@ -8,7 +8,7 @@ FreeMemoryList::FreeMemoryList(int chunk_size, int max_free_list_len)
 {
     _max_free_list_len = max_free_list_len;
     _free_list_len = 0;
-    _memory_chunk_size = chunk_size > sizeof(ListNode) ? chunk_size : sizeof(ListNode);
+    _memory_chunk_size = chunk_size > (int32_t)sizeof(ListNode) ? chunk_size : (int32_t)sizeof(ListNode);
     _free_list_header = nullptr;
 }
 

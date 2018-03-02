@@ -193,11 +193,6 @@ void ServiceDispatcher::SendServiceMsg(int32_t src_sid, int32_t dest_sid, int64_
 	}
 }
 
-static ServiceDispatcher & GetServiceDispatcher()
-{
-	return ServiceDispatcher::Instance();
-}
-
 #define SERVICE_DISPATCHER (sframe::ServiceDispatcher::Instance())
 
 }

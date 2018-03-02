@@ -9,14 +9,14 @@
 using namespace sframe;
 
 ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port)
-	: _session_id(id), _remote_ip(remote_ip), _remote_port(remote_port), _proxy_service(proxy_service), 
-	_state(kSessionState_Initialize),  _reconnect(true), _cur_msg_size(0), _cur_msg_readed_size(0)
+	: _proxy_service(proxy_service), _session_id(id), _state(kSessionState_Initialize), _reconnect(true), 
+	_remote_ip(remote_ip), _remote_port(remote_port), _cur_msg_size(0), _cur_msg_readed_size(0)
 {
 	assert(!remote_ip.empty() && proxy_service);
 }
 
 ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<sframe::TcpSocket> & sock)
-	: _session_id(id), _socket(sock), _state(kSessionState_Running), _proxy_service(proxy_service), 
+	: _proxy_service(proxy_service), _socket(sock), _session_id(id), _state(kSessionState_Running),
 	_reconnect(false), _cur_msg_size(0), _cur_msg_readed_size(0)
 {
 	assert(sock != nullptr && proxy_service);

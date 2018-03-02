@@ -33,8 +33,6 @@ TimerHandle TimerManager::RegistNormalTimer(int32_t after_msec, NormalTimer::Tim
 		assert(_exec_time <= 0);
 		_init_time = now;
 		_exec_time = now;
-
-		printf("init %lld\n", now);
 	}
 
 	NormalTimer * t = new  NormalTimer(func);
@@ -214,7 +212,6 @@ void TimerManager::AddTimer(Timer * t)
 		return;
 	}
 
-	int64_t after_time = timer_time - _exec_time;
 	int32_t after_tick = (int32_t)MilliSecToTick(timer_time - _exec_time, true);
 	timer_time = _exec_time + after_tick * kMilliSecOneTick;
 	t->SetExecTime(timer_time);

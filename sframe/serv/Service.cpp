@@ -175,6 +175,9 @@ void Service::DelegateInsideServiceMsg(const std::shared_ptr<sframe::ServiceMess
 	case kDelegateType_MemberFuncDelegate_WithObjectFinder:
 		call_succ = _inside_delegate_mgr.CallWithObjectKey(msg->msg_id, msg->session_key, decoder);
 		break;
+
+	default:
+		break;
 	}
 
 	if (!call_succ)
@@ -199,6 +202,9 @@ void Service::DelegateNetServiceMsg(const std::shared_ptr<sframe::NetServiceMess
 
 	case kDelegateType_MemberFuncDelegate_WithObjectFinder:
 		call_succ = _net_delegate_mgr.CallWithObjectKey(msg->msg_id, msg->session_key, decoder);
+		break;
+
+	default:
 		break;
 	}
 

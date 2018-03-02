@@ -89,11 +89,13 @@ class LoggerMgr : public singleton<LoggerMgr>
 {
 public:
 
-	LoggerMgr() : _is_running(false), _flush_log_thread(nullptr) {}
+	LoggerMgr() : _flush_log_thread(nullptr), _is_running(false) {}
 
 	~LoggerMgr();
 
 	void Initialize(const std::string & log_dir = "", const std::string & log_base_name = "");
+
+	void Close();
 
 	Logger & GetLogger(const std::string & log_name);
 

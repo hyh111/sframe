@@ -49,7 +49,7 @@ private:
 class StreamReader
 {
 public:
-	StreamReader(const char * buf, size_t len) : _buf(buf), _capacity(len), _cur_pos(0) {}
+	StreamReader(const char * buf, size_t len) : _buf(buf), _cur_pos(0), _capacity(len) {}
 
 	// 获取已读取的长度
 	size_t GetReadedLength() const

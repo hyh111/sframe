@@ -53,7 +53,7 @@ void ClientSession::OnClosed(bool by_self, sframe::Error err)
 
 
 ClientSession::ClientSession(GateService * gate_service, int64_t session_id, const std::shared_ptr<sframe::TcpSocket> & sock)
-	: _sock(sock), _gate_service(gate_service), _session_id(session_id), _cur_work_sid(0)
+	: _gate_service(gate_service), _sock(sock), _session_id(session_id), _cur_work_sid(0)
 {
 	_sock->SetMonitor(this);
 	_sock->StartRecv();

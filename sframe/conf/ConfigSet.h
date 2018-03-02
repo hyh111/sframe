@@ -153,7 +153,6 @@ std::shared_ptr<const T> ConfigSet::GetConfigModule() const
 template<typename T>
 std::shared_ptr<const typename CONFIG_MODEL_TYPE(T)> ConfigSet::GetConfig() const
 {
-	int32_t config_id = GET_CONFIGID(T);
 	std::shared_ptr<const T> conf_module = GetConfigModule<T>();
 	if (!conf_module)
 	{
