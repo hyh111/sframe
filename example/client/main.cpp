@@ -25,11 +25,6 @@ int main()
 {
 	INITIALIZE_LOG("./client_log", "");
 
-	LOG_INFO << "hello, yes!!!" << std::endl;
-
-	sframe::LoggerMgr::Instance().Close();
-
-	/*
 	if (!ConfigManager::InitializeConfig("./client_data"))
 	{
 		LOG_ERROR << "Config error, quit now..." << std::endl;
@@ -79,6 +74,6 @@ int main()
 	ClientManager::Instance().Close();
 	g_running = false;
 	t.join();
-*/
+
 	return 0;
 }

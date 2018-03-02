@@ -95,8 +95,6 @@ public:
 
 	void Initialize(const std::string & log_dir = "", const std::string & log_base_name = "");
 
-	void Close();
-
 	Logger & GetLogger(const std::string & log_name);
 
 	const std::string & GetLogDir() const

@@ -293,17 +293,6 @@ void LoggerMgr::Initialize(const std::string & log_dir, const std::string & log_
 	_flush_log_thread = new std::thread(LoggerMgr::ExecFlushLog, this);
 }
 
-void LoggerMgr::Close()
-{
-	if (_is_running)
-	{
-		_is_running = false;
-		_wait_flush_logger_queue.Stop();
-		_flush_log_thread->join();
-		delete _flush_log_thread;
-	}
-}
-
 Logger & LoggerMgr::GetLogger(const std::string & log_name)
 {
 	if (log_name.empty())

@@ -1,2 +1,2 @@
 ulimit -c unlimited
-/home/programmer/share/sframe/example/bin/client/client-d &
+/home/programmer/share/sframe/example/bin/client/client &
