@@ -18,7 +18,7 @@
 
 namespace sframe {
 
-// 配置集合
+// 脜盲脰脙录炉潞脧
 class ConfigSet
 {
 public:
@@ -60,45 +60,45 @@ public:
 
 	virtual ~ConfigSet();
 
-	// 加载(全部成功返回true, 只要有一个失败都会返回false)
-	// 出错时，err_info会返回出错的配置信息
+	// 录脫脭脴(脠芦虏驴鲁脡鹿娄路碌禄脴true, 脰禄脪陋脫脨脪禄赂枚脢搂掳脺露录禄谩路碌禄脴false)
+	// 鲁枚麓铆脢卤拢卢err_info禄谩路碌禄脴鲁枚麓铆碌脛脜盲脰脙脨脜脧垄
 	bool Load(const std::string & path, std::vector<std::string> * vec_err_msg = nullptr);
 
 
-	///////////////////////// 查询相关方法 ///////////////////////////
+	///////////////////////// 虏茅脩炉脧脿鹿脴路陆路篓 ///////////////////////////
 
-	// 获取配置模块
+	// 禄帽脠隆脜盲脰脙脛拢驴茅
 	template<typename T>
 	std::shared_ptr<const T> GetConfigModule() const;
 
-	// 获取配置
+	// 禄帽脠隆脜盲脰脙
 	template<typename T>
 	std::shared_ptr<const typename CONFIG_MODEL_TYPE(T)> GetConfig() const;
 
-	// 根据key获取Map类型条目
+	// 赂霉戮脻key禄帽脠隆Map脌脿脨脥脤玫脛驴
 	template<typename T>
 	std::shared_ptr<const typename CONFIG_CONF_TYPE(T)> GetMapConfigItem(const typename CONFIG_KEY_TYPE(T) & key) const;
 
-	// 注册配置
-	// conf_file_name：配置文件名，必须为Load时传入基础目录路劲的相对路劲，支持通配符以表示多个文件
+	// 脳垄虏谩脜盲脰脙
+	// conf_file_name拢潞脜盲脰脙脦脛录镁脙没拢卢卤脴脨毛脦陋Load脢卤麓芦脠毛禄霉麓隆脛驴脗录脗路戮垄碌脛脧脿露脭脗路戮垄拢卢脰搂鲁脰脥篓脜盲路没脪脭卤铆脢戮露脿赂枚脦脛录镁
 	template<typename T_ConfigLoader, typename T>
 	void RegistConfigModule(const std::string & conf_file_name);
 
 private:
 
-	// 加载
+	// 录脫脭脴
 	template<typename T_ConfigLoader, typename T_Module>
 	static bool LoadConfig(const std::string & conf_file_name, ConfUnitT<T_Module> * o);
 
-	// 加载（单个文件）
+	// 录脫脭脴拢篓碌楼赂枚脦脛录镁拢漏
 	template<typename T_ConfigLoader, typename T>
 	ConfigSet::ConfUnit * LoadConfig_OneFile(const std::string & conf_file_name, std::vector<std::string> * err_file_name);
 
-	// 加载（多文件）
+	// 录脫脭脴拢篓露脿脦脛录镁拢漏
 	template<typename T_ConfigLoader, typename T>
 	ConfigSet::ConfUnit * LoadConfig_MultiFile(const std::string & conf_file_name, std::vector<std::string> * err_file_name);
 
-	// 初始化配置
+	// 鲁玫脢录禄炉脜盲脰脙
 	template<typename T_Module>
 	bool InitConfig(ConfigSet::ConfUnit * conf);
 
@@ -114,7 +114,7 @@ private:
 };
 
 
-// 获取配置模块
+// 禄帽脠隆脜盲脰脙脛拢驴茅
 template<typename T>
 std::shared_ptr<const T> ConfigSet::GetConfigModule() const
 {
@@ -149,7 +149,7 @@ std::shared_ptr<const T> ConfigSet::GetConfigModule() const
 	return config_ele->val;
 }
 
-// 获取配置
+// 禄帽脠隆脜盲脰脙
 template<typename T>
 std::shared_ptr<const typename CONFIG_MODEL_TYPE(T)> ConfigSet::GetConfig() const
 {
@@ -162,7 +162,7 @@ std::shared_ptr<const typename CONFIG_MODEL_TYPE(T)> ConfigSet::GetConfig() cons
 	return conf_module->Obj();
 }
 
-// 根据key获取Map类型条目
+// 赂霉戮脻key禄帽脠隆Map脌脿脨脥脤玫脛驴
 template<typename T>
 std::shared_ptr<const typename CONFIG_CONF_TYPE(T)> ConfigSet::GetMapConfigItem(const typename CONFIG_KEY_TYPE(T) & key) const
 {
@@ -175,8 +175,8 @@ std::shared_ptr<const typename CONFIG_CONF_TYPE(T)> ConfigSet::GetMapConfigItem(
 	return map_conf->GetConfigItem(key);
 }
 
-// 注册配置
-// conf_file_name：配置文件名，必须为Load时传入基础目录路劲的相对路劲，支持通配符以表示多个文件
+// 脳垄虏谩脜盲脰脙
+// conf_file_name拢潞脜盲脰脙脦脛录镁脙没拢卢卤脴脨毛脦陋Load脢卤麓芦脠毛禄霉麓隆脛驴脗录脗路戮垄碌脛脧脿露脭脗路戮垄拢卢脰搂鲁脰脥篓脜盲路没脪脭卤铆脢戮露脿赂枚脦脛录镁
 template<typename T_ConfigLoader, typename T>
 void ConfigSet::RegistConfigModule(const std::string & conf_file_name)
 {
@@ -195,7 +195,7 @@ void ConfigSet::RegistConfigModule(const std::string & conf_file_name)
 	load_helper.conf_file_name = conf_file_name;
 	load_helper.conf_type_name = ReadTypeName(typeid(T).name());
 
-	// 看文件命中是否有通配符(*)，若有的话，采用多文件加载方式
+	// 驴麓脦脛录镁脙眉脰脨脢脟路帽脫脨脥篓脜盲路没(*)拢卢脠么脫脨碌脛禄掳拢卢虏脡脫脙露脿脦脛录镁录脫脭脴路陆脢陆
 	if (load_helper.conf_file_name.find('*') == std::string::npos)
 	{
 		load_helper.func_load = &ConfigSet::LoadConfig_OneFile<T_ConfigLoader, T>;
@@ -205,7 +205,7 @@ void ConfigSet::RegistConfigModule(const std::string & conf_file_name)
 		load_helper.func_load = &ConfigSet::LoadConfig_MultiFile<T_ConfigLoader, T>;
 	}
 
-	// 保存
+	// 卤拢麓忙
 	if (config_id < 0)
 	{
 		_temporary_config_load_helper.push_back(load_helper);
@@ -217,7 +217,7 @@ void ConfigSet::RegistConfigModule(const std::string & conf_file_name)
 	}
 }
 
-// 加载
+// 录脫脭脴
 template<typename T_ConfigLoader, typename T_Module>
 bool ConfigSet::LoadConfig(const std::string & conf_file_name, ConfUnitT<T_Module> * o)
 {
@@ -230,7 +230,7 @@ bool ConfigSet::LoadConfig(const std::string & conf_file_name, ConfUnitT<T_Modul
 	return T_ConfigLoader::Load(conf_file_name, *(o->val->Obj().get()));
 }
 
-// 加载（单个文件）
+// 录脫脭脴拢篓碌楼赂枚脦脛录镁拢漏
 template<typename T_ConfigLoader, typename T>
 ConfigSet::ConfUnit * ConfigSet::LoadConfig_OneFile(const std::string & conf_file_name, std::vector<std::string> * err_file_name)
 {
@@ -250,7 +250,7 @@ ConfigSet::ConfUnit * ConfigSet::LoadConfig_OneFile(const std::string & conf_fil
 	return o;
 }
 
-// 加载（多文件）
+// 录脫脭脴拢篓露脿脦脛录镁拢漏
 template<typename T_ConfigLoader, typename T>
 ConfigSet::ConfUnit * ConfigSet::LoadConfig_MultiFile(const std::string & conf_file_name, std::vector<std::string> * err_file_name)
 {
@@ -278,7 +278,7 @@ ConfigSet::ConfUnit * ConfigSet::LoadConfig_MultiFile(const std::string & conf_f
 	return o;
 }
 
-// 初始化配置
+// 鲁玫脢录禄炉脜盲脰脙
 template<typename T_Module>
 bool ConfigSet::InitConfig(ConfigSet::ConfUnit * conf)
 {

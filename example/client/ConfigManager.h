@@ -12,13 +12,13 @@ class ConfigManager
 {
 public:
 	
-	// 初始化
+	// 鲁玫脢录禄炉
 	static bool InitializeConfig(const std::string & path);
 
-	// 重新加载
+	// 脰脴脨脗录脫脭脴
 	static bool ReloadConfig();
 
-	// 获取配置集
+	// 禄帽脠隆脜盲脰脙录炉
 	static std::shared_ptr<sframe::ConfigSet> GetConfigSet();
 
 private:

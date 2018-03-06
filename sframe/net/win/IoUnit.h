@@ -9,18 +9,18 @@
 
 namespace sframe {
 
-// IO事件类型
+// IO脢脗录镁脌脿脨脥
 enum IoEventType :int32_t
 {
-	kIoEvent_ConnectCompleted,      // 连接
-	kIoEvent_SendCompleted,         // 发送
-	kIoEvent_RecvCompleted,         // 接收数据
-	kIoEvent_AcceptCompleted,       // 接受连接
+	kIoEvent_ConnectCompleted,      // 脕卢陆脫
+	kIoEvent_SendCompleted,         // 路垄脣脥
+	kIoEvent_RecvCompleted,         // 陆脫脢脮脢媒戮脻
+	kIoEvent_AcceptCompleted,       // 陆脫脢脺脕卢陆脫
 };
 
 class IoUnit;
 
-// IO事件
+// IO脢脗录镁
 struct IoEvent
 {
 	IoEvent(IoEventType t)
@@ -30,20 +30,20 @@ struct IoEvent
 	}
 
 	OVERLAPPED ol;
-	const IoEventType evt_type;   // 事件类型
-	std::shared_ptr<IoUnit> io_unit; // 用于关联IoUnit对象，IO服务用此进行完成事件通知，同时保证在一次操作完成之前对象不会被析构掉
-	Error err;                    // 错误码
-	int32_t data_len;             // 数据长度
+	const IoEventType evt_type;   // 脢脗录镁脌脿脨脥
+	std::shared_ptr<IoUnit> io_unit; // 脫脙脫脷鹿脴脕陋IoUnit露脭脧贸拢卢IO路镁脦帽脫脙麓脣陆酶脨脨脥锚鲁脡脢脗录镁脥篓脰陋拢卢脥卢脢卤卤拢脰陇脭脷脪禄麓脦虏脵脳梅脥锚鲁脡脰庐脟掳露脭脧贸虏禄禄谩卤禄脦枚鹿鹿碌么
+	Error err;                    // 麓铆脦贸脗毛
+	int32_t data_len;             // 脢媒戮脻鲁陇露脠
 };
 
-// IO消息类型
+// IO脧没脧垄脌脿脨脥
 enum IoMsgType : int32_t
 {
-	kIoMsgType_Close,        // 关闭
-	kIoMsgType_NotifyError,  // 错误通知
+	kIoMsgType_Close,        // 鹿脴卤脮
+	kIoMsgType_NotifyError,  // 麓铆脦贸脥篓脰陋
 };
 
-// IO消息
+// IO脧没脧垄
 struct IoMsg
 {
 	IoMsg(IoMsgType t) : msg_type(t) {}
@@ -54,7 +54,7 @@ struct IoMsg
 
 class IoService;
 
-// Io单元
+// Io碌楼脭陋
 class IoUnit
 {
 public:

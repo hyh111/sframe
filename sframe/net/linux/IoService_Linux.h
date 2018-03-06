@@ -10,13 +10,13 @@
 
 namespace sframe {
 
-// Linux下的Io服务(采用EPOLL实现)
+// Linux脧脗碌脛Io路镁脦帽(虏脡脫脙EPOLL脢碌脧脰)
 class IoService_Linux : public IoService
 {
 public:
-	// epoll等待最大事件数量
+	// epoll碌脠麓媒脳卯麓贸脢脗录镁脢媒脕驴
 	static const int kMaxEpollEventsNumber = 1024;
-	// IO消息缓冲区长度
+	// IO脧没脧垄禄潞鲁氓脟酶鲁陇露脠
 	static const int kMaxIoMsgBufferSize = 65536;
 
 public:
@@ -30,23 +30,23 @@ public:
 
 	void Close() override;
 
-	// 添加监听事件
+	// 脤铆录脫录脿脤媒脢脗录镁
 	bool AddIoEvent(const IoUnit & iounit, const IoEvent ioevt);
 
-	// 修改监听事件
+	// 脨脼赂脛录脿脤媒脢脗录镁
 	bool ModifyIoEvent(const IoUnit & iounit, const IoEvent ioevt);
 
-	// 删除监听事件
+	// 脡戮鲁媒录脿脤媒脢脗录镁
 	bool DeleteIoEvent(const IoUnit & iounit, const IoEvent ioevt);
 
-	// 投递消息
+	// 脥露碌脻脧没脧垄
 	void PostIoMsg(const IoMsg & io_msg);
 
 private:
 	int _epoll_fd;
-	int _msg_evt_fd;               // 用于实现IO消息的发送与处理
-	std::vector<IoMsg*> _msgs;     // IO消息列表
-	sframe::Lock _msgs_lock;  // 消息列表锁
+	int _msg_evt_fd;               // 脫脙脫脷脢碌脧脰IO脧没脧垄碌脛路垄脣脥脫毛麓娄脌铆
+	std::vector<IoMsg*> _msgs;     // IO脧没脧垄脕脨卤铆
+	sframe::Lock _msgs_lock;  // 脧没脧垄脕脨卤铆脣酶
 };
 
 }

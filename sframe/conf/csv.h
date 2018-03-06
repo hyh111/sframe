@@ -10,7 +10,7 @@ class CSV
 {
 public:
 
-	// ½âÎö
+	// Â½Ã¢ÃÃ¶
 	static bool Parse(const std::string & content, Table & tbl);
 
 };

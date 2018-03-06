@@ -10,8 +10,8 @@ HttpSession::HttpSession(HttpService * http_service, const std::shared_ptr<sfram
 	_sock->StartRecv();
 }
 
-// 接收到数据
-// 返回剩余多少数据
+// 陆脫脢脮碌陆脢媒戮脻
+// 路碌禄脴脢拢脫脿露脿脡脵脢媒戮脻
 int32_t HttpSession::OnReceived(char * data, int32_t len)
 {
 	std::string err_msg;
@@ -19,7 +19,7 @@ int32_t HttpSession::OnReceived(char * data, int32_t len)
 	if (!err_msg.empty())
 	{
 		FLOG("HttpService") << "HttpSession " << _session_id << " decode http request error|" << err_msg << std::endl;
-		// 关闭连接
+		// 鹿脴卤脮脕卢陆脫
 		return -1;
 	}
 
@@ -34,8 +34,8 @@ int32_t HttpSession::OnReceived(char * data, int32_t len)
 	return len - (int32_t)readed;
 }
 
-// Socket关闭
-// by_self: true表示主动请求的关闭操作
+// Socket鹿脴卤脮
+// by_self: true卤铆脢戮脰梅露炉脟毛脟贸碌脛鹿脴卤脮虏脵脳梅
 void HttpSession::OnClosed(bool by_self, sframe::Error err)
 {
 	if (err)

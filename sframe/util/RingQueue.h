@@ -9,7 +9,7 @@
 
 namespace sframe {
 
-// 拷贝数据
+// 驴陆卤麓脢媒戮脻
 template<typename T, bool>
 struct CopyDataHelper
 {
@@ -31,7 +31,7 @@ struct CopyDataHelper<T, false>
 	}
 };
 
-// 环形队列
+// 禄路脨脦露脫脕脨
 template<typename T>
 class RingQueue
 {
@@ -68,7 +68,7 @@ public:
 		return (*this);
 	}
 
-	// 压入
+	// 脩鹿脠毛
 	void Push(const T & val)
 	{
 		if (_len >= _capacity)
@@ -86,7 +86,7 @@ public:
 		}
 	}
 
-	// 弹出
+	// 碌炉鲁枚
 	bool Pop(T * val = nullptr)
 	{
 		if (_len <= 0)

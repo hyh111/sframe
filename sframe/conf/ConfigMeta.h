@@ -19,7 +19,7 @@ public:
 
 };
 
-// 配置模块基类
+// 脜盲脰脙脛拢驴茅禄霉脌脿
 template<typename T_ConfigModel, int Conf_Id>
 class ConfigModuleT : public ConfigModule
 {
@@ -46,7 +46,7 @@ private:
 	std::shared_ptr<ModelType> _conf_obj;
 };
 
-// 单一对象配置模块
+// 碌楼脪禄露脭脧贸脜盲脰脙脛拢驴茅
 template<typename T_Config, int Conf_Id>
 class ObjectConfigModule : public ConfigModuleT<T_Config, Conf_Id>
 {
@@ -54,7 +54,7 @@ public:
 	typedef T_Config ConfType;
 };
 
-// vector配置模块
+// vector脜盲脰脙脛拢驴茅
 template<typename T_Config, int Conf_Id>
 class VectorConfigModule : public ConfigModuleT<std::vector<std::shared_ptr<T_Config>>, Conf_Id>
 {
@@ -62,7 +62,7 @@ public:
 	typedef T_Config ConfType;
 };
 
-// set配置模块
+// set脜盲脰脙脛拢驴茅
 template<typename T_Config, int Conf_Id>
 class SetConfigModule : public ConfigModuleT<std::set<std::shared_ptr<T_Config>>, Conf_Id>
 {
@@ -70,7 +70,7 @@ public:
 	typedef T_Config ConfType;
 };
 
-// map配置模块
+// map脜盲脰脙脛拢驴茅
 template<typename T_Key, typename T_Config, int Conf_Id>
 class MapConfigModule : public ConfigModuleT<std::map<T_Key, std::shared_ptr<T_Config>>, Conf_Id>
 {
@@ -141,35 +141,35 @@ inline R GetConfigObjKey(std::shared_ptr<T> & obj)
 }
 
 
-// 声明单一对象模型的配置
-// OBJ_CONFIG_MODULE(配置模块名, 配置结构体名, 配置ID)
+// 脡霉脙梅碌楼脪禄露脭脧贸脛拢脨脥碌脛脜盲脰脙
+// OBJ_CONFIG_MODULE(脜盲脰脙脛拢驴茅脙没, 脜盲脰脙陆谩鹿鹿脤氓脙没, 脜盲脰脙ID)
 #define OBJ_CONFIG_MODULE(module, conf, conf_id) class module : public sframe::ObjectConfigModule<conf, conf_id> {};
 
-// 声明Vetor模型的配置
-// VECTOR_CONFIG_MODULE(配置模块名, 结构体名, 配置ID)
+// 脡霉脙梅Vetor脛拢脨脥碌脛脜盲脰脙
+// VECTOR_CONFIG_MODULE(脜盲脰脙脛拢驴茅脙没, 陆谩鹿鹿脤氓脙没, 脜盲脰脙ID)
 #define VECTOR_CONFIG_MODULE(module, conf, conf_id) class module : public sframe::VectorConfigModule<conf, conf_id> {};
 
-// 声明Set模型的配置
-// SET_CONFIG_MODULE(配置模块名, 结构体名, 配置ID)
+// 脡霉脙梅Set脛拢脨脥碌脛脜盲脰脙
+// SET_CONFIG_MODULE(脜盲脰脙脛拢驴茅脙没, 陆谩鹿鹿脤氓脙没, 脜盲脰脙ID)
 #define SET_CONFIG_MODULE(module, conf, conf_id) class module : public sframe::SetConfigModule<conf, conf_id> {};
 
-// 声明Map模型的配置
-// MAP_CONFIG_MODULE(配置模块名, key类型, 结构体名, 结构体中用作key的成员变量名, 配置ID)
+// 脡霉脙梅Map脛拢脨脥碌脛脜盲脰脙
+// MAP_CONFIG_MODULE(脜盲脰脙脛拢驴茅脙没, key脌脿脨脥, 陆谩鹿鹿脤氓脙没, 陆谩鹿鹿脤氓脰脨脫脙脳梅key碌脛鲁脡脭卤卤盲脕驴脙没, 脜盲脰脙ID)
 #define MAP_CONFIG_MODULE(module, k, conf, conf_id) class module : public sframe::MapConfigModule<k, conf, (conf_id)> {};
 
-// 为MAP类型配置类指定最为key的字段
+// 脦陋MAP脌脿脨脥脜盲脰脙脌脿脰赂露篓脳卯脦陋key碌脛脳脰露脦
 #define KEY_FIELD(k_type, k_field) k_type GetKey() const {return k_field;}
 
-// 获取配置key类型
+// 禄帽脠隆脜盲脰脙key脌脿脨脥
 #define CONFIG_KEY_TYPE(module) module::KeyType
 
-// 获取配置模型类型
+// 禄帽脠隆脜盲脰脙脛拢脨脥脌脿脨脥
 #define CONFIG_MODEL_TYPE(module) module::ModelType
 
-// 获取配置类型
+// 禄帽脠隆脜盲脰脙脌脿脨脥
 #define CONFIG_CONF_TYPE(module) module::ConfType
 
-// 获取配置ID
+// 禄帽脠隆脜盲脰脙ID
 #define GET_CONFIGID(module) module::GetConfigId()
 
 #endif

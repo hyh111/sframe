@@ -58,7 +58,7 @@ bool Start()
 {
 	std::unordered_map<std::string, std::set<int32_t>> local_service;
 
-	// ×¢²áËùÓĞ·şÎñ
+	// Ã—Â¢Â²Ã¡Ã‹Ã¹Ã“ÃÂ·Ã¾ÃÃ±
 	for (const auto & pr : ServerConfig::Instance().services)
 	{
 		auto serv_info = pr.second;
@@ -124,7 +124,7 @@ bool Start()
 		}
 	}
 
-	// ×¢²á¹ÜÀíÃüÁî
+	// Ã—Â¢Â²Ã¡Â¹ÃœÃ€Ã­ÃƒÃ¼ÃÃ®
 	ServiceDispatcher::Instance().RegistAdminCmd("get_server_info", &AdminCmd_GetServerInfo);
 
 	if (!ServiceDispatcher::Instance().Start(ServerConfig::Instance().thread_num))

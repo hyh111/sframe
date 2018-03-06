@@ -8,8 +8,8 @@
 
 using namespace sframe;
 
-// 接收到数据
-// 返回剩余多少数据
+// 陆脫脢脮碌陆脢媒戮脻
+// 路碌禄脴脢拢脫脿露脿脡脵脢媒戮脻
 int32_t ClientSession::OnReceived(char * data, int32_t len)
 {
 	char * p = data;
@@ -43,8 +43,8 @@ int32_t ClientSession::OnReceived(char * data, int32_t len)
 	return surplus;
 }
 
-// Socket关闭
-// by_self: true表示主动请求的关闭操作
+// Socket鹿脴卤脮
+// by_self: true卤铆脢戮脰梅露炉脟毛脟贸碌脛鹿脴卤脮虏脵脳梅
 void ClientSession::OnClosed(bool by_self, sframe::Error err)
 {
 	std::shared_ptr<ClientSession> session = shared_from_this();

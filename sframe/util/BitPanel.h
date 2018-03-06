@@ -28,7 +28,7 @@ static const uint8_t kByteBitMask_Negative[8] = {
 	0xfe, 0xfd, 0xfb, 0xf7,0xef, 0xdf ,0xbf, 0x7f
 };
 
-// 封装按位运算的开关(位索引从0开始)
+// 路芒脳掳掳麓脦禄脭脣脣茫碌脛驴陋鹿脴(脦禄脣梅脪媒麓脫0驴陋脢录)
 template<int32_t Bit_Count>
 class BitPanel
 {

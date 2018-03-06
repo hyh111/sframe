@@ -15,16 +15,16 @@ public:
 	GateService() : _new_session_id(1), _last_choosed_work_service(-1) {}
 	virtual ~GateService(){}
 
-	// 初始化（创建服务成功后调用，此时还未开始运行）
+	// 鲁玫脢录禄炉拢篓麓麓陆篓路镁脦帽鲁脡鹿娄潞贸碌梅脫脙拢卢麓脣脢卤禄鹿脦麓驴陋脢录脭脣脨脨拢漏
 	void Init() override;
 
-	// 新连接到来
+	// 脨脗脕卢陆脫碌陆脌麓
 	void OnNewConnection(const sframe::ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock) override;
 
-	// 处理销毁
+	// 麓娄脌铆脧煤禄脵
 	void OnDestroy() override;
 
-	// 是否销毁完成
+	// 脢脟路帽脧煤禄脵脥锚鲁脡
 	bool IsDestroyCompleted() const override
 	{
 		return _sessions.empty();

@@ -32,7 +32,7 @@ void ServiceSession::Init()
 	else
 	{
 		_socket->SetMonitor(this);
-		// 开始接收数据
+		// 驴陋脢录陆脫脢脮脢媒戮脻
 		_socket->StartRecv();
 	}
 }
@@ -60,7 +60,7 @@ void ServiceSession::Close()
 	}
 }
 
-// 尝试释放
+// 鲁垄脢脭脢脥路脜
 bool ServiceSession::TryFree()
 {
 	if (!_reconnect)
@@ -70,31 +70,31 @@ bool ServiceSession::TryFree()
 
 	_state = kSessionState_WaitConnect;
 	_socket.reset();
-	// 开启连接定时器
+	// 驴陋脝么脕卢陆脫露篓脢卤脝梅
 	SetConnectTimer(kReconnectInterval);
 
 	return false;
 }
 
-// 连接操作完成处理
+// 脕卢陆脫虏脵脳梅脥锚鲁脡麓娄脌铆
 void ServiceSession::DoConnectCompleted(bool success)
 {
 	if (!success)
 	{
-		// 清空缓存的发送数据
+		// 脟氓驴脮禄潞麓忙碌脛路垄脣脥脢媒戮脻
 		_msg_cache.clear();
-		// 开启连接定时器
+		// 驴陋脝么脕卢陆脫露篓脢卤脝梅
 		_socket.reset();
 		_state = kSessionState_WaitConnect;
 		SetConnectTimer(kReconnectInterval);
 		return;
 	}
 
-	// 开始会话
+	// 驴陋脢录禄谩禄掳
 	_state = ServiceSession::kSessionState_Running;
 	assert(_socket->IsOpen());
 
-	// 之前缓存的数据立即发送出去
+	// 脰庐脟掳禄潞麓忙碌脛脢媒戮脻脕垄录麓路垄脣脥鲁枚脠楼
 	for (auto & msg : _msg_cache)
 	{
 		std::string data;
@@ -110,14 +110,14 @@ void ServiceSession::DoConnectCompleted(bool success)
 	_msg_cache.clear();
 }
 
-// 发送数据
+// 路垄脣脥脢媒戮脻
 void ServiceSession::SendData(const std::shared_ptr<ProxyServiceMessage> & msg)
 {
 	if (_state != ServiceSession::kSessionState_Running)
 	{
-		// 缓存下来
+		// 禄潞麓忙脧脗脌麓
 		_msg_cache.push_back(msg);
-		// 如果当前处于等待连接状态，删除timer，立即开始连接
+		// 脠莽鹿没碌卤脟掳麓娄脫脷碌脠麓媒脕卢陆脫脳麓脤卢拢卢脡戮鲁媒timer拢卢脕垄录麓驴陋脢录脕卢陆脫
 		if (_state == ServiceSession::kSessionState_WaitConnect)
 		{
 			assert(Timer::IsTimerAlive(_connect_timer));
@@ -128,7 +128,7 @@ void ServiceSession::SendData(const std::shared_ptr<ProxyServiceMessage> & msg)
 	else
 	{
 		assert(_socket);
-		// 直接发送
+		// 脰卤陆脫路垄脣脥
 		std::string data;
 		if (msg->Serialize(data))
 		{
@@ -137,7 +137,7 @@ void ServiceSession::SendData(const std::shared_ptr<ProxyServiceMessage> & msg)
 	}
 }
 
-// 发送数据
+// 路垄脣脥脢媒戮脻
 void ServiceSession::SendData(const char * data, size_t len)
 {
 	if (_state == ServiceSession::kSessionState_Running && data && len > 0)
@@ -147,7 +147,7 @@ void ServiceSession::SendData(const char * data, size_t len)
 	}
 }
 
-// 获取地址
+// 禄帽脠隆碌脴脰路
 std::string ServiceSession::GetRemoteAddrText() const
 {
 	if (!_socket)
@@ -158,8 +158,8 @@ std::string ServiceSession::GetRemoteAddrText() const
 	return SocketAddrText(_socket->GetRemoteAddress()).Text();
 }
 
-// 接收到数据
-// 返回剩余多少数据
+// 陆脫脢脮碌陆脢媒戮脻
+// 路碌禄脴脢拢脫脿露脿脡脵脢媒戮脻
 int32_t ServiceSession::OnReceived(char * data, int32_t len)
 {
 	assert(data && len > 0 && _state == kSessionState_Running);
@@ -217,8 +217,8 @@ int32_t ServiceSession::OnReceived(char * data, int32_t len)
 	return (int32_t)surplus;
 }
 
-// Socket关闭
-// by_self: true表示主动请求的关闭操作
+// Socket鹿脴卤脮
+// by_self: true卤铆脢戮脰梅露炉脟毛脟贸碌脛鹿脴卤脮虏脵脳梅
 void ServiceSession::OnClosed(bool by_self, sframe::Error err)
 {
 	if (err)
@@ -238,7 +238,7 @@ void ServiceSession::OnClosed(bool by_self, sframe::Error err)
 	ServiceDispatcher::Instance().SendMsg(0, msg);
 }
 
-// 连接操作完成
+// 脕卢陆脫虏脵脳梅脥锚鲁脡
 void ServiceSession::OnConnected(sframe::Error err)
 {
 	bool success = true;
@@ -253,30 +253,30 @@ void ServiceSession::OnConnected(sframe::Error err)
 		LOG_INFO << "Connect to server(" << _remote_ip << ":" << _remote_port << ") success" << ENDL;
 	}
 
-	// 通知连接完成
+	// 脥篓脰陋脕卢陆脫脥锚鲁脡
 	ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, 0, kProxyServiceMsgId_SessionConnectCompleted, _session_id, success);
-	// 开始接收数据
+	// 驴陋脢录陆脫脢脮脢媒戮脻
 	if (success)
 	{
 		_socket->StartRecv();
 	}
 }
 
-// 开始连接定时器
+// 驴陋脢录脕卢陆脫露篓脢卤脝梅
 void ServiceSession::SetConnectTimer(int32_t after_ms)
 {
 	_connect_timer = RegistTimer(after_ms, &ServiceSession::OnTimer_Connect);
 }
 
-// 定时：连接
+// 露篓脢卤拢潞脕卢陆脫
 int32_t ServiceSession::OnTimer_Connect()
 {
 	StartConnect();
-	// 只执行一次后停止
+	// 脰禄脰麓脨脨脪禄麓脦潞贸脥拢脰鹿
 	return -1;
 }
 
-// 开始连接
+// 驴陋脢录脕卢陆脫
 void ServiceSession::StartConnect()
 {
 	assert((_state == kSessionState_Initialize || _state == kSessionState_WaitConnect) && !_socket && !_remote_ip.empty());
@@ -290,8 +290,8 @@ void ServiceSession::StartConnect()
 
 
 
-// 接收到数据
-// 返回剩余多少数据
+// 陆脫脢脮碌陆脢媒戮脻
+// 路碌禄脴脢拢脫脿露脿脡脵脢媒戮脻
 int32_t AdminSession::OnReceived(char * data, int32_t len)
 {
 	assert(data && len > 0 && GetState() == kSessionState_Running);
@@ -303,7 +303,7 @@ int32_t AdminSession::OnReceived(char * data, int32_t len)
 	if (!err_msg.empty())
 	{
 		LOG_ERROR << "AdminSession(" << session_id << ") decode http request error|" << err_msg << std::endl;
-		// 关闭连接
+		// 鹿脴卤脮脕卢陆脫
 		return -1;
 	}
 

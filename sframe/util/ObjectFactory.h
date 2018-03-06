@@ -12,7 +12,7 @@
 
 namespace sframe {
 
-// 动态对象基类
+// 露炉脤卢露脭脧贸禄霉脌脿
 class DynamicObject
 {
 public:
@@ -22,7 +22,7 @@ public:
 
 typedef DynamicObject* (*Func_CreateObject)();
 
-// 对象工厂
+// 露脭脧贸鹿陇鲁搂
 template<typename T_ObjKey>
 class ObjectFactory
 {
@@ -74,12 +74,12 @@ private:
 	std::unordered_map<T_ObjKey, Func_CreateObject> _creator_map;
 };
 
-// 全局对象工厂
+// 脠芦戮脰露脭脧贸鹿陇鲁搂
 class GlobalObjFactory : public ObjectFactory<std::string>, public singleton<GlobalObjFactory> {};
 
 
-// 注册到工厂
-// 工厂必须定义了单例方法 static Factory & Factory::Instance()
+// 脳垄虏谩碌陆鹿陇鲁搂
+// 鹿陇鲁搂卤脴脨毛露篓脪氓脕脣碌楼脌媒路陆路篓 static Factory & Factory::Instance()
 template<typename T, typename T_Factory, typename T_Factory::KeyType key>
 class RegFactory : public DynamicObject
 {
@@ -120,8 +120,8 @@ template <typename T, typename T_Factory, typename T_Factory::KeyType key>
 typename RegFactory<T, T_Factory, key>::Registor RegFactory<T, T_Factory, key>::s_registor;
 
 
-// 注册到工厂，通过类名
-// 工厂必须定义了单例方法 static Factory & Factory::Instance()
+// 脳垄虏谩碌陆鹿陇鲁搂拢卢脥篓鹿媒脌脿脙没
+// 鹿陇鲁搂卤脴脨毛露篓脪氓脕脣碌楼脌媒路陆路篓 static Factory & Factory::Instance()
 template<typename T, typename T_Factory = GlobalObjFactory>
 class RegFactoryByName : public DynamicObject
 {

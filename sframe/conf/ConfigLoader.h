@@ -17,7 +17,7 @@ struct ObjectFiller
 	}
 };
 
-// 配置加载器
+// 脜盲脰脙录脫脭脴脝梅
 struct ConfigLoader
 {
 	template<typename T_Reader, typename T_Obj, int>
@@ -51,11 +51,11 @@ struct ConfigLoader
 	template<typename T_Reader, typename T_Obj>
 	struct LoaderType
 	{
-		// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
+		// 脝楼脜盲脝梅 隆陋隆陋隆陋隆陋 bool路碌禄脴脰碌脌脿鲁脡脭卤潞炉脢媒拢卢脨脦脠莽 bool T_Obj::FillObject(T_Reader & reader)
 		template<typename U, bool(U::*)(T_Reader &)>
 		struct MethodMatcher_MemeberFuncWithBoolReturn;
 
-		// 匹配器 ———— 无返回值类成员函数，形如 void T_Obj::FillObject(T_Reader & reader)
+		// 脝楼脜盲脝梅 隆陋隆陋隆陋隆陋 脦脼路碌禄脴脰碌脌脿鲁脡脭卤潞炉脢媒拢卢脨脦脠莽 void T_Obj::FillObject(T_Reader & reader)
 		template<typename U, void(U::*)(T_Reader &)>
 		struct MethodMatcher_MemeberFuncWithNoReturn;
 
@@ -80,7 +80,7 @@ struct ConfigLoader
 };
 
 
-// 配置初始化器
+// 脜盲脰脙鲁玫脢录禄炉脝梅
 struct ConfigInitializer
 {
 	template<typename T, int, typename... T_Args>
@@ -114,11 +114,11 @@ struct ConfigInitializer
 	template<typename T, typename... T_Args>
 	struct InitializerType
 	{
-		// 匹配器——带返回值的初始化方法
+		// 脝楼脜盲脝梅隆陋隆陋麓酶路碌禄脴脰碌碌脛鲁玫脢录禄炉路陆路篓
 		template<bool(T::*)(T_Args & ...)>
 		struct MethodMatcher_WithReturnedValue;
 
-		// 匹配器——带返回值的初始化方法
+		// 脝楼脜盲脝梅隆陋隆陋麓酶路碌禄脴脰碌碌脛鲁玫脢录禄炉路陆路篓
 		template<void(T::*)(T_Args & ...)>
 		struct MethodMatcher_WithNoReturnedValue;
 
@@ -131,9 +131,9 @@ struct ConfigInitializer
 		template<typename U>
 		static int32_t match(...);
 
-		// 1 带返回值的初始化方法
-		// 2 不带返回值得初始化方法
-		// 4 没有初始化方法
+		// 1 麓酶路碌禄脴脰碌碌脛鲁玫脢录禄炉路陆路篓
+		// 2 虏禄麓酶路碌禄脴脰碌碌脙鲁玫脢录禄炉路陆路篓
+		// 4 脙禄脫脨鲁玫脢录禄炉路陆路篓
 		static const int value = sizeof(match<T>(NULL));
 	};
 
@@ -145,7 +145,7 @@ struct ConfigInitializer
 
 };
 
-// 将配置对象放入容器
+// 陆芦脜盲脰脙露脭脧贸路脜脠毛脠脻脝梅
 struct PutConfigInContainer
 {
 	template<typename T_Map, typename T_Key, typename T_Obj, bool>
@@ -233,7 +233,7 @@ struct PutConfigInContainer
 	template<typename T_Container, typename T_Obj>
 	struct HaveMethod
 	{
-		// 匹配器 ———— 形如 bool T_Obj::FillObject(T_Reader & reader)
+		// 脝楼脜盲脝梅 隆陋隆陋隆陋隆陋 脨脦脠莽 bool T_Obj::FillObject(T_Reader & reader)
 		template<typename U, bool(U::*)(T_Container &)>
 		struct MethodMatcher;
 

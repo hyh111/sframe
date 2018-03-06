@@ -14,8 +14,8 @@ namespace sframe {
 
 enum HttpType
 {
-	kHttpType_Request = 1,      // Http请求
-	kHttpType_Response = 2,     // Http响应
+	kHttpType_Request = 1,      // Http脟毛脟贸
+	kHttpType_Response = 2,     // Http脧矛脫娄
 };
 
 class Http
@@ -26,19 +26,19 @@ public:
 
 	typedef std::unordered_map<std::string, std::vector<std::string>> Header;
 
-	// 标准化头部属性Key
+	// 卤锚脳录禄炉脥路虏驴脢么脨脭Key
 	static std::string StandardizeHeaderKey(const std::string & key);
 
-	// URL编码
+	// URL卤脿脗毛
 	static std::string UrlEncode(const std::string & str);
 
-	// URL解码
+	// URL陆芒脗毛
 	static std::string UrlDecode(const std::string & str);
 
-	// 解析HTTP参数
+	// 陆芒脦枚HTTP虏脦脢媒
 	static Http::Param ParseHttpParam(const std::string para_str);
 
-	// HttpParam转换为string
+	// HttpParam脳陋禄禄脦陋string
 	static std::string HttpParamToString(const Http::Param & para);
 
 
@@ -154,10 +154,10 @@ public:
 
 	enum DecodeState
 	{
-		kDecodeState_FirstLine = 0,       // 正在第一行
-		kDecodeState_HttpHeader = 1,      // 正在解析头部属性
-		kDecodeState_Content = 2,         // 正在解析内容部分
-		kDecodeState_Completed = 3,       // 解析完成
+		kDecodeState_FirstLine = 0,       // 脮媒脭脷碌脷脪禄脨脨
+		kDecodeState_HttpHeader = 1,      // 脮媒脭脷陆芒脦枚脥路虏驴脢么脨脭
+		kDecodeState_Content = 2,         // 脮媒脭脷陆芒脦枚脛脷脠脻虏驴路脰
+		kDecodeState_Completed = 3,       // 陆芒脦枚脥锚鲁脡
 	};
 
 	void Reset();
@@ -167,15 +167,15 @@ public:
 		return _state == kDecodeState_Completed;
 	}
 
-	// 解析
-	// 返回解析了的有效数据数据的长度
+	// 陆芒脦枚
+	// 路碌禄脴陆芒脦枚脕脣碌脛脫脨脨搂脢媒戮脻脢媒戮脻碌脛鲁陇露脠
 	size_t Decode(const std::string & data, std::string & err_msg)
 	{
 		return Decode(data.data(), data.length(), err_msg);
 	}
 
-	// 解析
-	// 返回解析了的有效数据数据的长度
+	// 陆芒脦枚
+	// 路碌禄脴陆芒脦枚脕脣碌脛脫脨脨搂脢媒戮脻脢媒戮脻碌脛鲁陇露脠
 	size_t Decode(const char * data, size_t len, std::string & err_msg);
 
 protected:
@@ -208,7 +208,7 @@ private:
 	std::shared_ptr<HttpRequest> _http_request;
 	std::shared_ptr<HttpResponse> _http_response;
 	int32_t _state;
-	int32_t _remain_content_len;      // -1.chunked不确定长度; -2.内容知道连接关闭才读完; >0.定长
+	int32_t _remain_content_len;      // -1.chunked虏禄脠路露篓鲁陇露脠; -2.脛脷脠脻脰陋碌脌脕卢陆脫鹿脴卤脮虏脜露脕脥锚; >0.露篓鲁陇
 	std::vector<std::string> _data_list;
 };
 

@@ -11,31 +11,31 @@ class FileHelper
 {
 public:
 
-	// 读取文件所有内容
+	// 露脕脠隆脦脛录镁脣霉脫脨脛脷脠脻
 	static bool ReadFile(const std::string & full_name, std::string & content);
 
-	// 写入文件
+	// 脨麓脠毛脦脛录镁
 	static size_t WriteFile(const std::string & full_name, std::string & content);
 
-	// 在全路劲中获取文件名
+	// 脭脷脠芦脗路戮垄脰脨禄帽脠隆脦脛录镁脙没
 	static std::string GetFileName(const char * fullname);
 
-	// 在全路劲中获取文件名
+	// 脭脷脠芦脗路戮垄脰脨禄帽脠隆脦脛录镁脙没
 	static std::string GetFileName(const std::string & fullname)
 	{
 		return GetFileName(fullname.c_str());
 	}
 
-	// 去除文件扩展名
+	// 脠楼鲁媒脦脛录镁脌漏脮鹿脙没
 	static std::string RemoveExtension(const std::string & name);
 
-	// 目录是否存在
+	// 脛驴脗录脢脟路帽麓忙脭脷
 	static bool DirectoryExisted(const std::string & path);
 
-	// 创建目录
+	// 麓麓陆篓脛驴脗录
 	static bool MakeDirectory(const std::string & path);
 
-	// 递归创建
+	// 碌脻鹿茅麓麓陆篓
 	static bool MakeDirectoryRecursive(const std::string & path);
 
 	enum ScanType
@@ -45,14 +45,14 @@ public:
 		kScanType_OnlyNotDirectory,
 	};
 
-	// 扫描目录
-	// dir_path   :   目录路径，不能包含通配符
-	// match_name :   名字匹配，支持通配符，比如要扫描 /data 目录下，所有符合*.cpp的名字的内容，调用ScanDirectory("/data", "*.cpp")
+	// 脡篓脙猫脛驴脗录
+	// dir_path   :   脛驴脗录脗路戮露拢卢虏禄脛脺掳眉潞卢脥篓脜盲路没
+	// match_name :   脙没脳脰脝楼脜盲拢卢脰搂鲁脰脥篓脜盲路没拢卢卤脠脠莽脪陋脡篓脙猫 /data 脛驴脗录脧脗拢卢脣霉脫脨路没潞脧*.cpp碌脛脙没脳脰碌脛脛脷脠脻拢卢碌梅脫脙ScanDirectory("/data", "*.cpp")
 	static std::vector<std::string> ScanDirectory(const std::string & dir_path, const std::string & match_name = "", ScanType scan_type = kScanType_All);
 
-	// 展开通配符(* ?)
-	// path: 路径，最后是否以/结尾，表示文件，否则为目录
-	// parent_dir: 所在目录
+	// 脮鹿驴陋脥篓脜盲路没(* ?)
+	// path: 脗路戮露拢卢脳卯潞贸脢脟路帽脪脭/陆谩脦虏拢卢卤铆脢戮脦脛录镁拢卢路帽脭貌脦陋脛驴脗录
+	// parent_dir: 脣霉脭脷脛驴脗录
 	static std::vector<std::string> ExpandWildcard(const std::string & path, const std::string & parent_dir = "");
 };
 

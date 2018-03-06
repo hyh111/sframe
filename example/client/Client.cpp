@@ -36,8 +36,8 @@ void Client::Close()
 	}
 }
 
-// 接收到数据
-// 返回剩余多少数据
+// 陆脫脢脮碌陆脢媒戮脻
+// 路碌禄脴脢拢脫脿露脿脡脵脢媒戮脻
 int32_t Client::OnReceived(char * data, int32_t len)
 {
 	std::string s(data, len);
@@ -45,8 +45,8 @@ int32_t Client::OnReceived(char * data, int32_t len)
 	return 0;
 }
 
-// Socket关闭
-// by_self: true表示主动请求的关闭操作
+// Socket鹿脴卤脮
+// by_self: true卤铆脢戮脰梅露炉脟毛脟贸碌脛鹿脴卤脮虏脵脳梅
 void Client::OnClosed(bool by_self, sframe::Error err)
 {
 	if (err)
@@ -61,7 +61,7 @@ void Client::OnClosed(bool by_self, sframe::Error err)
 	_mgr->CloseClient(_id);
 }
 
-// 连接操作完成
+// 脕卢陆脫虏脵脳梅脥锚鲁脡
 void Client::OnConnected(sframe::Error err)
 {
 	if (err)

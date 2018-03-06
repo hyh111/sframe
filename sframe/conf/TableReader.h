@@ -131,7 +131,7 @@ inline bool Table_FillSet(TableReader & tbl, T_Set & obj)
 	return true;
 }
 
-// Ìî³äTableµ½unorder_map
+// ÃŒÃ®Â³Ã¤TableÂµÂ½unorder_map
 template<typename T_Key, typename T_Val>
 struct ObjectFiller<TableReader, std::unordered_map<T_Key, T_Val>>
 {
@@ -141,7 +141,7 @@ struct ObjectFiller<TableReader, std::unordered_map<T_Key, T_Val>>
 	}
 };
 
-// Ìî³äTableµ½map
+// ÃŒÃ®Â³Ã¤TableÂµÂ½map
 template<typename T_Key, typename T_Val>
 struct ObjectFiller<TableReader, std::map<T_Key, T_Val>>
 {
@@ -151,7 +151,7 @@ struct ObjectFiller<TableReader, std::map<T_Key, T_Val>>
 	}
 };
 
-// Ìî³äTableµ½set
+// ÃŒÃ®Â³Ã¤TableÂµÂ½set
 template<typename T>
 struct ObjectFiller<TableReader, std::set<T>>
 {
@@ -161,7 +161,7 @@ struct ObjectFiller<TableReader, std::set<T>>
 	}
 };
 
-// Ìî³äTableµ½unordered_set
+// ÃŒÃ®Â³Ã¤TableÂµÂ½unordered_set
 template<typename T>
 struct ObjectFiller<TableReader, std::unordered_set<T>>
 {
@@ -172,7 +172,7 @@ struct ObjectFiller<TableReader, std::unordered_set<T>>
 };
 
 
-// Ìî³äTableµ½vector
+// ÃŒÃ®Â³Ã¤TableÂµÂ½vector
 template<typename T>
 struct ObjectFiller<TableReader, std::vector<T>>
 {
@@ -182,7 +182,7 @@ struct ObjectFiller<TableReader, std::vector<T>>
 	}
 };
 
-// Ìî³äTableµ½list
+// ÃŒÃ®Â³Ã¤TableÂµÂ½list
 template<typename T>
 struct ObjectFiller<TableReader, std::list<T>>
 {
@@ -192,7 +192,7 @@ struct ObjectFiller<TableReader, std::list<T>>
 	}
 };
 
-// Ìî³äTableµ½shared_ptr
+// ÃŒÃ®Â³Ã¤TableÂµÂ½shared_ptr
 template<typename T>
 struct ObjectFiller<TableReader, std::shared_ptr<T>>
 {
@@ -203,7 +203,7 @@ struct ObjectFiller<TableReader, std::shared_ptr<T>>
 	}
 };
 
-// Ìî³ä±í¸ñ×Ö¶Î
+// ÃŒÃ®Â³Ã¤Â±Ã­Â¸Ã±Ã—Ã–Â¶Ã
 template<typename T>
 inline bool Tbl_FillField(TableReader & reader, const char * field_name, T & obj, const T & default_value = T())
 {
@@ -220,7 +220,7 @@ inline bool Tbl_FillField(TableReader & reader, const char * field_name, T & obj
 	return true;
 }
 
-// Ìî³ä±í¸ñ×Ö¶Î
+// ÃŒÃ®Â³Ã¤Â±Ã­Â¸Ã±Ã—Ã–Â¶Ã
 template<typename T>
 inline bool Tbl_FillIndex(TableReader & reader, int32_t field_index, T & obj, const T & default_value = T())
 {
@@ -240,7 +240,7 @@ inline bool Tbl_FillIndex(TableReader & reader, int32_t field_index, T & obj, co
 }
 
 
-// ¶ÔÏóÌî³ä¸¨Öúºê
+// Â¶Ã”ÃÃ³ÃŒÃ®Â³Ã¤Â¸Â¨Ã–ÃºÂºÃª
 #define TBL_FILLFIELD(name)                                            sframe::Tbl_FillField(reader, #name, this->name);
 #define TBL_FILLFIELD_DEFAULT(name, defaultval)                        sframe::Tbl_FillField(reader, #name, this->name, defaultval)
 #define TBL_FILLINDEX(index, name)                                     sframe::Tbl_FillIndex(reader, (int)index, obj.name);

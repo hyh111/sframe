@@ -13,20 +13,20 @@ namespace sframe {
 
 class ProxyService;
 
-// 服务会话（主要处理与网络中的服务的通信）
+// 路镁脦帽禄谩禄掳拢篓脰梅脪陋麓娄脌铆脫毛脥酶脗莽脰脨碌脛路镁脦帽碌脛脥篓脨脜拢漏
 class ServiceSession : public TcpSocket::Monitor, public noncopyable, public SafeTimerRegistor<ServiceSession>
 {
 public:
-	// 会话状态
+	// 禄谩禄掳脳麓脤卢
 	enum SessionState : int32_t
 	{
-		kSessionState_Initialize = 0,    // 初始状态
-		kSessionState_WaitConnect,       // 等待连接
-		kSessionState_Connecting,        // 正在连接
-		kSessionState_Running,           // 运行中
+		kSessionState_Initialize = 0,    // 鲁玫脢录脳麓脤卢
+		kSessionState_WaitConnect,       // 碌脠麓媒脕卢陆脫
+		kSessionState_Connecting,        // 脮媒脭脷脕卢陆脫
+		kSessionState_Running,           // 脭脣脨脨脰脨
 	};
 
-	static const int32_t kReconnectInterval = 3000;       // 自动重连间隔
+	static const int32_t kReconnectInterval = 3000;       // 脳脭露炉脰脴脕卢录盲赂么
 
 public:
 	ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port);
@@ -37,42 +37,42 @@ public:
 
 	void Init();
 
-	// 关闭
+	// 鹿脴卤脮
 	void Close();
 
-	// 尝试释放
+	// 鲁垄脢脭脢脥路脜
 	bool TryFree();
 
-	// 连接完成处理
+	// 脕卢陆脫脥锚鲁脡麓娄脌铆
 	void DoConnectCompleted(bool success);
 
-	// 发送数据
+	// 路垄脣脥脢媒戮脻
 	void SendData(const std::shared_ptr<ProxyServiceMessage> & msg);
 
-	// 发送数据
+	// 路垄脣脥脢媒戮脻
 	void SendData(const char * data, size_t len);
 
-	// 获取地址
+	// 禄帽脠隆碌脴脰路
 	std::string GetRemoteAddrText() const;
 
-	// 接收到数据
-	// 返回剩余多少数据
+	// 陆脫脢脮碌陆脢媒戮脻
+	// 路碌禄脴脢拢脫脿露脿脡脵脢媒戮脻
 	virtual int32_t OnReceived(char * data, int32_t len) override;
 
-	// Socket关闭
-	// by_self: true表示主动请求的关闭操作
+	// Socket鹿脴卤脮
+	// by_self: true卤铆脢戮脰梅露炉脟毛脟贸碌脛鹿脴卤脮虏脵脳梅
 	virtual void OnClosed(bool by_self, Error err) override;
 
-	// 连接操作完成
+	// 脕卢陆脫虏脵脳梅脥锚鲁脡
 	virtual void OnConnected(Error err) override;
 
-	// 获取SessionId
+	// 禄帽脠隆SessionId
 	int32_t GetSessionId()
 	{
 		return _session_id;
 	}
 
-	// 获取状态
+	// 禄帽脠隆脳麓脤卢
 	SessionState GetState() const
 	{
 		return _state;
@@ -80,13 +80,13 @@ public:
 
 private:
 
-	// 开始连接定时器
+	// 驴陋脢录脕卢陆脫露篓脢卤脝梅
 	void SetConnectTimer(int32_t after_ms);
 
-	// 定时：连接
+	// 露篓脢卤拢潞脕卢陆脫
 	int32_t OnTimer_Connect();
 
-	// 开始连接
+	// 驴陋脢录脕卢陆脫
 	void StartConnect();
 
 private:
@@ -105,7 +105,7 @@ private:
 };
 
 
-// 管理会话
+// 鹿脺脌铆禄谩禄掳
 class AdminSession : public ServiceSession
 {
 public:
@@ -115,8 +115,8 @@ public:
 
 	virtual ~AdminSession() {}
 
-	// 接收到数据
-	// 返回剩余多少数据
+	// 陆脫脢脮碌陆脢媒戮脻
+	// 路碌禄脴脢拢脫脿露脿脡脵脢媒戮脻
 	virtual int32_t OnReceived(char * data, int32_t len) override;
 
 private:

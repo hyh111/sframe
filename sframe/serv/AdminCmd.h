@@ -10,7 +10,7 @@
 
 namespace sframe {
 
-// 管理命令
+// 鹿脺脌铆脙眉脕卯
 class AdminCmd
 {
 public:
@@ -44,7 +44,7 @@ private:
 	std::shared_ptr<sframe::HttpRequest> _http_req;
 };
 
-// 管理命令处理方法
+// 鹿脺脌铆脙眉脕卯麓娄脌铆路陆路篓
 typedef std::function<void(const AdminCmd &)> AdminCmdHandleFunc;
 
 }

@@ -20,7 +20,7 @@ std::shared_ptr<ConfigSet> ConfigManager::g_cur_conf_set;
 std::string ConfigManager::g_config_path;
 sframe::Lock ConfigManager::g_conf_set_lock;
 
-// 初始化
+// 鲁玫脢录禄炉
 bool ConfigManager::InitializeConfig(const std::string & path)
 {
 	g_config_path = path;
@@ -32,7 +32,7 @@ bool ConfigManager::InitializeConfig(const std::string & path)
 	return ReloadConfig();
 }
 
-// 重新加载
+// 脰脴脨脗录脫脭脴
 bool ConfigManager::ReloadConfig()
 {
 	if (g_config_path.empty())
@@ -66,7 +66,7 @@ bool ConfigManager::ReloadConfig()
 	return true;
 }
 
-// 获取配置集
+// 禄帽脠隆脜盲脰脙录炉
 std::shared_ptr<ConfigSet> ConfigManager::GetConfigSet()
 {
 	AUTO_LOCK(g_conf_set_lock);

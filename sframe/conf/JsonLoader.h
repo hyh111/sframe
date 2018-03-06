@@ -9,15 +9,15 @@
 
 namespace sframe {
 
-// JSON¶ÁÈ¡Æ÷
+// JSONÂ¶ÃÃˆÂ¡Ã†Ã·
 class JsonLoader
 {
 public:
 
-	// È¥×¢ÊÍ
+	// ÃˆÂ¥Ã—Â¢ÃŠÃ
 	static std::string RemoveComments(const std::string & data)
 	{
-		int cur_state = 0;   // 0 ²»ÊÇ×¢ÊÍ, 1 ĞĞ×¢ÊÍ, 2¶Î×¢ÊÍ 
+		int cur_state = 0;   // 0 Â²Â»ÃŠÃ‡Ã—Â¢ÃŠÃ, 1 ÃÃÃ—Â¢ÃŠÃ, 2Â¶ÃÃ—Â¢ÃŠÃ 
 		std::ostringstream oss;
 		auto it = data.begin();
 		while (it < data.end())
@@ -27,7 +27,7 @@ public:
 			{
 				if (c == '\n')
 				{
-					// ĞĞ×¢ÊÍ½áÊø
+					// ÃÃÃ—Â¢ÃŠÃÂ½Ã¡ÃŠÃ¸
 					cur_state = 0;
 				}
 			}
@@ -36,7 +36,7 @@ public:
 				if (c == '*' &&  it < data.end() - 1 && (*(it + 1)) == '/')
 				{
 					it++;
-					// ¶Î×¢ÊÍ½áÊø
+					// Â¶ÃÃ—Â¢ÃŠÃÂ½Ã¡ÃŠÃ¸
 					cur_state = 0;
 				}
 			}

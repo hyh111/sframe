@@ -12,7 +12,7 @@ namespace sframe {
 
 class Table;
 
-// 表格行
+// 卤铆赂帽脨脨
 class Row
 {
 public:
@@ -41,7 +41,7 @@ private:
 	std::vector<std::string> _data;
 };
 
-// 表格列
+// 卤铆赂帽脕脨
 class Column
 {
 public:
@@ -81,7 +81,7 @@ private:
 	int32_t _index;
 };
 
-// 表格类
+// 卤铆赂帽脌脿
 class Table
 {
 public:
@@ -93,10 +93,10 @@ public:
 
 	~Table();
 
-	// 添加新列
+	// 脤铆录脫脨脗脕脨
 	Column & NewColumn(const std::string & column_name = "");
 
-	// 添加新行
+	// 脤铆录脫脨脗脨脨
 	Row & NewRow();
 
 	Row & GetRow(int32_t index);
@@ -125,8 +125,8 @@ public:
 	bool RemoveColumn(int32_t colum_index);
 
 private:
-	std::vector<Row*> _rows;           // 所有行
-	std::vector<Column*> _columns;     // 所有列
+	std::vector<Row*> _rows;           // 脣霉脫脨脨脨
+	std::vector<Column*> _columns;     // 脣霉脫脨脕脨
 };
 
 }

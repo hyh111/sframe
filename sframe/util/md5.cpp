@@ -21,7 +21,7 @@ MD5::MD5(const char * input, uint32_t len)
     Digest((const unsigned char *)input, len);
 }
 
-// 计算MD5摘要
+// 录脝脣茫MD5脮陋脪陋
 void MD5::Digest(const unsigned char * str, uint32_t len)
 {
     _result[0] = A;
@@ -31,19 +31,19 @@ void MD5::Digest(const unsigned char * str, uint32_t len)
 
     uint32_t group_num = len / 64;
 
-    // 以每组64字节（512位）分组处理
+    // 脪脭脙驴脳茅64脳脰陆脷拢篓512脦禄拢漏路脰脳茅麓娄脌铆
     for (uint32_t i = 0; i < group_num; i++)
     {
         TransGroup(str + i * 64);
     }
 
-    // 还有多少数据没有处理
+    // 禄鹿脫脨露脿脡脵脢媒戮脻脙禄脫脨麓娄脌铆
     uint32_t surplus = len % 64;
     unsigned char buf[64];
 
     if (surplus < 56)
     {
-        // 将剩余的数据拷到buf中
+        // 陆芦脢拢脫脿碌脛脢媒戮脻驴陆碌陆buf脰脨
         for (uint32_t i = 0; i < surplus; i++)
         {
             buf[i] = str[len - surplus + i];
@@ -55,51 +55,51 @@ void MD5::Digest(const unsigned char * str, uint32_t len)
             buf[surplus + i] = 0x00;
         }
 
-        // 加入数据长度
+        // 录脫脠毛脢媒戮脻鲁陇露脠
         uint64_t in_len = (uint64_t)(len << 3);
         for (int i = 0; i < 8; i++){
             buf[56 + i] = (char)(in_len & 0xFFL);
             in_len = in_len >> 8;
         }
 
-        // 处理组
+        // 麓娄脌铆脳茅
         TransGroup(buf);
     }
     else
     {
-        // 拷贝数据
+        // 驴陆卤麓脢媒戮脻
         for (uint32_t i = 0; i < surplus; i++)
         {
             buf[i] = str[len - surplus + i];
         }
-        // 填充
+        // 脤卯鲁盲
         buf[surplus] = 0x80;
         for (int i = surplus + 1; i < 64; i++)
         {
             buf[i] = 0x00;
         }
-        // 处理分组
+        // 麓娄脌铆路脰脳茅
         TransGroup(buf);
 
-        // 再次填充56个0
+        // 脭脵麓脦脤卯鲁盲56赂枚0
         for (int i = 0; i < 56; i++)
         {
             buf[i] = 0x00;
         }
 
-        // 填入长度
+        // 脤卯脠毛鲁陇露脠
         uint64_t in_len = (uint64_t)(len << 3);
         for (int i = 0; i < 8; i++){
             buf[56 + i] = (char)(in_len & 0xFFL);
             in_len = in_len >> 8;
         }
 
-        // 处理组
+        // 麓娄脌铆脳茅
         TransGroup(buf);
     }
 }
 
-// 获取结果
+// 禄帽脠隆陆谩鹿没
 const char * MD5::GetResult()
 {
     if (_result_str[0] == '\0')
@@ -119,7 +119,7 @@ const char * MD5::GetResult()
 
 
 
-// 处理一组数据(默认长度为64字节)
+// 麓娄脌铆脪禄脳茅脢媒戮脻(脛卢脠脧鲁陇露脠脦陋64脳脰陆脷)
 void MD5::TransGroup(const unsigned char * groups)
 {
     uint32_t a = _result[0], b = _result[1], c = _result[2], d = _result[3];
@@ -151,7 +151,7 @@ void MD5::TransGroup(const unsigned char * groups)
     c = FF(c, d, a, b, groupdata[14], S13, 0xa679438eL); /* 15 */
     b = FF(b, c, d, a, groupdata[15], S14, 0x49b40821L); /* 16 */
 
-    /*第二轮*/
+    /*碌脷露镁脗脰*/
     a = GG(a, b, c, d, groupdata[1], S21, 0xf61e2562L); /* 17 */
     d = GG(d, a, b, c, groupdata[6], S22, 0xc040b340L); /* 18 */
     c = GG(c, d, a, b, groupdata[11], S23, 0x265e5a51L); /* 19 */
@@ -169,7 +169,7 @@ void MD5::TransGroup(const unsigned char * groups)
     c = GG(c, d, a, b, groupdata[7], S23, 0x676f02d9L); /* 31 */
     b = GG(b, c, d, a, groupdata[12], S24, 0x8d2a4c8aL); /* 32 */
 
-    /*第三轮*/
+    /*碌脷脠媒脗脰*/
     a = HH(a, b, c, d, groupdata[5], S31, 0xfffa3942L); /* 33 */
     d = HH(d, a, b, c, groupdata[8], S32, 0x8771f681L); /* 34 */
     c = HH(c, d, a, b, groupdata[11], S33, 0x6d9d6122L); /* 35 */
@@ -187,7 +187,7 @@ void MD5::TransGroup(const unsigned char * groups)
     c = HH(c, d, a, b, groupdata[15], S33, 0x1fa27cf8L); /* 47 */
     b = HH(b, c, d, a, groupdata[2], S34, 0xc4ac5665L); /* 48 */
 
-    /*第四轮*/
+    /*碌脷脣脛脗脰*/
     a = II(a, b, c, d, groupdata[0], S41, 0xf4292244L); /* 49 */
     d = II(d, a, b, c, groupdata[7], S42, 0x432aff97L); /* 50 */
     c = II(c, d, a, b, groupdata[14], S43, 0xab9423a7L); /* 51 */
@@ -205,7 +205,7 @@ void MD5::TransGroup(const unsigned char * groups)
     c = II(c, d, a, b, groupdata[2], S43, 0x2ad7d2bbL); /* 63 */
     b = II(b, c, d, a, groupdata[9], S44, 0xeb86d391L); /* 64 */
 
-    /*加入到之前计算的结果当中*/
+    /*录脫脠毛碌陆脰庐脟掳录脝脣茫碌脛陆谩鹿没碌卤脰脨*/
     _result[0] += a;
     _result[1] += b;
     _result[2] += c;

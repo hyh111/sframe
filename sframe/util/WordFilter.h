@@ -9,7 +9,7 @@
 
 namespace sframe {
 
-// 单词查找树节点
+// 碌楼麓脢虏茅脮脪脢梅陆脷碌茫
 class TrieNode
 {
 public:
@@ -35,7 +35,7 @@ private:
 	bool _is_end_node;
 };
 
-// 单词查找树
+// 碌楼麓脢虏茅脮脪脢梅
 class Trie
 {
 public:
@@ -59,7 +59,7 @@ private:
 };
 
 
-// 敏感词过滤
+// 脙么赂脨麓脢鹿媒脗脣
 class WordFilter
 {
 public:

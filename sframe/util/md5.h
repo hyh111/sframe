@@ -12,7 +12,7 @@
 
 namespace sframe {
 
-// MD5计算
+// MD5录脝脣茫
 class MD5
 {
 public:
@@ -20,18 +20,18 @@ public:
 	MD5(const std::string & input);
 	MD5(const char * input, uint32_t len);
 
-	// 计算MD5摘要
+	// 录脝脣茫MD5脮陋脪陋
 	void Digest(const unsigned char * str, uint32_t len);
 	void Digest(const std::string & str)
 	{
 		Digest((const unsigned char *)str.c_str(), (uint32_t)str.length());
 	}
 
-	// 获取结果
+	// 禄帽脠隆陆谩鹿没
 	const char * GetResult();
 
 private:
-	// 处理一组数据(默认长度为64字节)
+	// 麓娄脌铆脪禄脳茅脢媒戮脻(脛卢脠脧鲁陇露脠脦陋64脳脰陆脷)
 	void TransGroup(const unsigned char * groups);
 
 	uint32_t FF(uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t x, uint32_t s,
@@ -72,7 +72,7 @@ private:
 	char _result_str[33];
 
 private:
-	// 四轮运算用到的
+	// 脣脛脗脰脭脣脣茫脫脙碌陆碌脛
 	static const uint32_t S11 = 7;
 	static const uint32_t S12 = 12;
 	static const uint32_t S13 = 17;
@@ -89,7 +89,7 @@ private:
 	static const uint32_t S42 = 10;
 	static const uint32_t S43 = 15;
 	static const uint32_t S44 = 21;
-	// 标准幻数
+	// 卤锚脳录禄脙脢媒
 	static const uint32_t A = 0x67452301;
 	static const uint32_t B = 0xefcdab89L;
 	static const uint32_t C = 0x98badcfeL;

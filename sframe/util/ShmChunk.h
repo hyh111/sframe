@@ -15,14 +15,14 @@
 #include <sys/shm.h>
 #endif
 
-// 共享内存块
+// 鹿虏脧铆脛脷麓忙驴茅
 class ShmChunk
 {
 public:
 	/*
-	构造函数
-	@shm_key: 共享内存的key(windows下使用字符串，linux下使用数字，这里统一为数字)
-	@shm_size: 大小
+	鹿鹿脭矛潞炉脢媒
+	@shm_key: 鹿虏脧铆脛脷麓忙碌脛key(windows脧脗脢鹿脫脙脳脰路没麓庐拢卢linux脧脗脢鹿脫脙脢媒脳脰拢卢脮芒脌茂脥鲁脪禄脦陋脢媒脳脰)
+	@shm_size: 麓贸脨隆
 	*/
 	ShmChunk(int32_t shm_key, int32_t shm_size) : _shm_key(shm_key), _shm_size(shm_size), _shm_ptr(nullptr)
 	{

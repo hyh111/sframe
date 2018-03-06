@@ -17,8 +17,8 @@ TimerList::~TimerList()
 	}
 }
 
-// 注册普通定时器
-// after_msec: 多少毫秒后执行
+// 脳垄虏谩脝脮脥篓露篓脢卤脝梅
+// after_msec: 露脿脡脵潞脕脙毛潞贸脰麓脨脨
 TimerHandle TimerManager::RegistNormalTimer(int32_t after_msec, NormalTimer::TimerFunc func)
 {
 	if (!func || after_msec < 0)
@@ -42,7 +42,7 @@ TimerHandle TimerManager::RegistNormalTimer(int32_t after_msec, NormalTimer::Tim
 	return t->GetHandle();
 }
 
-// 删除定时器
+// 脡戮鲁媒露篓脢卤脝梅
 void TimerManager::DeleteTimer(TimerHandle timer_handle)
 {
 	if (!Timer::IsTimerAlive(timer_handle))
@@ -57,7 +57,7 @@ void TimerManager::DeleteTimer(TimerHandle timer_handle)
 		return;
 	}
 
-	// 不能删除当前正在执行的timer
+	// 虏禄脛脺脡戮鲁媒碌卤脟掳脮媒脭脷脰麓脨脨碌脛timer
 	if (timer == _cur_exec_timer)
 	{
 		return;
@@ -85,7 +85,7 @@ void TimerManager::DeleteTimer(TimerHandle timer_handle)
 		auto it = std::find(_add_timer_cache.begin(), _add_timer_cache.end(), timer);
 		if (it == _add_timer_cache.end())
 		{
-			// 没有在执行组中，肯定在cache中，没有找到说明逻辑有错误
+			// 脙禄脫脨脭脷脰麓脨脨脳茅脰脨拢卢驴脧露篓脭脷cache脰脨拢卢脙禄脫脨脮脪碌陆脣碌脙梅脗脽录颅脫脨麓铆脦贸
 			assert(false);
 			return;
 		}
@@ -95,7 +95,7 @@ void TimerManager::DeleteTimer(TimerHandle timer_handle)
 	}
 }
 
-// 执行
+// 脰麓脨脨
 void TimerManager::Execute()
 {
 	if (_init_time <= 0 || _exec_time <= 0)
@@ -125,7 +125,7 @@ void TimerManager::Execute()
 		_cur_exec_timer = cur_list.timer_head;
 		while (_cur_exec_timer)
 		{
-			// 执行
+			// 脰麓脨脨
 			int64_t after = -1;
 			try
 			{
@@ -142,7 +142,7 @@ void TimerManager::Execute()
 				after = -1;
 			}
 
-			// 获取下一节点，并删除当前节点
+			// 禄帽脠隆脧脗脪禄陆脷碌茫拢卢虏垄脡戮鲁媒碌卤脟掳陆脷碌茫
 			Timer * next_timer = _cur_exec_timer->GetNext();
 			cur_list.DeleteTimer(_cur_exec_timer);
 

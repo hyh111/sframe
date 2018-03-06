@@ -16,15 +16,15 @@ struct NetAddrInfo
 	bool ParseFormString(const std::string & data);
 
 	std::string ip;           // IP
-	uint16_t port;            // 端口
+	uint16_t port;            // 露脣驴脷
 };
 
 struct ListenAddrInfo
 {
 	bool ParseFormString(const std::string & data);
 
-	std::string desc;         // 描述，便于识别
-	NetAddrInfo addr;         // 地址
+	std::string desc;         // 脙猫脢枚拢卢卤茫脫脷脢露卤冒
+	NetAddrInfo addr;         // 碌脴脰路
 };
 
 struct ServiceInfo
@@ -32,9 +32,9 @@ struct ServiceInfo
 	bool ParseFormString(const std::string & data);
 
 	int32_t sid;
-	std::string service_type_name;   // 服务类型名称
-	bool is_local_service;           // true 为本地服务，false为远程服务
-	NetAddrInfo remote_addr;         // 远程地址，仅当local_service为false是有效
+	std::string service_type_name;   // 路镁脦帽脌脿脨脥脙没鲁脝
+	bool is_local_service;           // true 脦陋卤戮碌脴路镁脦帽拢卢false脦陋脭露鲁脤路镁脦帽
+	NetAddrInfo remote_addr;         // 脭露鲁脤碌脴脰路拢卢陆枚碌卤local_service脦陋false脢脟脫脨脨搂
 };
 
 struct ServerConfig : public sframe::singleton<ServerConfig>
@@ -45,14 +45,14 @@ struct ServerConfig : public sframe::singleton<ServerConfig>
 
 	bool HaveLocalService(const std::string & serv_type_name);
 
-	std::string server_name;                  // 服务器名称
-	std::string res_path;                     // 资源目录
-	int32_t thread_num;                       // 线程数量
-	std::shared_ptr<NetAddrInfo> listen_service;                                 // 远程服务监听地址
-	std::shared_ptr<NetAddrInfo> listen_admin;                                 // 管理地址
-	std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>> services;          // 服务信息（sid -> 服务信息）
-	std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>>> type_to_services;  // 类型->该类型所有服务信息
-	std::unordered_map<std::string, std::vector<ListenAddrInfo>> listen_custom;  // 自定义监听
+	std::string server_name;                  // 路镁脦帽脝梅脙没鲁脝
+	std::string res_path;                     // 脳脢脭麓脛驴脗录
+	int32_t thread_num;                       // 脧脽鲁脤脢媒脕驴
+	std::shared_ptr<NetAddrInfo> listen_service;                                 // 脭露鲁脤路镁脦帽录脿脤媒碌脴脰路
+	std::shared_ptr<NetAddrInfo> listen_admin;                                 // 鹿脺脌铆碌脴脰路
+	std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>> services;          // 路镁脦帽脨脜脧垄拢篓sid -> 路镁脦帽脨脜脧垄拢漏
+	std::unordered_map<std::string, std::unordered_map<int32_t, std::shared_ptr<ServiceInfo>>> type_to_services;  // 脌脿脨脥->赂脙脌脿脨脥脣霉脫脨路镁脦帽脨脜脧垄
+	std::unordered_map<std::string, std::vector<ListenAddrInfo>> listen_custom;  // 脳脭露篓脪氓录脿脤媒
 };
 
 

@@ -41,9 +41,9 @@ public:
 	bool WriteSizeField(size_t s);
 
 private:
-	char * const _buf;       // 缓冲区
-	size_t _capacity;      // 容量
-	size_t _data_pos;      // 数据当前位置
+	char * const _buf;       // 禄潞鲁氓脟酶
+	size_t _capacity;      // 脠脻脕驴
+	size_t _data_pos;      // 脢媒戮脻碌卤脟掳脦禄脰脙
 };
 
 class StreamReader
@@ -51,13 +51,13 @@ class StreamReader
 public:
 	StreamReader(const char * buf, size_t len) : _buf(buf), _cur_pos(0), _capacity(len) {}
 
-	// 获取已读取的长度
+	// 禄帽脠隆脪脩露脕脠隆碌脛鲁陇露脠
 	size_t GetReadedLength() const
 	{
 		return _cur_pos;
 	}
 
-	// 获取未读长度
+	// 禄帽脠隆脦麓露脕鲁陇露脠
 	size_t GetNotReadLength() const
 	{
 		return _cur_pos >= _capacity ? 0 : _capacity - _cur_pos;
@@ -79,17 +79,17 @@ public:
 	size_t BackwardCurPos(size_t len);
 
 private:
-	const char * const _buf;  // 缓冲区
-	size_t _cur_pos;        // 当前位置
-	size_t _capacity;       // 容量
+	const char * const _buf;  // 禄潞鲁氓脟酶
+	size_t _cur_pos;        // 碌卤脟掳脦禄脰脙
+	size_t _capacity;       // 脠脻脕驴
 };
 
 
 /**
-大小端判断与转换相关辅助
+麓贸脨隆露脣脜脨露脧脫毛脳陋禄禄脧脿鹿脴赂篓脰煤
 */
 
-// 检测CPU字节序，大端返回true
+// 录矛虏芒CPU脳脰陆脷脨貌拢卢麓贸露脣路碌禄脴true
 inline bool CheckCpuEndian()
 {
 	union
@@ -102,7 +102,7 @@ inline bool CheckCpuEndian()
 	return (test.arr[0] == 0x01);
 }
 
-// 字节序逆向
+// 脳脰陆脷脨貌脛忙脧貌
 #define REVERSE_BYTES_ORDER_16(x) ( \
     (((uint16_t)(x) & 0x00ff) << 8) | \
     (((uint16_t)(x) & 0xff00) >> 8) \
@@ -178,7 +178,7 @@ private:
 		return obj.Encode(stream_writer);
 	}
 
-	// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
+	// 脝楼脜盲脝梅 隆陋隆陋隆陋隆陋 bool路碌禄脴脰碌脌脿鲁脡脭卤潞炉脢媒拢卢脨脦脠莽 bool T_Obj::FillObject(T_Reader & reader)
 	template<typename U, bool(U::*)(StreamWriter &) const>
 	struct MethodMatcher;
 
@@ -216,7 +216,7 @@ private:
 		return obj.Decode(stream_reader);
 	}
 
-	// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
+	// 脝楼脜盲脝梅 隆陋隆陋隆陋隆陋 bool路碌禄脴脰碌脌脿鲁脡脭卤潞炉脢媒拢卢脨脦脠莽 bool T_Obj::FillObject(T_Reader & reader)
 	template<typename U, bool(U::*)(StreamReader &)>
 	struct MethodMatcher;
 
@@ -249,7 +249,7 @@ private:
 		return obj.GetSize();
 	}
 
-	// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
+	// 脝楼脜盲脝梅 隆陋隆陋隆陋隆陋 bool路碌禄脴脰碌脌脿鲁脡脭卤潞炉脢媒拢卢脨脦脠莽 bool T_Obj::FillObject(T_Reader & reader)
 	template<typename U, size_t(U::*)() const>
 	struct MethodMatcher;
 
@@ -852,7 +852,7 @@ struct Serializer<double>
 	}
 };
 
-// 对象指针序列化器
+// 露脭脧贸脰赂脮毛脨貌脕脨禄炉脝梅
 class ObjectPtrSerializer
 {
 public:
@@ -910,7 +910,7 @@ private:
 			return false;
 		}
 		obj_type = (uint16_t)NTOH_16(obj_type);
-		// 必须有创建对象的方法，不然直接使其编译错误
+		// 卤脴脨毛脫脨麓麓陆篓露脭脧贸碌脛路陆路篓拢卢虏禄脠禄脰卤陆脫脢鹿脝盲卤脿脪毛麓铆脦贸
 		obj = T::CreateObject(obj_type);
 		if (!obj)
 		{
@@ -933,7 +933,7 @@ private:
 		return sizeof(uint16_t) + SizeGettor::GetSize<T>(*obj);
 	}
 
-	// 匹配器
+	// 脝楼脜盲脝梅
 	template<typename U, size_t(*)(const U *)>
 	struct MethodMatcher;
 
@@ -1045,25 +1045,25 @@ inline size_t AutoGetSize(const T & t, const T_Args&... args)
 
 }
 
-// 序列化申明
+// 脨貌脕脨禄炉脡锚脙梅
 #define DECLARE_SERIALIZE \
 	size_t GetSize() const; \
 	bool Encode(sframe::StreamWriter & stream_writer) const; \
 	bool Decode(sframe::StreamReader & stream_reader);
 
-// 序列化申明(虚函数)
+// 脨貌脕脨禄炉脡锚脙梅(脨茅潞炉脢媒)
 #define DECLARE_VIRTUAL_SERIALIZE \
 	virtual size_t GetSize() const; \
 	virtual bool Encode(sframe::StreamWriter & stream_writer) const; \
 	virtual bool Decode(sframe::StreamReader & stream_reader);
 
-// 序列化申明(存虚函数)
+// 脨貌脕脨禄炉脡锚脙梅(麓忙脨茅潞炉脢媒)
 #define DECLARE_PURE_VIRTUAL_SERIALIZE \
 	virtual size_t GetSize() const = 0; \
 	virtual bool Encode(sframe::StreamWriter & stream_writer) const = 0; \
 	virtual bool Decode(sframe::StreamReader & stream_reader) = 0;
 
-// 序列化定义(写在类或结构体外部)
+// 脨貌脕脨禄炉露篓脪氓(脨麓脭脷脌脿禄貌陆谩鹿鹿脤氓脥芒虏驴)
 #define DEFINE_SERIALIZE_OUTER(S, ...) \
 	size_t S::GetSize() const \
 	{ \
@@ -1086,7 +1086,7 @@ inline size_t AutoGetSize(const T & t, const T_Args&... args)
 		return sframe::AutoDecode(sub_stream_reader, ##__VA_ARGS__); \
 	}
 
-// 序列化定义（写在类或结构体内部）
+// 脨貌脕脨禄炉露篓脪氓拢篓脨麓脭脷脌脿禄貌陆谩鹿鹿脤氓脛脷虏驴拢漏
 #define DEFINE_SERIALIZE_INNER(...) \
 	size_t GetSize() const \
 	{ \
@@ -1109,7 +1109,7 @@ inline size_t AutoGetSize(const T & t, const T_Args&... args)
 		return sframe::AutoDecode(sub_stream_reader, ##__VA_ARGS__); \
 	}
 
-// 序列化定义（虚函数定义、写在类或结构体内部）
+// 脨貌脕脨禄炉露篓脪氓拢篓脨茅潞炉脢媒露篓脪氓隆垄脨麓脭脷脌脿禄貌陆谩鹿鹿脤氓脛脷虏驴拢漏
 #define DEFINE_VIRTUAL_SERIALIZE_INNER(...) \
 	virtual size_t GetSize() const \
 	{ \

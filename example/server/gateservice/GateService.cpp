@@ -6,14 +6,14 @@
 #include "util/RandomHelper.h"
 #include "../config/ServerConfig.h"
 
-// 初始化（创建服务成功后调用，此时还未开始运行）
+// 鲁玫脢录禄炉拢篓麓麓陆篓路镁脦帽鲁脡鹿娄潞贸碌梅脫脙拢卢麓脣脢卤禄鹿脦麓驴陋脢录脭脣脨脨拢漏
 void GateService::Init()
 {
 	RegistInsideServiceMessageHandler(kGateMsg_SessionClosed, &GateService::OnMsg_SessionClosed, this);
 	RegistInsideServiceMessageHandler(kGateMsg_SessionRecvData, &GateService::OnMsg_SessionRecvData, this);
 	RegistServiceMessageHandler(kGateMsg_SendToClient, &GateService::OnMsg_SendToClient, this);
 
-	// 获取配置的所有逻辑服务
+	// 禄帽脠隆脜盲脰脙碌脛脣霉脫脨脗脽录颅路镁脦帽
 	auto & gate_services = ServerConfig::Instance().type_to_services["WorkService"];
 	for (auto & it_pair : gate_services)
 	{
@@ -21,7 +21,7 @@ void GateService::Init()
 	}
 }
 
-// 新连接到来
+// 脨脗脕卢陆脫碌陆脌麓
 void GateService::OnNewConnection(const sframe::ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock)
 {
 	sframe::Error err = sock->SetTcpNodelay(true);
@@ -46,7 +46,7 @@ void GateService::OnNewConnection(const sframe::ListenAddress & listen_addr_info
 	FLOG(GetLogName()) << "NewSession|" << sessionid << "|WorkService|" << work_service << ENDL;
 }
 
-// 处理销毁
+// 麓娄脌铆脧煤禄脵
 void GateService::OnDestroy()
 {
 	for (auto & pr : _sessions)

@@ -9,7 +9,7 @@
 #include <cxxabi.h>
 #endif
 
-// 分割字符串
+// 路脰赂卯脳脰路没麓庐
 std::vector<std::string> sframe::SplitString(const std::string & str, const std::string & sep)
 {
 	std::vector<std::string> result;
@@ -45,7 +45,7 @@ std::vector<std::string> sframe::SplitString(const std::string & str, const std:
 	return result;
 }
 
-// 查找字符在字符串中最大连续出现次数
+// 虏茅脮脪脳脰路没脭脷脳脰路没麓庐脰脨脳卯麓贸脕卢脨酶鲁枚脧脰麓脦脢媒
 int32_t sframe::GetCharMaxContinueInString(const std::string & str, char c)
 {
 	int32_t cur = 0;
@@ -69,7 +69,7 @@ int32_t sframe::GetCharMaxContinueInString(const std::string & str, char c)
 	return max;
 }
 
-// 查找子串
+// 虏茅脮脪脳脫麓庐
 int32_t sframe::FindFirstSubstr(const char * str, int32_t len, const char * sub_str)
 {
 	int32_t sub_str_len = (int32_t)strlen(sub_str);
@@ -92,7 +92,7 @@ int32_t sframe::FindFirstSubstr(const char * str, int32_t len, const char * sub_
 
 static const char kUpperLower = 'a' - 'Z';
 
-// 将字符串转换为大写
+// 陆芦脳脰路没麓庐脳陋禄禄脦陋麓贸脨麓
 void sframe::UpperString(std::string & str)
 {
 	for (std::string::iterator it = str.begin(); it != str.end(); it++)
@@ -105,7 +105,7 @@ void sframe::UpperString(std::string & str)
 	}
 }
 
-// 将字符串转换为小写
+// 陆芦脳脰路没麓庐脳陋禄禄脦陋脨隆脨麓
 void sframe::LowerString(std::string & str)
 {
 	for (std::string::iterator it = str.begin(); it != str.end(); it++)
@@ -118,7 +118,7 @@ void sframe::LowerString(std::string & str)
 	}
 }
 
-// 将字符串转换为大写
+// 陆芦脳脰路没麓庐脳陋禄禄脦陋麓贸脨麓
 std::string sframe::ToUpper(const std::string & str)
 {
 	std::string new_str;
@@ -137,7 +137,7 @@ std::string sframe::ToUpper(const std::string & str)
 	return new_str;
 }
 
-// 将字符串转换为小写
+// 陆芦脳脰路没麓庐脳陋禄禄脦陋脨隆脨麓
 std::string sframe::ToLower(const std::string & str)
 {
 	std::string new_str;
@@ -156,7 +156,7 @@ std::string sframe::ToLower(const std::string & str)
 	return new_str;
 }
 
-// 去掉头部空串
+// 脠楼碌么脥路虏驴驴脮麓庐
 std::string sframe::TrimLeft(const std::string & str, char c)
 {
 	size_t pos = str.find_first_not_of(c);
@@ -168,7 +168,7 @@ std::string sframe::TrimLeft(const std::string & str, char c)
 	return str.substr(pos);
 }
 
-// 去掉尾部空串
+// 脠楼碌么脦虏虏驴驴脮麓庐
 std::string sframe::TrimRight(const std::string & str, char c)
 {
 	size_t pos = str.find_last_not_of(c);
@@ -180,7 +180,7 @@ std::string sframe::TrimRight(const std::string & str, char c)
 	return str.substr(0, pos + 1);
 }
 
-// 去掉两边空串
+// 脠楼碌么脕陆卤脽驴脮麓庐
 std::string sframe::Trim(const std::string & str, char c)
 {
 	return TrimLeft(TrimRight(str, c), c);
@@ -254,37 +254,37 @@ size_t sframe::UTF8ToWChar(const char * str, size_t len, wchar_t * wc)
 	uint32_t chr_data = 0;
 	const uint8_t * data = (const uint8_t *)str;
 	size_t bytes_num = 0;
-	// 1字节 [0, 0x80)
+	// 1脳脰陆脷 [0, 0x80)
 	if (data[0] < 0x80)
 	{
 		chr_data = data[0];
 		bytes_num = 1;
 	}
-	// 2个字节 [0xc0, 0xe0)
+	// 2赂枚脳脰陆脷 [0xc0, 0xe0)
 	else if (data[0] >= 0xc0 && data[0] < 0xe0)
 	{
 		chr_data = (data[0] & 0x1f);
 		bytes_num = 2;
 	}
-	// 3字节 [0xe0, 0xf0)
+	// 3脳脰陆脷 [0xe0, 0xf0)
 	else if (data[0] < 0xf0)
 	{
 		chr_data = (data[0] & 0x0f);
 		bytes_num = 3;
 	}
-	// 4字节 [0xf0, 0xf8)
+	// 4脳脰陆脷 [0xf0, 0xf8)
 	else if (data[0] < 0xf8)
 	{
 		chr_data = (data[0] & 0x07);
 		bytes_num = 4;
 	}
-	// 5字节 [0xf8, 0xfc)
+	// 5脳脰陆脷 [0xf8, 0xfc)
 	else if (data[0] < 0xfc)
 	{
 		chr_data = (data[0] & 0x03);
 		bytes_num = 5;
 	}
-	// 6字节 [0xfc, 0xfe)
+	// 6脳脰陆脷 [0xfc, 0xfe)
 	else if (data[0] < 0xfe)
 	{
 		chr_data = (data[0] & 0x01);
@@ -371,13 +371,13 @@ size_t sframe::WCharToUTF8(wchar_t wc, char * buf, size_t buf_size)
 	return bytes_num;
 }
 
-// 是否合法的utf8
+// 脢脟路帽潞脧路篓碌脛utf8
 bool sframe::IsValidUTF8(const std::string & str)
 {
 	return IsValidUTF8(str.data(), str.length());
 }
 
-// 是否合法的utf8
+// 脢脟路帽潞脧路篓碌脛utf8
 bool sframe::IsValidUTF8(const char * str, size_t len)
 {
 	while (len > 0)
@@ -445,7 +445,7 @@ static bool CompareCharacter(char c1, char c2, bool ignore_case)
 
 	if (ignore_case)
 	{
-		// 全部转换为小写
+		// 脠芦虏驴脳陋禄禄脦陋脨隆脨麓
 		if (c1 >= 'A' && c1 <= 'Z')
 		{
 			c1 += diff;
@@ -459,9 +459,9 @@ static bool CompareCharacter(char c1, char c2, bool ignore_case)
 	return c1 == c2;
 }
 
-// 是否匹配通配符（?和*）
-// str     :   不带通配符的字符串
-// match   :   带通配符的字符串
+// 脢脟路帽脝楼脜盲脥篓脜盲路没拢篓?潞脥*拢漏
+// str     :   虏禄麓酶脥篓脜盲路没碌脛脳脰路没麓庐
+// match   :   麓酶脥篓脜盲路没碌脛脳脰路没麓庐
 bool sframe::MatchWildcardStr(const std::string & str, const std::string & match, bool ignore_case)
 {
 	bool have_star = false;
@@ -554,7 +554,7 @@ bool sframe::MatchWildcardStr(const std::string & str, const std::string & match
 
 #ifndef __GNUC__
 
-// 解析类型名称（转换为 A::B::C 的形式）
+// 陆芒脦枚脌脿脨脥脙没鲁脝拢篓脳陋禄禄脦陋 A::B::C 碌脛脨脦脢陆拢漏
 std::string sframe::ReadTypeName(const char * name)
 {
 	const char * p = strstr(name, " ");
@@ -576,7 +576,7 @@ std::string sframe::ReadTypeName(const char * name)
 
 #else
 
-// 解析类型名称（转换为 A::B::C 的形式）
+// 陆芒脦枚脌脿脨脥脙没鲁脝拢篓脳陋禄禄脦陋 A::B::C 碌脛脨脦脢陆拢漏
 std::string sframe::ReadTypeName(const char * name)
 {
 	char * real_name = abi::__cxa_demangle(name, nullptr, nullptr, nullptr);

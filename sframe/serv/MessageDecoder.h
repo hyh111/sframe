@@ -8,7 +8,7 @@
 
 namespace sframe {
 
-// 内部服务消息解码器
+// 脛脷虏驴路镁脦帽脧没脧垄陆芒脗毛脝梅
 class InsideServiceMessageDecoder
 {
 public:
@@ -38,7 +38,7 @@ private:
 	ServiceMessage * _msg;
 };
 
-// 网络服务消息解码器
+// 脥酶脗莽路镁脦帽脧没脧垄陆芒脗毛脝梅
 class NetServiceMessageDecoder
 {
 public:

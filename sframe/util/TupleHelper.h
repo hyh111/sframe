@@ -30,7 +30,7 @@ struct UnfoldHelper<0>
 	}
 };
 
-// չ��std::tuple
+// Õ¹¿ªstd::tuple
 template<typename Obj, typename Tuple>
 inline auto UnfoldTuple(Obj * obj, Tuple & t)
 	-> decltype(UnfoldHelper<std::tuple_size<Tuple>::value>::Unfold(obj, t))

@@ -5,7 +5,7 @@
 
 using namespace sframe;
 
-// 解析
+// 陆芒脦枚
 bool CSV::Parse(const std::string & content, Table & tbl)
 {
 	if (content.empty())
@@ -17,8 +17,8 @@ bool CSV::Parse(const std::string & content, Table & tbl)
 	int32_t cur_column = 0;
 	size_t i = 0;
 	std::string word;
-	bool word_start_by_quote = false;    // 当前词语是否已引号开始
-	bool word_first = true;              // 当前是否是一个词的第一个字符
+	bool word_start_by_quote = false;    // 碌卤脟掳麓脢脫茂脢脟路帽脪脩脪媒潞脜驴陋脢录
+	bool word_first = true;              // 碌卤脟掳脢脟路帽脢脟脪禄赂枚麓脢碌脛碌脷脪禄赂枚脳脰路没
 
 	while (true)
 	{

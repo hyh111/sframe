@@ -8,7 +8,7 @@ using namespace sframe;
 
 #define MAKE_KEY(_gatesid, _sessionid) (((uint64_t)(_gatesid) << 32) | ((uint64_t)(_sessionid) & 0x00000000ffffffff))
 
-// ³õÊ¼»¯£¨´´½¨·þÎñ³É¹¦ºóµ÷ÓÃ£¬´ËÊ±»¹Î´¿ªÊ¼ÔËÐÐ£©
+// Â³ÃµÃŠÂ¼Â»Â¯Â£Â¨Â´Â´Â½Â¨Â·Ã¾ÃŽÃ±Â³Ã‰Â¹Â¦ÂºÃ³ÂµÃ·Ã“ÃƒÂ£Â¬Â´Ã‹ÃŠÂ±Â»Â¹ÃŽÂ´Â¿ÂªÃŠÂ¼Ã”Ã‹ÃÃÂ£Â©
 void WorkService::Init()
 {
 	RegistServiceMessageHandler(kWorkMsg_EnterWorkService, &WorkService::OnMsg_EnterWorkService, this);

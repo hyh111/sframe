@@ -4,8 +4,6 @@ project(sframe)
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -Wall")
-
 set(LIB_INSTALL_DIR "/usr/local/sframe/lib")
 set(HEADER_INSTALL_DIR "/usr/local/sframe/include")
 
@@ -17,8 +15,10 @@ set(ALL_DIRS
 )
 
 if(WIN32)
+	add_definitions(-DNOMINMAX -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
 	set(ALL_DIRS ${ALL_DIRS} net/win)
 elseif(UNIX)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -Wall")
 	set(ALL_DIRS ${ALL_DIRS} net/linux)
 else()
 	message(FATAL_ERROR "Not surported os.")

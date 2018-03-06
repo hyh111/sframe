@@ -18,7 +18,7 @@
 
 namespace sframe {
 
-// ¶ÁÈ¡JSONµ½ÈÎÒâÀàĞÍ»ù´¡ÀàĞÍ
+// Â¶ÃÃˆÂ¡JSONÂµÂ½ÃˆÃÃ’Ã¢Ã€Ã ÃÃÂ»Ã¹Â´Â¡Ã€Ã ÃÃ
 template<typename T>
 struct ObjectFiller<const json11::Json, T>
 {
@@ -89,7 +89,7 @@ struct ObjectFiller<const json11::Json, std::string>
 	}
 };
 
-// ¶ÁÈ¡JSONµ½Êı×é
+// Â¶ÃÃˆÂ¡JSONÂµÂ½ÃŠÃ½Ã—Ã©
 template<typename T, int Array_Size>
 struct ObjectFiller<const json11::Json, T[Array_Size]>
 {
@@ -172,7 +172,7 @@ inline bool Json_FillMap(const json11::Json & json, T & obj)
 	return true;
 }
 
-// ¶ÁÈ¡JSONµ½unorder_map
+// Â¶ÃÃˆÂ¡JSONÂµÂ½unorder_map
 template<typename T_Key, typename T_Val>
 struct ObjectFiller<const json11::Json, std::unordered_map<T_Key, T_Val>>
 {
@@ -182,7 +182,7 @@ struct ObjectFiller<const json11::Json, std::unordered_map<T_Key, T_Val>>
 	}
 };
 
-// ¶ÁÈ¡JSONµ½map
+// Â¶ÃÃˆÂ¡JSONÂµÂ½map
 template<typename T_Key, typename T_Val>
 struct ObjectFiller<const json11::Json, std::map<T_Key, T_Val>>
 {
@@ -229,7 +229,7 @@ inline bool Json_FillArray(const json11::Json & json, T & obj)
 	return true;
 }
 
-// ¶ÁÈ¡JSONµ½vector
+// Â¶ÃÃˆÂ¡JSONÂµÂ½vector
 template<typename T>
 struct ObjectFiller<const json11::Json, std::vector<T>>
 {
@@ -239,7 +239,7 @@ struct ObjectFiller<const json11::Json, std::vector<T>>
 	}
 };
 
-// ¶ÁÈ¡JSONµ½list
+// Â¶ÃÃˆÂ¡JSONÂµÂ½list
 template<typename T>
 struct ObjectFiller<const json11::Json, std::list<T>>
 {
@@ -286,7 +286,7 @@ inline bool Json_FillSet(const json11::Json & json, T_Set & obj)
 	return true;
 }
 
-// Ìî³äTableµ½set
+// ÃŒÃ®Â³Ã¤TableÂµÂ½set
 template<typename T>
 struct ObjectFiller<const json11::Json, std::set<T>>
 {
@@ -296,7 +296,7 @@ struct ObjectFiller<const json11::Json, std::set<T>>
 	}
 };
 
-// Ìî³äJSONµ½unordered_set
+// ÃŒÃ®Â³Ã¤JSONÂµÂ½unordered_set
 template<typename T>
 struct ObjectFiller<const json11::Json, std::unordered_set<T>>
 {
@@ -306,7 +306,7 @@ struct ObjectFiller<const json11::Json, std::unordered_set<T>>
 	}
 };
 
-// ¶ÁÈ¡JSONµ½shared_ptr
+// Â¶ÃÃˆÂ¡JSONÂµÂ½shared_ptr
 template<typename T>
 struct ObjectFiller<const json11::Json, std::shared_ptr<T>>
 {
@@ -318,7 +318,7 @@ struct ObjectFiller<const json11::Json, std::shared_ptr<T>>
 };
 
 
-// ¶ÁÈ¡JSON×Ö¶Î
+// Â¶ÃÃˆÂ¡JSONÃ—Ã–Â¶Ã
 template<typename T>
 inline bool Json_FillField(const json11::Json & json, const char * field_name, T & obj, const T & default_val = T())
 {
@@ -337,7 +337,7 @@ inline bool Json_FillField(const json11::Json & json, const char * field_name, T
 	return true;
 }
 
-// ¶ÁÈ¡JSON×Ö¶Î
+// Â¶ÃÃˆÂ¡JSONÃ—Ã–Â¶Ã
 template<typename T>
 inline bool Json_FillIndex(const json11::Json & json, int field_index, T & obj, const T & default_val = T())
 {
@@ -359,7 +359,7 @@ inline bool Json_FillIndex(const json11::Json & json, int field_index, T & obj, 
 }
 
 
-// ¶ÔÏóÌî³ä¸¨Öúºê
+// Â¶Ã”ÃÃ³ÃŒÃ®Â³Ã¤Â¸Â¨Ã–ÃºÂºÃª
 #define JSON_FILLFIELD(name)                                            sframe::Json_FillField(reader, #name, this->name);
 #define JSON_FILLFIELD_DEFAULT(name, defaultval)                        sframe::Json_FillField(reader, #name, this->name, defaultval)
 #define JSON_FILLINDEX(index, name)                                     sframe::Json_FillIndex(reader, (int)index, obj.name);

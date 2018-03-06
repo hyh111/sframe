@@ -6,7 +6,7 @@
 
 namespace sframe {
 
-// Socket地址封装
+// Socket碌脴脰路路芒脳掳
 class SocketAddr
 {
 public:
@@ -34,7 +34,7 @@ private:
 };
 
 
-// 地址转换为文本
+// 碌脴脰路脳陋禄禄脦陋脦脛卤戮
 class SocketAddrText
 {
 public:
