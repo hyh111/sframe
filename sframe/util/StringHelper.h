@@ -7,34 +7,34 @@
 
 namespace sframe {
 
-// ·Ö¸î×Ö·û´®
+// 分割字符串
 std::vector<std::string> SplitString(const std::string & str, const std::string & sep);
 
-// ²éÕÒ×Ö·ûÔÚ×Ö·û´®ÖÐ×î´óÁ¬Ðø³öÏÖ´ÎÊý
+// 查找字符在字符串中最大连续出现次数
 int32_t GetCharMaxContinueInString(const std::string & str, char c);
 
-// ²éÕÒ×Ó´®
+// 查找子串
 int32_t FindFirstSubstr(const char * str, int32_t len, const char * sub_str);
 
-// ½«×Ö·û´®×ª»»Îª´óÐ´
+// 将字符串转换为大写
 void UpperString(std::string & str);
 
-// ½«×Ö·û´®×ª»»ÎªÐ¡Ð´
+// 将字符串转换为小写
 void LowerString(std::string & str);
 
-// ½«×Ö·û´®×ª»»Îª´óÐ´
+// 将字符串转换为大写
 std::string ToUpper(const std::string & str);
 
-// ½«×Ö·û´®×ª»»ÎªÐ¡Ð´
+// 将字符串转换为小写
 std::string ToLower(const std::string & str);
 
-// È¥µôÍ·²¿¿Õ´®
+// 去掉头部空串
 std::string TrimLeft(const std::string & str, char c = ' ');
 
-// È¥µôÎ²²¿¿Õ´®
+// 去掉尾部空串
 std::string TrimRight(const std::string & str, char c = ' ');
 
-// È¥µôÁ½±ß¿Õ´®
+// 去掉两边空串
 std::string Trim(const std::string & str, char c = ' ');
 
 // wstring -> string
@@ -49,10 +49,10 @@ size_t UTF8ToWChar(const char * str, size_t len, wchar_t * wc);
 // wchar -> utf8
 size_t WCharToUTF8(wchar_t wc, char * buf, size_t buf_size);
 
-// ÊÇ·ñºÏ·¨µÄutf8
+// 是否合法的utf8
 bool IsValidUTF8(const std::string & str);
 
-// ÊÇ·ñºÏ·¨µÄutf8
+// 是否合法的utf8
 bool IsValidUTF8(const char * str, size_t len);
 
 // wstring -> utf8
@@ -61,12 +61,12 @@ std::string WStrToUTF8(const std::wstring & src);
 // utf8 -> wstring
 std::wstring UTF8ToWStr(const std::string & src);
 
-// ÊÇ·ñÆ¥ÅäÍ¨Åä·û£¨?ºÍ*£©
-// str     :   ²»´øÍ¨Åä·ûµÄ×Ö·û´®
-// match   :   ´øÍ¨Åä·ûµÄ×Ö·û´®
+// 是否匹配通配符（?和*）
+// str     :   不带通配符的字符串
+// match   :   带通配符的字符串
 bool MatchWildcardStr(const std::string & real_name, const std::string & wildcard_name, bool ignore_case = false);
 
-// ½âÎöÀàÐÍÃû³Æ£¨×ª»»Îª A::B::C µÄÐÎÊ½£©
+// 解析类型名称（转换为 A::B::C 的形式）
 std::string ReadTypeName(const char * name);
 
 bool ParseCommandLine(const std::string & data, std::string & cmd_name, std::vector<std::string> & cmd_param);

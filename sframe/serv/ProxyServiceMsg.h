@@ -4,7 +4,7 @@
 
 namespace sframe {
 
-// ´úÀí·þÎñÏûÏ¢ºÅ
+// 代理服务消息号
 enum ProxyServiceMsgId
 {
 	kProxyServiceMsgId_SessionClosed = 1,

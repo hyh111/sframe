@@ -9,7 +9,7 @@
 #include <cxxabi.h>
 #endif
 
-// ·Ö¸î×Ö·û´®
+// 分割字符串
 std::vector<std::string> sframe::SplitString(const std::string & str, const std::string & sep)
 {
 	std::vector<std::string> result;
@@ -45,7 +45,7 @@ std::vector<std::string> sframe::SplitString(const std::string & str, const std:
 	return result;
 }
 
-// ²éÕÒ×Ö·ûÔÚ×Ö·û´®ÖÐ×î´óÁ¬Ðø³öÏÖ´ÎÊý
+// 查找字符在字符串中最大连续出现次数
 int32_t sframe::GetCharMaxContinueInString(const std::string & str, char c)
 {
 	int32_t cur = 0;
@@ -69,7 +69,7 @@ int32_t sframe::GetCharMaxContinueInString(const std::string & str, char c)
 	return max;
 }
 
-// ²éÕÒ×Ó´®
+// 查找子串
 int32_t sframe::FindFirstSubstr(const char * str, int32_t len, const char * sub_str)
 {
 	int32_t sub_str_len = (int32_t)strlen(sub_str);
@@ -92,7 +92,7 @@ int32_t sframe::FindFirstSubstr(const char * str, int32_t len, const char * sub_
 
 static const char kUpperLower = 'a' - 'Z';
 
-// ½«×Ö·û´®×ª»»Îª´óÐ´
+// 将字符串转换为大写
 void sframe::UpperString(std::string & str)
 {
 	for (std::string::iterator it = str.begin(); it != str.end(); it++)
@@ -105,7 +105,7 @@ void sframe::UpperString(std::string & str)
 	}
 }
 
-// ½«×Ö·û´®×ª»»ÎªÐ¡Ð´
+// 将字符串转换为小写
 void sframe::LowerString(std::string & str)
 {
 	for (std::string::iterator it = str.begin(); it != str.end(); it++)
@@ -118,7 +118,7 @@ void sframe::LowerString(std::string & str)
 	}
 }
 
-// ½«×Ö·û´®×ª»»Îª´óÐ´
+// 将字符串转换为大写
 std::string sframe::ToUpper(const std::string & str)
 {
 	std::string new_str;
@@ -137,7 +137,7 @@ std::string sframe::ToUpper(const std::string & str)
 	return new_str;
 }
 
-// ½«×Ö·û´®×ª»»ÎªÐ¡Ð´
+// 将字符串转换为小写
 std::string sframe::ToLower(const std::string & str)
 {
 	std::string new_str;
@@ -156,7 +156,7 @@ std::string sframe::ToLower(const std::string & str)
 	return new_str;
 }
 
-// È¥µôÍ·²¿¿Õ´®
+// 去掉头部空串
 std::string sframe::TrimLeft(const std::string & str, char c)
 {
 	size_t pos = str.find_first_not_of(c);
@@ -168,7 +168,7 @@ std::string sframe::TrimLeft(const std::string & str, char c)
 	return str.substr(pos);
 }
 
-// È¥µôÎ²²¿¿Õ´®
+// 去掉尾部空串
 std::string sframe::TrimRight(const std::string & str, char c)
 {
 	size_t pos = str.find_last_not_of(c);
@@ -180,7 +180,7 @@ std::string sframe::TrimRight(const std::string & str, char c)
 	return str.substr(0, pos + 1);
 }
 
-// È¥µôÁ½±ß¿Õ´®
+// 去掉两边空串
 std::string sframe::Trim(const std::string & str, char c)
 {
 	return TrimLeft(TrimRight(str, c), c);
@@ -254,37 +254,37 @@ size_t sframe::UTF8ToWChar(const char * str, size_t len, wchar_t * wc)
 	uint32_t chr_data = 0;
 	const uint8_t * data = (const uint8_t *)str;
 	size_t bytes_num = 0;
-	// 1×Ö½Ú [0, 0x80)
+	// 1字节 [0, 0x80)
 	if (data[0] < 0x80)
 	{
 		chr_data = data[0];
 		bytes_num = 1;
 	}
-	// 2¸ö×Ö½Ú [0xc0, 0xe0)
+	// 2个字节 [0xc0, 0xe0)
 	else if (data[0] >= 0xc0 && data[0] < 0xe0)
 	{
 		chr_data = (data[0] & 0x1f);
 		bytes_num = 2;
 	}
-	// 3×Ö½Ú [0xe0, 0xf0)
+	// 3字节 [0xe0, 0xf0)
 	else if (data[0] < 0xf0)
 	{
 		chr_data = (data[0] & 0x0f);
 		bytes_num = 3;
 	}
-	// 4×Ö½Ú [0xf0, 0xf8)
+	// 4字节 [0xf0, 0xf8)
 	else if (data[0] < 0xf8)
 	{
 		chr_data = (data[0] & 0x07);
 		bytes_num = 4;
 	}
-	// 5×Ö½Ú [0xf8, 0xfc)
+	// 5字节 [0xf8, 0xfc)
 	else if (data[0] < 0xfc)
 	{
 		chr_data = (data[0] & 0x03);
 		bytes_num = 5;
 	}
-	// 6×Ö½Ú [0xfc, 0xfe)
+	// 6字节 [0xfc, 0xfe)
 	else if (data[0] < 0xfe)
 	{
 		chr_data = (data[0] & 0x01);
@@ -371,13 +371,13 @@ size_t sframe::WCharToUTF8(wchar_t wc, char * buf, size_t buf_size)
 	return bytes_num;
 }
 
-// ÊÇ·ñºÏ·¨µÄutf8
+// 是否合法的utf8
 bool sframe::IsValidUTF8(const std::string & str)
 {
 	return IsValidUTF8(str.data(), str.length());
 }
 
-// ÊÇ·ñºÏ·¨µÄutf8
+// 是否合法的utf8
 bool sframe::IsValidUTF8(const char * str, size_t len)
 {
 	while (len > 0)
@@ -445,7 +445,7 @@ static bool CompareCharacter(char c1, char c2, bool ignore_case)
 
 	if (ignore_case)
 	{
-		// È«²¿×ª»»ÎªÐ¡Ð´
+		// 全部转换为小写
 		if (c1 >= 'A' && c1 <= 'Z')
 		{
 			c1 += diff;
@@ -459,9 +459,9 @@ static bool CompareCharacter(char c1, char c2, bool ignore_case)
 	return c1 == c2;
 }
 
-// ÊÇ·ñÆ¥ÅäÍ¨Åä·û£¨?ºÍ*£©
-// str     :   ²»´øÍ¨Åä·ûµÄ×Ö·û´®
-// match   :   ´øÍ¨Åä·ûµÄ×Ö·û´®
+// 是否匹配通配符（?和*）
+// str     :   不带通配符的字符串
+// match   :   带通配符的字符串
 bool sframe::MatchWildcardStr(const std::string & str, const std::string & match, bool ignore_case)
 {
 	bool have_star = false;
@@ -554,7 +554,7 @@ bool sframe::MatchWildcardStr(const std::string & str, const std::string & match
 
 #ifndef __GNUC__
 
-// ½âÎöÀàÐÍÃû³Æ£¨×ª»»Îª A::B::C µÄÐÎÊ½£©
+// 解析类型名称（转换为 A::B::C 的形式）
 std::string sframe::ReadTypeName(const char * name)
 {
 	const char * p = strstr(name, " ");
@@ -576,7 +576,7 @@ std::string sframe::ReadTypeName(const char * name)
 
 #else
 
-// ½âÎöÀàÐÍÃû³Æ£¨×ª»»Îª A::B::C µÄÐÎÊ½£©
+// 解析类型名称（转换为 A::B::C 的形式）
 std::string sframe::ReadTypeName(const char * name)
 {
 	char * real_name = abi::__cxa_demangle(name, nullptr, nullptr, nullptr);

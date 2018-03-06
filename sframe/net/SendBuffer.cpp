@@ -18,13 +18,13 @@ void SendBuffer::Push(const char * data, int32_t len, bool & send_now)
 
 	AUTO_LOCK(_locker);
 
-	// ÏÈ³¢ÊÔÑ¹ÈëÖ÷»º³åÇø
+	// 先尝试压入主缓冲区
 	int32_t pushed = _buf.Push(data, len);
 	if (pushed < len)
 	{
 		if (pushed > 0)
 		{
-			// ÈôÑ¹ÈëÁËÊý¾Ýµ½Ö÷»º³åÇø£¬ÄÇÃ´±¸ÓÃµÄÁ´±í±Ø¶¨Îª¿Õ
+			// 若压入了数据到主缓冲区，那么备用的链表必定为空
 			assert(_standby_list.empty());
 		}
 
@@ -51,13 +51,13 @@ void SendBuffer::PushNotSend(const char * data, int32_t len)
 {
 	AUTO_LOCK(_locker);
 
-	// ÏÈ³¢ÊÔÑ¹ÈëÖ÷»º³åÇø
+	// 先尝试压入主缓冲区
 	int32_t pushed = _buf.Push(data, len);
 	if (pushed < len)
 	{
 		if (pushed > 0)
 		{
-			// ÈôÑ¹ÈëÁËÊý¾Ýµ½Ö÷»º³åÇø£¬ÄÇÃ´±¸ÓÃµÄÁ´±í±Ø¶¨Îª¿Õ
+			// 若压入了数据到主缓冲区，那么备用的链表必定为空
 			assert(_standby_list.empty());
 		}
 
@@ -74,7 +74,7 @@ void SendBuffer::PushNotSend(const char * data, int32_t len)
 	}
 }
 
-// ¶ÁÊý¾Ý
+// 读数据
 char * SendBuffer::Peek(int32_t & len)
 {
 	AUTO_LOCK(_locker);
@@ -89,7 +89,7 @@ char * SendBuffer::Peek(int32_t & len)
 	return data;
 }
 
-// ÊÍ·Å¿Õ¼ä
+// 释放空间
 void SendBuffer::Free(int32_t len)
 {
 	if (len <= 0)

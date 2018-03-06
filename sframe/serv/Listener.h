@@ -13,7 +13,7 @@
 
 namespace sframe {
 
-// TCPÁ¬½Ó´¦ÀíÆ÷
+// TCP连接处理器
 class TcpConnHandler
 {
 public:
@@ -24,7 +24,7 @@ public:
 	virtual void HandleTcpConn(const std::shared_ptr<TcpSocket> & sock, const ListenAddress & listen_addr) = 0;
 };
 
-// ·þÎñTCPÁ¬½Ó´¦ÀíÆ÷¡ª¡ª½«Á¬½Ó·¢ËÍ¸øÖ¸¶¨µÄ·þÎñÀ´´¦Àí
+// 服务TCP连接处理器——将连接发送给指定的服务来处理
 class ServiceTcpConnHandler : public TcpConnHandler
 {
 public:
@@ -54,7 +54,7 @@ private:
 	std::set<int32_t>::iterator _it_cur_sid;
 };
 
-// ¼àÌýÆ÷
+// 监听器
 class Listener : public TcpAcceptor::Monitor, public noncopyable
 {
 public:
@@ -67,10 +67,10 @@ public:
 
 	void Stop();
 
-	// Á¬½ÓÍ¨Öª
+	// 连接通知
 	void OnAccept(std::shared_ptr<TcpSocket> socket, Error err) override;
 
-	// Í£Ö¹
+	// 停止
 	void OnClosed(Error err) override;
 
 

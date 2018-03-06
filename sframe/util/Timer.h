@@ -44,7 +44,7 @@ private:
 
 typedef std::shared_ptr<TimerWrapper> TimerHandle;
 
-// ¶¨Ê±Æ÷
+// 定时器
 class Timer
 {
 public:
@@ -103,23 +103,23 @@ public:
 
 protected:
 	TimerHandle _handle;
-	int64_t _exec_time;     // Ö´ÐÐÊ±¼ä
+	int64_t _exec_time;     // 执行时间
 	Timer * _prev;
 	Timer * _next;
 };
 
-// ÆÕÍ¨Timer(Ö´ÐÐ¾²Ì¬º¯Êý)
+// 普通Timer(执行静态函数)
 class NormalTimer : public Timer
 {
 public:
-	// ·µ»ØÏÂ´Î¶à¾ÃºóÖ´ÐÐ£¬Ð¡ÓÚ0ÎªÍ£Ö¹¶¨Ê±Æ÷
+	// 返回下次多久后执行，小于0为停止定时器
 	typedef int32_t(*TimerFunc)();
 
 	NormalTimer(TimerFunc func) : _func(func) {}
 
 	virtual ~NormalTimer() {}
 
-	// Ö´ÐÐ
+	// 执行
 	int32_t Invoke() const override
 	{
 		int32_t next = -1;
@@ -134,7 +134,7 @@ private:
 	TimerFunc _func;
 };
 
-// °²È«¶¨Ê±Æ÷¶ÔÏó£¬°ü×°Ò»¸ö¶ÔÏó£¬ÓÃÓÚÊµÏÖ°²È«µÄTimer(ÍâÃæÊÍ·Å¶ÔÏóºó£¬²»ÓÃÊÖ¶¯É¾³ýTimer£¬Ò²ÊÇ°²È«µÄ)
+// 安全定时器对象，包装一个对象，用于实现安全的Timer(外面释放对象后，不用手动删除Timer，也是安全的)
 template<typename T_Obj>
 class SafeTimerObj
 {
@@ -155,7 +155,7 @@ private:
 	T_Obj * _obj_ptr;
 };
 
-// shared_ptrÌØ»¯
+// shared_ptr特化
 template<typename T_Obj>
 class SafeTimerObj<std::shared_ptr<T_Obj>>
 {
@@ -176,13 +176,13 @@ private:
 	std::shared_ptr<T_Obj> _obj_ptr;
 };
 
-// ¶¨Ê±Æ÷¶ÔÏó°ïÖú
+// 定时器对象帮助
 template<typename T_Obj>
 struct TimerObjHelper
 {
 };
 
-// Ô­Ê¼Ö¸ÕëÌØ»¯
+// 原始指针特化
 template<typename T_Obj>
 struct TimerObjHelper<T_Obj*>
 {
@@ -194,7 +194,7 @@ struct TimerObjHelper<T_Obj*>
 	}
 };
 
-// shared_ptrÌØ»¯
+// shared_ptr特化
 template<typename T_Obj>
 struct TimerObjHelper<std::shared_ptr<T_Obj>>
 {
@@ -206,7 +206,7 @@ struct TimerObjHelper<std::shared_ptr<T_Obj>>
 	}
 };
 
-// shared_ptr<SafeTimerObj>ÌØ»¯
+// shared_ptr<SafeTimerObj>特化
 template<typename T_Obj>
 struct TimerObjHelper<std::shared_ptr<SafeTimerObj<T_Obj>>>
 {
@@ -218,27 +218,27 @@ struct TimerObjHelper<std::shared_ptr<SafeTimerObj<T_Obj>>>
 	}
 };
 
-// SafeTimerObjÌØ»¯£¨²»ÔÊÐíÖ±½ÓÊ¹ÓÃSafeTimerObj*£©
+// SafeTimerObj特化（不允许直接使用SafeTimerObj*）
 template<typename T_Obj>
 struct TimerObjHelper<SafeTimerObj<T_Obj>*>
 {
 };
 
-// ¶ÔÏóTimer(Ö´ÐÐ¶ÔÏó·½·¨)
+// 对象Timer(执行对象方法)
 template<typename T_ObjPtr>
 class ObjectTimer : public Timer
 {
 public:
 	typedef typename TimerObjHelper<T_ObjPtr>::ObjectType TimerObjType;
 
-	// ·µ»ØÏÂ´Î¶à¾ÃºóÖ´ÐÐ£¬Ð¡ÓÚ0ÎªÍ£Ö¹¶¨Ê±Æ÷
+	// 返回下次多久后执行，小于0为停止定时器
 	typedef int32_t(TimerObjType::*TimerFunc)();
 
 	ObjectTimer(const T_ObjPtr &  obj_ptr, TimerFunc func) : _obj_ptr(obj_ptr), _func(func) {}
 
 	virtual ~ObjectTimer() {}
 
-	// Ö´ÐÐ
+	// 执行
 	int32_t Invoke() const override
 	{
 		int32_t next = -1;
@@ -258,7 +258,7 @@ private:
 	TimerFunc _func;
 };
 
-// ¶¨Ê±Æ÷Á´±í
+// 定时器链表
 struct TimerList
 {
 	TimerList() : timer_head(nullptr), timer_tail(nullptr) {}
@@ -326,8 +326,8 @@ struct TimerList
 		return timer_head == nullptr;
 	}
 
-	Timer* timer_head;           // ¶¨Ê±Æ÷Á´±íÍ·
-	Timer* timer_tail;           // ¶¨Ê±Æ÷Á´±íÍ·
+	Timer* timer_head;           // 定时器链表头
+	Timer* timer_tail;           // 定时器链表头
 };
 
 #define TVN_BITS 6
@@ -345,11 +345,11 @@ struct tvec_root {
 	struct TimerList vec[TVR_SIZE];
 };
 
-// ¶¨Ê±Æ÷¹ÜÀíÆ÷
+// 定时器管理器
 class TimerManager
 {
 public:
-	static const int32_t kMilliSecOneTick = 1;                  // Ò»¸ötick¶àÉÙºÁÃë
+	static const int32_t kMilliSecOneTick = 1;                  // 一个tick多少毫秒
 
 	TimerManager() : _exec_time(0), _cur_exec_timer(nullptr)
 	{
@@ -358,11 +358,11 @@ public:
 
 	~TimerManager() {}
 
-	// ×¢²áÆÕÍ¨¶¨Ê±Æ÷
-	// after_msec: ¶àÉÙºÁÃëºóÖ´ÐÐ
+	// 注册普通定时器
+	// after_msec: 多少毫秒后执行
 	TimerHandle RegistNormalTimer(int32_t after_msec, NormalTimer::TimerFunc func);
 
-	// ×¢²á¶ÔÏó¶¨Ê±Æ÷
+	// 注册对象定时器
 	template<typename T_ObjPtr>
 	TimerHandle RegistObjectTimer(int32_t after_msec, typename ObjectTimer<T_ObjPtr>::TimerFunc func, const T_ObjPtr & obj_ptr)
 	{
@@ -387,10 +387,10 @@ public:
 		return t->GetHandle();
 	}
 
-	// É¾³ý¶¨Ê±Æ÷
+	// 删除定时器
 	void DeleteTimer(TimerHandle timer_handle);
 
-	// Ö´ÐÐ
+	// 执行
 	void Execute();
 
 private:
@@ -412,12 +412,12 @@ private:
 	TimerList _tv5[TVN_SIZE];
 	int64_t _exec_time;
 	int64_t _init_time;
-	std::vector<Timer*> _add_timer_cache;                // Ìí¼Ó¶¨Ê±Æ÷»º´æ
+	std::vector<Timer*> _add_timer_cache;                // 添加定时器缓存
 	Timer * _cur_exec_timer;
 };
 
 
-// °²È«Timer×¢²á£¬ÅÉÉú´ËÀà£¬ÓÃÆä×¢²á¶¨Ê±Æ÷£¬¶ÔÏóÎö¹¹ºó²»ÓÃÊÖ¶¯É¾³ý¶¨Ê±Æ÷
+// 安全Timer注册，派生此类，用其注册定时器，对象析构后不用手动删除定时器
 template<typename T>
 class SafeTimerRegistor
 {
@@ -445,7 +445,7 @@ public:
 		return _timer_mgr;
 	}
 
-	// ×¢²á¶¨Ê±Æ÷(Ö»ÄÜ×¢²á¶ÔÏó×ÔÉíµÄ)
+	// 注册定时器(只能注册对象自身的)
 	TimerHandle RegistTimer(int32_t after_msec, typename ObjectTimer<T*>::TimerFunc func)
 	{
 		if (_timer_mgr == nullptr)

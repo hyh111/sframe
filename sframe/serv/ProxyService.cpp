@@ -26,7 +26,7 @@ ProxyService::~ProxyService()
 
 void ProxyService::Init()
 {
-	// ×¢²áÏûÏ¢´¦Àíº¯Êý
+	// 注册消息处理函数
 	this->RegistInsideServiceMessageHandler(kProxyServiceMsgId_SessionClosed, &ProxyService::OnMsg_SessionClosed, this);
 	this->RegistInsideServiceMessageHandler(kProxyServiceMsgId_SessionRecvData, &ProxyService::OnMsg_SessionRecvData, this);
 	this->RegistInsideServiceMessageHandler(kProxyServiceMsgId_SessionConnectCompleted, &ProxyService::OnMsg_SessionConnectCompleted, this);
@@ -50,13 +50,13 @@ bool ProxyService::IsDestroyCompleted() const
 	return _have_no_session;
 }
 
-// ´¦ÀíÖÜÆÚ¶¨Ê±Æ÷
+// 处理周期定时器
 void ProxyService::OnCycleTimer()
 {
 	_timer_mgr.Execute();
 }
 
-// ÐÂÁ¬½Óµ½À´
+// 新连接到来
 void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock)
 {
 	static const std::string admin_addr_desc = "AdminAddr";
@@ -85,7 +85,7 @@ void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const
 	}
 }
 
-// ´úÀí·þÎñÏûÏ¢
+// 代理服务消息
 void ProxyService::OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessage> & msg)
 {
 	auto it = _sid_to_sessionid.find(msg->dest_sid);
@@ -98,7 +98,7 @@ void ProxyService::OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessa
 	ServiceSession * session = GetServiceSession(sessionid);
 	if (session)
 	{
-		// µ÷ÓÃ·¢ËÍ
+		// 调用发送
 		session->SendData(msg);
 	}
 	else
@@ -109,8 +109,8 @@ void ProxyService::OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessa
 
 #define MAKE_ADDR_INFO(ip, port) ((((int64_t)(ip) & 0xffffffff) << 16) | ((int64_t)(port) & 0xffff))
 
-// ×¢²á»á»°
-// ·µ»Ø»á»°ID£¬Ð¡ÓÚ0Ê§°Ü
+// 注册会话
+// 返回会话ID，小于0失败
 int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, uint16_t remote_port)
 {
 	auto it_sid_to_sessionid = _sid_to_sessionid.find(sid);
@@ -127,7 +127,7 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 	auto it_session_id = _session_addr_to_sessionid.find(addr_info);
 	if (it_session_id == _session_addr_to_sessionid.end())
 	{
-		// ÈôÃ»ÓÐÏàÍ¬Ä¿µÄµØÖ·µÄsession£¬ÐÂ½¨Ò»¸ö
+		// 若没有相同目的地址的session，新建一个
 		session_id = GetNewSessionId();
 		if (session_id < 0)
 		{
@@ -145,15 +145,15 @@ int32_t ProxyService::RegistSession(int32_t sid, const std::string & remote_ip, 
 	}
 
 	assert(session && session_id == session->GetSessionId());
-	// Ìí¼Ó»á»°°üº¬µÄ·þÎñ
+	// 添加会话包含的服务
 	_sessionid_to_sid[session_id].insert(sid);
-	// Ìí¼Ósidµ½sessionidµÄÓ³Éä
+	// 添加sid到sessionid的映射
 	_sid_to_sessionid[sid] = session_id;
 
 	return session_id;
 }
 
-// ×¢²á¹ÜÀíÃüÁî´¦Àí´¦Àí·½·¨
+// 注册管理命令处理处理方法
 void ProxyService::RegistAdminCmd(const std::string & cmd, const AdminCmdHandleFunc & func)
 {
 	_map_admin_cmd_func[cmd] = func;
@@ -262,16 +262,16 @@ void ProxyService::OnMsg_SessionClosed(bool by_self, int32_t session_id)
 	ServiceSession * session = GetServiceSession(session_id);
 	assert(session && session->GetSessionId() == session_id);
 
-	// ÊÇ·ñÒªÉ¾³ýsession
+	// 是否要删除session
 	if (!session->TryFree())
 	{
 		return;
 	}
 
-	// É¾³ýsession
+	// 删除session
 	DeleteServiceSession(session_id);
 
-	// É¾³ýÆäËû¼ÇÂ¼
+	// 删除其他记录
 	auto it_sid = _sessionid_to_sid.find(session_id);
 	if (it_sid != _sessionid_to_sid.end())
 	{
@@ -309,7 +309,7 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 	uint32_t len = (uint32_t)vec_data.size();
 	StreamReader reader(p, len);
 
-	// ¶ÁÈ¡ÏûÏ¢Í·²¿
+	// 读取消息头部
 	int32_t src_sid = 0;
 	int32_t dest_sid = 0;
 	int64_t msg_session_key = 0;
@@ -320,7 +320,7 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 		return;
 	}
 
-	// Ô´·þÎñIDÊÇ·ñºÍ±¾µØ·þÎñID³åÍ»
+	// 源服务ID是否和本地服务ID冲突
 	if (ServiceDispatcher::Instance().IsLocalService(src_sid))
 	{
 		LOG_ERROR << "Recv from remote server(" << session->GetRemoteAddrText()
@@ -328,8 +328,8 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 		return;
 	}
 
-	// ²éÕÒÔ¶³Ì·þÎñÊÇ·ñÒÑ¾­¹ØÁªÁËsession£¬Èô»¹Ã»ÓÐ¹ØÁª£¬ÔÚÕâÀï¹ØÁª
-	// ¹ØÁªÔ¶³Ì·þÎñIDÓëSession
+	// 查找远程服务是否已经关联了session，若还没有关联，在这里关联
+	// 关联远程服务ID与Session
 	if (_sid_to_sessionid.insert(std::make_pair(src_sid, session_id)).second)
 	{
 		_sessionid_to_sid[session_id].insert(src_sid);
@@ -337,7 +337,7 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 
 	if (ServiceDispatcher::Instance().IsLocalService(dest_sid))
 	{
-		// ·â×°ÏûÏ¢²¢·¢ËÍµ½Ä¿±ê±¾µØ·þÎñ
+		// 封装消息并发送到目标本地服务
 		int32_t data_len = (int32_t)len - (int32_t)reader.GetReadedLength();
 		assert(data_len >= 0);
 		std::shared_ptr<NetServiceMessage> msg = std::make_shared<NetServiceMessage>();
@@ -346,12 +346,12 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 		msg->session_key = msg_session_key;
 		msg->msg_id = msg_id;
 		msg->data = std::move(vec_data);
-		// ·¢ËÍµ½Ä¿±ê·þÎñ
+		// 发送到目标服务
 		ServiceDispatcher::Instance().SendMsg(dest_sid, msg);
 	}
 	else
 	{
-		// ÊÇ·ñÓÐ¶ÔÓ¦µÄÔ¶³Ì·þÎñ»á»°
+		// 是否有对应的远程服务会话
 		auto it = _sid_to_sessionid.find(dest_sid);
 		if (it == _sid_to_sessionid.end())
 		{
@@ -360,18 +360,18 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 			return;
 		}
 
-		// ×ª·¢µ½Ô¶³Ì·þÎñ
+		// 转发到远程服务
 		ServiceSession * other_session = GetServiceSession(it->second);
 		if (other_session)
 		{
 			uint16_t msg_size = (uint16_t)vec_data.size();
 			if (msg_size >= kMaxPackSize)
 			{
-				// ÔÚ·¢ËÍÍøÂçÏûÏ¢´¦ÓÐ¼ì²â£¬ÕâÀïÒ»°ã²»¿ÉÄÜ·¢Éú
+				// 在发送网络消息处有检测，这里一般不可能发生
 				msg_size = kMaxPackSize;
 			}
 			msg_size = HTON_16(msg_size);
-			// µ÷ÓÃ·¢ËÍ
+			// 调用发送
 			other_session->SendData((const char *)&msg_size, sizeof(uint16_t));
 			other_session->SendData(vec_data.data(), msg_size);
 
@@ -408,7 +408,7 @@ void ProxyService::OnMsg_AdminCommand(int32_t admin_session_id, const std::share
 		return;
 	}
 
-	// Ö»Ö§³ÖGET
+	// 只支持GET
 	if (http_req->GetMethod() != "GET")
 	{
 		HttpResponse http_resp;
@@ -454,7 +454,7 @@ void ProxyService::OnMsg_AdminCommand(int32_t admin_session_id, const std::share
 
 	LOG_INFO << "Recv admin cmd from client(" << session->GetRemoteAddrText() << ")|" << admin_cmd.ToString() << std::endl;
 
-	// µ÷ÓÃ´¦Àíº¯Êý
+	// 调用处理函数
 	it->second(admin_cmd);
 }
 

@@ -18,7 +18,7 @@
 
 namespace sframe {
 
-// ¶ÁÈ¡JSONµ½ÈÎÒâÀàÐÍ»ù´¡ÀàÐÍ
+// 读取JSON到任意类型基础类型
 template<typename T>
 struct ObjectFiller<const json11::Json, T>
 {
@@ -89,7 +89,7 @@ struct ObjectFiller<const json11::Json, std::string>
 	}
 };
 
-// ¶ÁÈ¡JSONµ½Êý×é
+// 读取JSON到数组
 template<typename T, int Array_Size>
 struct ObjectFiller<const json11::Json, T[Array_Size]>
 {
@@ -172,7 +172,7 @@ inline bool Json_FillMap(const json11::Json & json, T & obj)
 	return true;
 }
 
-// ¶ÁÈ¡JSONµ½unorder_map
+// 读取JSON到unorder_map
 template<typename T_Key, typename T_Val>
 struct ObjectFiller<const json11::Json, std::unordered_map<T_Key, T_Val>>
 {
@@ -182,7 +182,7 @@ struct ObjectFiller<const json11::Json, std::unordered_map<T_Key, T_Val>>
 	}
 };
 
-// ¶ÁÈ¡JSONµ½map
+// 读取JSON到map
 template<typename T_Key, typename T_Val>
 struct ObjectFiller<const json11::Json, std::map<T_Key, T_Val>>
 {
@@ -229,7 +229,7 @@ inline bool Json_FillArray(const json11::Json & json, T & obj)
 	return true;
 }
 
-// ¶ÁÈ¡JSONµ½vector
+// 读取JSON到vector
 template<typename T>
 struct ObjectFiller<const json11::Json, std::vector<T>>
 {
@@ -239,7 +239,7 @@ struct ObjectFiller<const json11::Json, std::vector<T>>
 	}
 };
 
-// ¶ÁÈ¡JSONµ½list
+// 读取JSON到list
 template<typename T>
 struct ObjectFiller<const json11::Json, std::list<T>>
 {
@@ -286,7 +286,7 @@ inline bool Json_FillSet(const json11::Json & json, T_Set & obj)
 	return true;
 }
 
-// Ìî³äTableµ½set
+// 填充Table到set
 template<typename T>
 struct ObjectFiller<const json11::Json, std::set<T>>
 {
@@ -296,7 +296,7 @@ struct ObjectFiller<const json11::Json, std::set<T>>
 	}
 };
 
-// Ìî³äJSONµ½unordered_set
+// 填充JSON到unordered_set
 template<typename T>
 struct ObjectFiller<const json11::Json, std::unordered_set<T>>
 {
@@ -306,7 +306,7 @@ struct ObjectFiller<const json11::Json, std::unordered_set<T>>
 	}
 };
 
-// ¶ÁÈ¡JSONµ½shared_ptr
+// 读取JSON到shared_ptr
 template<typename T>
 struct ObjectFiller<const json11::Json, std::shared_ptr<T>>
 {
@@ -318,7 +318,7 @@ struct ObjectFiller<const json11::Json, std::shared_ptr<T>>
 };
 
 
-// ¶ÁÈ¡JSON×Ö¶Î
+// 读取JSON字段
 template<typename T>
 inline bool Json_FillField(const json11::Json & json, const char * field_name, T & obj, const T & default_val = T())
 {
@@ -337,7 +337,7 @@ inline bool Json_FillField(const json11::Json & json, const char * field_name, T
 	return true;
 }
 
-// ¶ÁÈ¡JSON×Ö¶Î
+// 读取JSON字段
 template<typename T>
 inline bool Json_FillIndex(const json11::Json & json, int field_index, T & obj, const T & default_val = T())
 {
@@ -359,7 +359,7 @@ inline bool Json_FillIndex(const json11::Json & json, int field_index, T & obj, 
 }
 
 
-// ¶ÔÏóÌî³ä¸¨Öúºê
+// 对象填充辅助宏
 #define JSON_FILLFIELD(name)                                            sframe::Json_FillField(reader, #name, this->name);
 #define JSON_FILLFIELD_DEFAULT(name, defaultval)                        sframe::Json_FillField(reader, #name, this->name, defaultval)
 #define JSON_FILLINDEX(index, name)                                     sframe::Json_FillIndex(reader, (int)index, obj.name);

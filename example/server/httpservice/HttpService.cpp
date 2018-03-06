@@ -2,7 +2,7 @@
 #include "HttpService.h"
 #include "util/Log.h"
 
-// ³õÊ¼»¯£¨´´½¨·þÎñ³É¹¦ºóµ÷ÓÃ£¬´ËÊ±»¹Î´¿ªÊ¼ÔËÐÐ£©
+// 初始化（创建服务成功后调用，此时还未开始运行）
 void HttpService::Init()
 {
 	std::function<HttpSession*(const int64_t &)> get_session_func = std::bind(&HttpService::GetHttpSession, this, std::placeholders::_1);
@@ -10,7 +10,7 @@ void HttpService::Init()
 	RegistInsideServiceMessageHandler(kHttpMsg_HttpSessionClosed, &HttpSession::OnMsg_HttpSessionClosed, get_session_func);
 }
 
-// ÐÂÁ¬½Óµ½À´
+// 新连接到来
 void HttpService::OnNewConnection(const sframe::ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock)
 {
 	sframe::Error err = sock->SetTcpNodelay(true);
@@ -24,7 +24,7 @@ void HttpService::OnNewConnection(const sframe::ListenAddress & listen_addr_info
 	FLOG("HttpService") << "Build new session " << http_session->GetSessionId() << std::endl;
 }
 
-// ´¦ÀíÏú»Ù
+// 处理销毁
 void HttpService::OnDestroy()
 {
 	for (auto & pr : _sessions)
@@ -33,7 +33,7 @@ void HttpService::OnDestroy()
 	}
 }
 
-// »ñÈ¡HttpSession
+// 获取HttpSession
 HttpSession * HttpService::GetHttpSession(int64_t session_id) const
 {
 	auto it = _sessions.find(session_id);

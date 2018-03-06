@@ -38,15 +38,15 @@ public:
 	void Close();
 
 public:
-	// ½ÓÊÕµ½Êý¾Ý
-	// ·µ»ØÊ£Óà¶àÉÙÊý¾Ý
+	// 接收到数据
+	// 返回剩余多少数据
 	int32_t OnReceived(char * data, int32_t len) override;
 
-	// Socket¹Ø±Õ
-	// by_self: true±íÊ¾Ö÷¶¯ÇëÇóµÄ¹Ø±Õ²Ù×÷
+	// Socket关闭
+	// by_self: true表示主动请求的关闭操作
 	void OnClosed(bool by_self, sframe::Error err) override;
 
-	// Á¬½Ó²Ù×÷Íê³É
+	// 连接操作完成
 	void OnConnected(sframe::Error err) override;
 
 private:

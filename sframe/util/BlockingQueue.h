@@ -7,7 +7,7 @@
 
 namespace sframe {
 
-// ×èÈû¶ÓÁÐ
+// 阻塞队列
 template<typename T>
 class BlockingQueue
 {
@@ -31,7 +31,7 @@ public:
 		}
 
 		_ring_queue.Push(val);
-		// »½ÐÑÒ»¸öÔÚµÈ´ýµÄÏß³Ì
+		// 唤醒一个在等待的线程
 		_cond.WakeUpOne();
 	}
 

@@ -13,20 +13,20 @@ namespace sframe {
 
 class ProxyService;
 
-// ·þÎñ»á»°£¨Ö÷Òª´¦ÀíÓëÍøÂçÖÐµÄ·þÎñµÄÍ¨ÐÅ£©
+// 服务会话（主要处理与网络中的服务的通信）
 class ServiceSession : public TcpSocket::Monitor, public noncopyable, public SafeTimerRegistor<ServiceSession>
 {
 public:
-	// »á»°×´Ì¬
+	// 会话状态
 	enum SessionState : int32_t
 	{
-		kSessionState_Initialize = 0,    // ³õÊ¼×´Ì¬
-		kSessionState_WaitConnect,       // µÈ´ýÁ¬½Ó
-		kSessionState_Connecting,        // ÕýÔÚÁ¬½Ó
-		kSessionState_Running,           // ÔËÐÐÖÐ
+		kSessionState_Initialize = 0,    // 初始状态
+		kSessionState_WaitConnect,       // 等待连接
+		kSessionState_Connecting,        // 正在连接
+		kSessionState_Running,           // 运行中
 	};
 
-	static const int32_t kReconnectInterval = 3000;       // ×Ô¶¯ÖØÁ¬¼ä¸ô
+	static const int32_t kReconnectInterval = 3000;       // 自动重连间隔
 
 public:
 	ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port);
@@ -37,42 +37,42 @@ public:
 
 	void Init();
 
-	// ¹Ø±Õ
+	// 关闭
 	void Close();
 
-	// ³¢ÊÔÊÍ·Å
+	// 尝试释放
 	bool TryFree();
 
-	// Á¬½ÓÍê³É´¦Àí
+	// 连接完成处理
 	void DoConnectCompleted(bool success);
 
-	// ·¢ËÍÊý¾Ý
+	// 发送数据
 	void SendData(const std::shared_ptr<ProxyServiceMessage> & msg);
 
-	// ·¢ËÍÊý¾Ý
+	// 发送数据
 	void SendData(const char * data, size_t len);
 
-	// »ñÈ¡µØÖ·
+	// 获取地址
 	std::string GetRemoteAddrText() const;
 
-	// ½ÓÊÕµ½Êý¾Ý
-	// ·µ»ØÊ£Óà¶àÉÙÊý¾Ý
+	// 接收到数据
+	// 返回剩余多少数据
 	virtual int32_t OnReceived(char * data, int32_t len) override;
 
-	// Socket¹Ø±Õ
-	// by_self: true±íÊ¾Ö÷¶¯ÇëÇóµÄ¹Ø±Õ²Ù×÷
+	// Socket关闭
+	// by_self: true表示主动请求的关闭操作
 	virtual void OnClosed(bool by_self, Error err) override;
 
-	// Á¬½Ó²Ù×÷Íê³É
+	// 连接操作完成
 	virtual void OnConnected(Error err) override;
 
-	// »ñÈ¡SessionId
+	// 获取SessionId
 	int32_t GetSessionId()
 	{
 		return _session_id;
 	}
 
-	// »ñÈ¡×´Ì¬
+	// 获取状态
 	SessionState GetState() const
 	{
 		return _state;
@@ -80,13 +80,13 @@ public:
 
 private:
 
-	// ¿ªÊ¼Á¬½Ó¶¨Ê±Æ÷
+	// 开始连接定时器
 	void SetConnectTimer(int32_t after_ms);
 
-	// ¶¨Ê±£ºÁ¬½Ó
+	// 定时：连接
 	int32_t OnTimer_Connect();
 
-	// ¿ªÊ¼Á¬½Ó
+	// 开始连接
 	void StartConnect();
 
 private:
@@ -105,7 +105,7 @@ private:
 };
 
 
-// ¹ÜÀí»á»°
+// 管理会话
 class AdminSession : public ServiceSession
 {
 public:
@@ -115,8 +115,8 @@ public:
 
 	virtual ~AdminSession() {}
 
-	// ½ÓÊÕµ½Êý¾Ý
-	// ·µ»ØÊ£Óà¶àÉÙÊý¾Ý
+	// 接收到数据
+	// 返回剩余多少数据
 	virtual int32_t OnReceived(char * data, int32_t len) override;
 
 private:

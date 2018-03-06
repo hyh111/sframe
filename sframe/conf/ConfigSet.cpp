@@ -29,8 +29,8 @@ ConfigSet::~ConfigSet()
 	}
 }
 
-// ¼ÓÔØ(È«²¿³É¹¦·µ»Øtrue, Ö»ÒªÓÐÒ»¸öÊ§°Ü¶¼»á·µ»Øfalse)
-// ³ö´íÊ±£¬err_info»á·µ»Ø³ö´íµÄÅäÖÃÐÅÏ¢
+// 加载(全部成功返回true, 只要有一个失败都会返回false)
+// 出错时，err_info会返回出错的配置信息
 bool ConfigSet::Load(const std::string & path, std::vector<std::string> * vec_err_msg)
 {
 	if (path.empty() || !_config.empty())
@@ -44,14 +44,14 @@ bool ConfigSet::Load(const std::string & path, std::vector<std::string> * vec_er
 
 	bool ret = true;
 
-	// ¼ÓÔØÅäÖÃ
+	// 加载配置
 	for (auto & pr : _config_load_helper)
 	{
 		LoadItem item;
 		item.conf_id = pr.first;
 		item.load_helper = &pr.second;
 
-		// ¼ÓÔØ
+		// 加载
 		std::vector<std::string> vec_err_files;
 		item.conf_unit = (this->*item.load_helper->func_load)(item.load_helper->conf_file_name, &vec_err_files);
 		if (item.conf_unit == nullptr)
@@ -71,7 +71,7 @@ bool ConfigSet::Load(const std::string & path, std::vector<std::string> * vec_er
 
 		vec_load_items.push_back(item);
 
-		// ±£´æÏÂÀ´
+		// 保存下来
 		if (_config.insert(std::make_pair(item.conf_id, item.conf_unit)).second)
 		{
 			if (item.conf_id >= 0 && item.conf_id < kQuickFindArrLen)
@@ -85,14 +85,14 @@ bool ConfigSet::Load(const std::string & path, std::vector<std::string> * vec_er
 		}
 	}
 
-	// ¼ÓÔØÁÙÊ±ÅäÖÃ
+	// 加载临时配置
 	for (auto & load_helper : _temporary_config_load_helper)
 	{
 		LoadItem item;
 		item.conf_id = load_helper.conf_id;
 		item.load_helper = &load_helper;
 
-		// ¼ÓÔØ
+		// 加载
 		std::vector<std::string> vec_err_files;
 		item.conf_unit = (this->*item.load_helper->func_load)(item.load_helper->conf_file_name, &vec_err_files);
 		if (item.conf_unit == nullptr)
@@ -118,7 +118,7 @@ bool ConfigSet::Load(const std::string & path, std::vector<std::string> * vec_er
 		return false;
 	}
 
-	// ³õÊ¼»¯ËùÓÐÅäÖÃ
+	// 初始化所有配置
 	for (auto & load_item : vec_load_items)
 	{
 		if (!(this->*load_item.load_helper->func_init)(load_item.conf_unit))

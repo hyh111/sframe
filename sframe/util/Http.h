@@ -14,8 +14,8 @@ namespace sframe {
 
 enum HttpType
 {
-	kHttpType_Request = 1,      // HttpÇëÇó
-	kHttpType_Response = 2,     // HttpÏìÓ¦
+	kHttpType_Request = 1,      // Http请求
+	kHttpType_Response = 2,     // Http响应
 };
 
 class Http
@@ -26,19 +26,19 @@ public:
 
 	typedef std::unordered_map<std::string, std::vector<std::string>> Header;
 
-	// ±ê×¼»¯Í·²¿ÊôÐÔKey
+	// 标准化头部属性Key
 	static std::string StandardizeHeaderKey(const std::string & key);
 
-	// URL±àÂë
+	// URL编码
 	static std::string UrlEncode(const std::string & str);
 
-	// URL½âÂë
+	// URL解码
 	static std::string UrlDecode(const std::string & str);
 
-	// ½âÎöHTTP²ÎÊý
+	// 解析HTTP参数
 	static Http::Param ParseHttpParam(const std::string para_str);
 
-	// HttpParam×ª»»Îªstring
+	// HttpParam转换为string
 	static std::string HttpParamToString(const Http::Param & para);
 
 
@@ -154,10 +154,10 @@ public:
 
 	enum DecodeState
 	{
-		kDecodeState_FirstLine = 0,       // ÕýÔÚµÚÒ»ÐÐ
-		kDecodeState_HttpHeader = 1,      // ÕýÔÚ½âÎöÍ·²¿ÊôÐÔ
-		kDecodeState_Content = 2,         // ÕýÔÚ½âÎöÄÚÈÝ²¿·Ö
-		kDecodeState_Completed = 3,       // ½âÎöÍê³É
+		kDecodeState_FirstLine = 0,       // 正在第一行
+		kDecodeState_HttpHeader = 1,      // 正在解析头部属性
+		kDecodeState_Content = 2,         // 正在解析内容部分
+		kDecodeState_Completed = 3,       // 解析完成
 	};
 
 	void Reset();
@@ -167,15 +167,15 @@ public:
 		return _state == kDecodeState_Completed;
 	}
 
-	// ½âÎö
-	// ·µ»Ø½âÎöÁËµÄÓÐÐ§Êý¾ÝÊý¾ÝµÄ³¤¶È
+	// 解析
+	// 返回解析了的有效数据数据的长度
 	size_t Decode(const std::string & data, std::string & err_msg)
 	{
 		return Decode(data.data(), data.length(), err_msg);
 	}
 
-	// ½âÎö
-	// ·µ»Ø½âÎöÁËµÄÓÐÐ§Êý¾ÝÊý¾ÝµÄ³¤¶È
+	// 解析
+	// 返回解析了的有效数据数据的长度
 	size_t Decode(const char * data, size_t len, std::string & err_msg);
 
 protected:
@@ -208,7 +208,7 @@ private:
 	std::shared_ptr<HttpRequest> _http_request;
 	std::shared_ptr<HttpResponse> _http_response;
 	int32_t _state;
-	int32_t _remain_content_len;      // -1.chunked²»È·¶¨³¤¶È; -2.ÄÚÈÝÖªµÀÁ¬½Ó¹Ø±Õ²Å¶ÁÍê; >0.¶¨³¤
+	int32_t _remain_content_len;      // -1.chunked不确定长度; -2.内容知道连接关闭才读完; >0.定长
 	std::vector<std::string> _data_list;
 };
 

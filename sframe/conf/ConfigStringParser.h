@@ -43,7 +43,7 @@ private:
 		obj.ParseTableString(str);
 	}
 
-	// Æ¥ÅäÆ÷ ¡ª¡ª¡ª¡ª bool·µ»ØÖµÀà³ÉÔ±º¯Êý£¬ÐÎÈç bool T_Obj::FillObject(T_Reader & reader)
+	// 匹配器 ———— bool返回值类成员函数，形如 bool T_Obj::FillObject(T_Reader & reader)
 	template<typename U, void(U::*)(const std::string &) const>
 	struct MethodMatcher;
 
@@ -66,7 +66,7 @@ void ParseMap(const std::string & str, T_Map & obj)
 		return;
 	}
 
-	// ·Ö¸îÃ¿¸öÌõÄ¿
+	// 分割每个条目
 	std::string sep_str(sframe::GetCharMaxContinueInString(str, kMapItemSep), kMapItemSep);
 	std::vector<std::string> all_items = sframe::SplitString(str, sep_str);
 
@@ -122,7 +122,7 @@ void ParseArray(const std::string & str, T_Array & obj)
 		return;
 	}
 
-	// ·Ö¸îÃ¿¸öÌõÄ¿
+	// 分割每个条目
 	std::string sep_str(sframe::GetCharMaxContinueInString(str, kSep), kSep);
 	std::vector<std::string> all_items = sframe::SplitString(str, sep_str);
 
@@ -152,7 +152,7 @@ struct TblStrParser<T[Array_Size]>
 			return;
 		}
 
-		// ·Ö¸îÃ¿¸öÌõÄ¿
+		// 分割每个条目
 		std::string sep_str(sframe::GetCharMaxContinueInString(str, kSep), kSep);
 		std::vector<std::string> all_items = sframe::SplitString(str, sep_str);
 

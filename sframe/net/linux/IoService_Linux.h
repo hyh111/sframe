@@ -10,13 +10,13 @@
 
 namespace sframe {
 
-// LinuxÏÂµÄIo·þÎñ(²ÉÓÃEPOLLÊµÏÖ)
+// Linux下的Io服务(采用EPOLL实现)
 class IoService_Linux : public IoService
 {
 public:
-	// epollµÈ´ý×î´óÊÂ¼þÊýÁ¿
+	// epoll等待最大事件数量
 	static const int kMaxEpollEventsNumber = 1024;
-	// IOÏûÏ¢»º³åÇø³¤¶È
+	// IO消息缓冲区长度
 	static const int kMaxIoMsgBufferSize = 65536;
 
 public:
@@ -30,23 +30,23 @@ public:
 
 	void Close() override;
 
-	// Ìí¼Ó¼àÌýÊÂ¼þ
+	// 添加监听事件
 	bool AddIoEvent(const IoUnit & iounit, const IoEvent ioevt);
 
-	// ÐÞ¸Ä¼àÌýÊÂ¼þ
+	// 修改监听事件
 	bool ModifyIoEvent(const IoUnit & iounit, const IoEvent ioevt);
 
-	// É¾³ý¼àÌýÊÂ¼þ
+	// 删除监听事件
 	bool DeleteIoEvent(const IoUnit & iounit, const IoEvent ioevt);
 
-	// Í¶µÝÏûÏ¢
+	// 投递消息
 	void PostIoMsg(const IoMsg & io_msg);
 
 private:
 	int _epoll_fd;
-	int _msg_evt_fd;               // ÓÃÓÚÊµÏÖIOÏûÏ¢µÄ·¢ËÍÓë´¦Àí
-	std::vector<IoMsg*> _msgs;     // IOÏûÏ¢ÁÐ±í
-	sframe::Lock _msgs_lock;  // ÏûÏ¢ÁÐ±íËø
+	int _msg_evt_fd;               // 用于实现IO消息的发送与处理
+	std::vector<IoMsg*> _msgs;     // IO消息列表
+	sframe::Lock _msgs_lock;  // 消息列表锁
 };
 
 }

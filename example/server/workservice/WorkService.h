@@ -13,7 +13,7 @@ public:
 	WorkService() {}
 	virtual ~WorkService() {}
 
-	// ³õÊ¼»¯£¨´´½¨·þÎñ³É¹¦ºóµ÷ÓÃ£¬´ËÊ±»¹Î´¿ªÊ¼ÔËÐÐ£©
+	// 初始化（创建服务成功后调用，此时还未开始运行）
 	void Init() override;
 
 private:

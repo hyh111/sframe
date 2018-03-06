@@ -8,7 +8,7 @@
 
 namespace sframe {
 
-// ÄÚ²¿·þÎñÏûÏ¢½âÂëÆ÷
+// 内部服务消息解码器
 class InsideServiceMessageDecoder
 {
 public:
@@ -38,7 +38,7 @@ private:
 	ServiceMessage * _msg;
 };
 
-// ÍøÂç·þÎñÏûÏ¢½âÂëÆ÷
+// 网络服务消息解码器
 class NetServiceMessageDecoder
 {
 public:

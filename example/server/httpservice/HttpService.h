@@ -17,16 +17,16 @@ public:
 
 	~HttpService() {}
 
-	// ³õÊ¼»¯£¨´´½¨·þÎñ³É¹¦ºóµ÷ÓÃ£¬´ËÊ±»¹Î´¿ªÊ¼ÔËÐÐ£©
+	// 初始化（创建服务成功后调用，此时还未开始运行）
 	void Init() override;
 
-	// ÐÂÁ¬½Óµ½À´
+	// 新连接到来
 	void OnNewConnection(const sframe::ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock) override;
 
-	// ´¦ÀíÏú»Ù
+	// 处理销毁
 	void OnDestroy() override;
 
-	// ÊÇ·ñÏú»ÙÍê³É
+	// 是否销毁完成
 	bool IsDestroyCompleted() const override
 	{
 		return _sessions.empty();

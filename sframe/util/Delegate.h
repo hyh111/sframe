@@ -10,16 +10,16 @@
 
 namespace sframe {
 
-// DelegateÀàÐÍ
+// Delegate类型
 enum DelegateType 
 {
 	kDelegateType_None = 0,
-	kDelegateType_StaticFuncDelegate,                              // ¾²Ì¬º¯ÊýÎ¯ÍÐ
-	kDelegateType_MemberFuncDelegate_WithObject,                   // ³ÉÔ±º¯ÊýÎ¯ÍÐ(Í¨¹ý¶ÔÏóµ÷ÓÃ)
-	kDelegateType_MemberFuncDelegate_WithObjectFinder,             // ³ÉÔ±º¯ÊýÎ¯ÍÐ(Í¨¹ý¶ÔÏó²éÕÒÆ÷µ÷ÓÃ)
+	kDelegateType_StaticFuncDelegate,                              // 静态函数委托
+	kDelegateType_MemberFuncDelegate_WithObject,                   // 成员函数委托(通过对象调用)
+	kDelegateType_MemberFuncDelegate_WithObjectFinder,             // 成员函数委托(通过对象查找器调用)
 };
 
-// Delegate½Ó¿Ú
+// Delegate接口
 template<typename Decoder_Type>
 class IDelegate
 {
@@ -29,7 +29,7 @@ public:
 	virtual bool Call(Decoder_Type& decoder) = 0;
 };
 
-// ¾²Ì¬º¯ÊýÎ¯ÍÐ
+// 静态函数委托
 template<typename Decoder_Type, typename... Args_Type>
 class StaticFuncDelegate : public IDelegate<Decoder_Type>
 {
@@ -73,7 +73,7 @@ private:
 	FuncT _func;
 };
 
-// ³ÉÔ±º¯ÊýÎ¯ÍÐ½Ó¿Ú(Í¨¹ý¶ÔÏóµ÷ÓÃ)
+// 成员函数委托接口(通过对象调用)
 template<typename Decoder_Type, typename Object_Type>
 class IMemberFuncDelegate_WithObject : public IDelegate<Decoder_Type>
 {
@@ -83,7 +83,7 @@ public:
 	virtual bool CallWithObject(Object_Type * obj, Decoder_Type& decoder) = 0;
 };
 
-// ³ÉÔ±º¯ÊýÎ¯ÍÐµÄÊµÏÖ
+// 成员函数委托的实现
 template<typename Decoder_Type, typename Object_Type, typename... Args_Type>
 class MemeberFunctionDelegate_WithObject : public IMemberFuncDelegate_WithObject<Decoder_Type, Object_Type>
 {
@@ -141,7 +141,7 @@ private:
 	FuncT _func;
 };
 
-// ³ÉÔ±º¯ÊýÎ¯ÍÐ½Ó¿Ú(Í¨¹ý¶ÔÏó²éÕÒÆ÷µ÷ÓÃ)
+// 成员函数委托接口(通过对象查找器调用)
 template<typename Decoder_Type, typename Object_Key_Type>
 class IMemberFuncDelegate_WithObjectFinder : public IDelegate<Decoder_Type>
 {
@@ -156,7 +156,7 @@ public:
 	virtual bool CallWithObjectKey(const Object_Key_Type & obj_key, Decoder_Type& decoder) = 0;
 };
 
-// ³ÉÔ±º¯ÊýÎ¯ÍÐ(Í¨¹ý¶ÔÏó²éÕÒÆ÷µ÷ÓÃ)
+// 成员函数委托(通过对象查找器调用)
 template<typename Decoder_Type, typename Object_Key_Type, typename Object_Type, typename... Args_Type>
 class MemberFuncDelegate_WithObjectFinder : public IMemberFuncDelegate_WithObjectFinder<Decoder_Type, Object_Key_Type>
 {
@@ -223,7 +223,7 @@ private:
 };
 
 
-// Delegate¹ÜÀíÆ÷
+// Delegate管理器
 template <typename Decoder_Type>
 class DelegateManager
 {
@@ -321,9 +321,9 @@ public:
 		return member_func_caller->CallWithObjectKey(obj_key, decoder);
 	}
 
-	////////// ×¢²áº¯Êý ////////////
+	////////// 注册函数 ////////////
 
-	// ×¢²á¾²Ì¬º¯Êý
+	// 注册静态函数
 	template<typename... Args>
 	DelegateType Regist(int id, void(*func)(Args...))
 	{
@@ -337,7 +337,7 @@ public:
 		return caller->GetType();
 	}
 
-	// ×¢²á³ÉÔ±º¯Êý
+	// 注册成员函数
 	template<typename Object_Type, typename... Args>
 	DelegateType Regist(int id, void(Object_Type::*func)(Args...))
 	{
@@ -351,7 +351,7 @@ public:
 		return caller->GetType();
 	}
 
-	// ×¢²á³ÉÔ±º¯ÊýÍ¬Ê±°ó¶¨¶ÔÏó
+	// 注册成员函数同时绑定对象
 	template<typename Object_Type, typename... Args>
 	DelegateType Regist(int id, void(Object_Type::*func)(Args...), Object_Type * obj)
 	{
@@ -371,7 +371,7 @@ public:
 		return caller->GetType();
 	}
 
-	// ×¢²á³ÉÔ±º¯ÊýÍ¬Ê±°ó¶¨¶ÔÏó²éÕÒÆ÷
+	// 注册成员函数同时绑定对象查找器
 	template<typename Object_Key_Type, typename Object_Type, typename... Args>
 	DelegateType Regist(int id, void(Object_Type::*func)(Args...), const std::function<Object_Type*(const Object_Key_Type & obj_key)> & obj_finder)
 	{

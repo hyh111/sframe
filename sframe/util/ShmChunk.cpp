@@ -43,7 +43,7 @@ void ShmChunk::Close()
 bool ShmChunk::Open(bool & is_new)
 {
 	is_new = true;
-	//Èç¹ûkey¹²ÏíÄÚ´æÒÑÓÐ ·µ»Ø-1 ·ñÔòÔò´´½¨
+	//如果key共享内存已有 返回-1 否则则创建
 	int shm_id = shmget(_shm_key, _shm_size, IPC_CREAT | IPC_EXCL | 0666);
 	if (shm_id < 0)
 	{
@@ -55,7 +55,7 @@ bool ShmChunk::Open(bool & is_new)
 		is_new = false;
 	}
 
-	//ÊÇÒÑÓÐµÄ Ôò»ñÈ¡ÒÔÇ°µÄShmId
+	//是已有的 则获取以前的ShmId
 	if (shm_id < 0)
 	{
 		shm_id = shmget(_shm_key, _shm_size, 0666);

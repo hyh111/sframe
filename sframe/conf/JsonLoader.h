@@ -9,15 +9,15 @@
 
 namespace sframe {
 
-// JSON¶ÁÈ¡Æ÷
+// JSON读取器
 class JsonLoader
 {
 public:
 
-	// È¥×¢ÊÍ
+	// 去注释
 	static std::string RemoveComments(const std::string & data)
 	{
-		int cur_state = 0;   // 0 ²»ÊÇ×¢ÊÍ, 1 ÐÐ×¢ÊÍ, 2¶Î×¢ÊÍ 
+		int cur_state = 0;   // 0 不是注释, 1 行注释, 2段注释 
 		std::ostringstream oss;
 		auto it = data.begin();
 		while (it < data.end())
@@ -27,7 +27,7 @@ public:
 			{
 				if (c == '\n')
 				{
-					// ÐÐ×¢ÊÍ½áÊø
+					// 行注释结束
 					cur_state = 0;
 				}
 			}
@@ -36,7 +36,7 @@ public:
 				if (c == '*' &&  it < data.end() - 1 && (*(it + 1)) == '/')
 				{
 					it++;
-					// ¶Î×¢ÊÍ½áÊø
+					// 段注释结束
 					cur_state = 0;
 				}
 			}

@@ -79,7 +79,7 @@ Table::~Table()
 	}
 }
 
-// Ìí¼ÓÐÂÁÐ
+// 添加新列
 Column & Table::NewColumn(const std::string & column_name)
 {
 	int32_t new_index = (int32_t)_columns.size();
@@ -96,7 +96,7 @@ Column & Table::NewColumn(const std::string & column_name)
 	return *col;
 }
 
-// Ìí¼ÓÐÂÐÐ
+// 添加新行
 Row & Table::NewRow()
 {
 	Row * r = new Row(this);

@@ -13,16 +13,16 @@ class IoUnit;
 
 typedef uint32_t IoEvent;
 
-// IOÏûÏ¢ÀàÐÍ
+// IO消息类型
 enum IoMsgType : int32_t
 {
-	kIoMsgType_Connect,      // Á¬½Ó
-	kIoMsgType_SendData,     // ·¢ËÍÊý¾Ý
-	kIoMsgType_Close,        // ¹Ø±Õ
-	kIoMsgType_NotifyError,  // ´íÎóÍ¨Öª
+	kIoMsgType_Connect,      // 连接
+	kIoMsgType_SendData,     // 发送数据
+	kIoMsgType_Close,        // 关闭
+	kIoMsgType_NotifyError,  // 错误通知
 };
 
-// IOÏûÏ¢
+// IO消息
 struct IoMsg
 {
 	IoMsg(IoMsgType t) : msg_type(t) {}
@@ -33,11 +33,11 @@ struct IoMsg
 
 class IoService;
 
-// Ioµ¥Ôª
+// Io单元
 class IoUnit
 {
 public:
-	// ÉèÖÃÎÄ¼þÃèÊö·ûÎª·Ç×èÈû
+	// 设置文件描述符为非阻塞
 	static bool SetNonBlock(int fd)
 	{
 		int old = fcntl(fd, F_GETFL);

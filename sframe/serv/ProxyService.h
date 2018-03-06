@@ -13,7 +13,7 @@
 
 namespace sframe {
 
-// ´úÀí·þÎñ
+// 代理服务
 class ProxyService : public Service
 {
 public:
@@ -33,20 +33,20 @@ public:
 		return 1000;
 	}
 
-	// ´¦ÀíÖÜÆÚ¶¨Ê±Æ÷
+	// 处理周期定时器
 	void OnCycleTimer() override;
 
-	// ÐÂÁ¬½Óµ½À´
+	// 新连接到来
 	void OnNewConnection(const ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock) override;
 
-	// ´úÀí·þÎñÏûÏ¢
+	// 代理服务消息
 	void OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessage> & msg) override;
 
-	// ×¢²á»á»°
-	// ·µ»Ø»á»°ID£¨´óÓÚ0µÄÕûÊý£©£¬·ñÔòÎªÊ§°Ü
+	// 注册会话
+	// 返回会话ID（大于0的整数），否则为失败
 	int32_t RegistSession(int32_t sid, const std::string & remote_ip, uint16_t remote_port);
 
-	// ×¢²á¹ÜÀíÃüÁî´¦Àí·½·¨
+	// 注册管理命令处理方法
 	void RegistAdminCmd(const std::string & cmd, const AdminCmdHandleFunc & func);
 
 private:
@@ -73,17 +73,17 @@ private:
 
 	static const int kQuickFindSessionArrLen = 512;
 
-	ServiceSession * _quick_find_session_arr[kQuickFindSessionArrLen];          // ½«session_idÐ¡ÓÚkQuickFindSessionArrLenµÄsession¸´ÖÆÒ»·Ý£¬ÓÃÓÚ¿ìËÙ²éÕÒ
-	std::unordered_map<int32_t, ServiceSession*> _all_sessions;                 // ËùÓÐServiceSession
+	ServiceSession * _quick_find_session_arr[kQuickFindSessionArrLen];          // 将session_id小于kQuickFindSessionArrLen的session复制一份，用于快速查找
+	std::unordered_map<int32_t, ServiceSession*> _all_sessions;                 // 所有ServiceSession
 	bool _have_no_session;
-	std::unordered_map<int64_t, int32_t> _session_addr_to_sessionid;            // ¶ÔÓÚÖ÷¶¯Á¬½ÓµÄSession£¬Ä¿±êµØÖ·µ½sessionidµÄÓ³Éä
-	std::unordered_map<int32_t, int32_t> _sid_to_sessionid;                     // Ô¶³Ì·þÎñIDÓ³Éäµ½»á»°ID
-	std::unordered_map<int32_t, std::unordered_set<int32_t>> _sessionid_to_sid; // »á»°IDÓ³Éäµ½·þÎñID
-	bool _listening;                                                            // ÊÇ·ñÕýÔÚ¼àÌý
-	TimerManager _timer_mgr;                                                    // ¶¨Ê±Æ÷¹ÜÀí
+	std::unordered_map<int64_t, int32_t> _session_addr_to_sessionid;            // 对于主动连接的Session，目标地址到sessionid的映射
+	std::unordered_map<int32_t, int32_t> _sid_to_sessionid;                     // 远程服务ID映射到会话ID
+	std::unordered_map<int32_t, std::unordered_set<int32_t>> _sessionid_to_sid; // 会话ID映射到服务ID
+	bool _listening;                                                            // 是否正在监听
+	TimerManager _timer_mgr;                                                    // 定时器管理
 	int32_t _cur_max_session_id;
 	bool _session_id_first_loop;
-	std::unordered_map<std::string, AdminCmdHandleFunc> _map_admin_cmd_func;    // ¹ÜÀíÃüÁî´¦Àí·½·¨
+	std::unordered_map<std::string, AdminCmdHandleFunc> _map_admin_cmd_func;    // 管理命令处理方法
 };
 
 }

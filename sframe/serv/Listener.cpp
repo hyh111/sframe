@@ -77,7 +77,7 @@ void Listener::Stop()
 	}
 }
 
-// Á¬½ÓÍ¨Öª
+// 连接通知
 void Listener::OnAccept(std::shared_ptr<TcpSocket> socket, Error err)
 {
 	if (err)
@@ -95,7 +95,7 @@ void Listener::OnAccept(std::shared_ptr<TcpSocket> socket, Error err)
 	_conn_handler->HandleTcpConn(socket, _addr);
 }
 
-// Í£Ö¹
+// 停止
 void Listener::OnClosed(Error err)
 {
 	if (err)

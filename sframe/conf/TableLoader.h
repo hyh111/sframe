@@ -8,16 +8,16 @@
 
 namespace sframe {
 
-// ±í¸ñ¶ÁÈ¡Æ÷
+// 表格读取器
 template<typename T_Parser>
 class TableLoader
 {
 	enum 
 	{
-		kHeaderRow_Declare,         // ÉêÃ÷
-		kHeaderRow_ColumnName,      // ÁÐÃû
-		kHeaderRow_ColumnExplain,   // ×¢ÊÍ
-		kHeaderRow_ColumnType,      // ÀàÐÍ
+		kHeaderRow_Declare,         // 申明
+		kHeaderRow_ColumnName,      // 列名
+		kHeaderRow_ColumnExplain,   // 注释
+		kHeaderRow_ColumnType,      // 类型
 
 		kHeaderRow_Count
 	};
@@ -46,14 +46,14 @@ public:
 			return false;
 		}
 
-		// ÉèÖÃÁÐÃû
+		// 设置列名
 		int32_t column_count = tbl.GetColumnCount();
 		for (int i = 0; i < column_count; i++)
 		{
 			tbl.GetColumn(i).SetName(tbl[kHeaderRow_ColumnName][i]);
 		}
 
-		// É¾³ýÍ·²¿
+		// 删除头部
 		int32_t surplus_header = kHeaderRow_Count;
 		while (surplus_header > 0)
 		{

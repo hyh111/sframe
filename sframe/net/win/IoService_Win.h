@@ -8,7 +8,7 @@
 
 namespace sframe {
 
-// windowsµÄIo·þÎñ(Íê³É¶Ë¿ÚÊµÏÖ)
+// windows的Io服务(完成端口实现)
 class IoService_Win : public IoService
 {
 public:
@@ -22,10 +22,10 @@ public:
 
 	void Close() override;
 
-	// ×¢²áSocket
+	// 注册Socket
 	bool RegistSocket(const IoUnit & io_unit);
 
-	// Í¶µÝÏûÏ¢
+	// 投递消息
 	void PostIoMsg(const IoMsg & io_msg);
 
 private:

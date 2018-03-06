@@ -18,7 +18,7 @@
 
 using namespace sframe;
 
-// ¶ÁÈ¡ÎÄ¼þËùÓÐÄÚÈÝ
+// 读取文件所有内容
 bool FileHelper::ReadFile(const std::string & full_name, std::string & content)
 {
 	FILE * f = fopen(full_name.c_str(), "r");
@@ -61,7 +61,7 @@ bool FileHelper::ReadFile(const std::string & full_name, std::string & content)
 	return true;
 }
 
-// Ð´ÈëÎÄ¼þ
+// 写入文件
 size_t FileHelper::WriteFile(const std::string & full_name, std::string & content)
 {
 	FILE * f = fopen(full_name.c_str(), "w");
@@ -76,7 +76,7 @@ size_t FileHelper::WriteFile(const std::string & full_name, std::string & conten
 	return s;
 }
 
-// ÔÚÈ«Â·¾¢ÖÐ»ñÈ¡ÎÄ¼þÃû
+// 在全路劲中获取文件名
 std::string FileHelper::GetFileName(const char * fullname)
 {
 	const char * file = fullname;
@@ -94,14 +94,14 @@ std::string FileHelper::GetFileName(const char * fullname)
 	return std::string(file);
 }
 
-// È¥³ýÎÄ¼þÀ©Õ¹Ãû
+// 去除文件扩展名
 std::string FileHelper::RemoveExtension(const std::string & name)
 {
 	size_t pos = name.find_last_of('.');
 	return (pos == std::string::npos ? name : name.substr(0, pos));
 }
 
-// Ä¿Â¼ÊÇ·ñ´æÔÚ
+// 目录是否存在
 bool FileHelper::DirectoryExisted(const std::string & path)
 {
 	bool result = false;
@@ -120,7 +120,7 @@ bool FileHelper::DirectoryExisted(const std::string & path)
 	return result;
 }
 
-// ´´½¨Ä¿Â¼
+// 创建目录
 bool FileHelper::MakeDirectory(const std::string & path)
 {
 #ifndef __GNUC__
@@ -130,7 +130,7 @@ bool FileHelper::MakeDirectory(const std::string & path)
 #endif
 }
 
-// È·±£Â·¾¶´æÔÚ
+// 确保路径存在
 bool FileHelper::MakeDirectoryRecursive(const std::string & path)
 {
 	if (DirectoryExisted(path))
@@ -172,9 +172,9 @@ static int SelectOnlyNotDir(const dirent * d)
 
 #endif
 
-// É¨ÃèÄ¿Â¼
-// dir_path   :   Ä¿Â¼Â·¾¶£¬²»ÄÜ°üº¬Í¨Åä·û
-// match_name :   Ãû×ÖÆ¥Åä£¬Ö§³ÖÍ¨Åä·û£¬±ÈÈçÒªÉ¨Ãè /data Ä¿Â¼ÏÂ£¬ËùÓÐ·ûºÏ*.cppµÄÃû×ÖµÄÄÚÈÝ£¬µ÷ÓÃScanDirectory("/data", "*.cpp")
+// 扫描目录
+// dir_path   :   目录路径，不能包含通配符
+// match_name :   名字匹配，支持通配符，比如要扫描 /data 目录下，所有符合*.cpp的名字的内容，调用ScanDirectory("/data", "*.cpp")
 std::vector<std::string> FileHelper::ScanDirectory(const std::string & dir_path, const std::string & match_name, ScanType scan_type)
 {
 	std::vector<std::string> vec;
@@ -266,9 +266,9 @@ std::vector<std::string> FileHelper::ScanDirectory(const std::string & dir_path,
 	return vec;
 }
 
-// Õ¹¿ªÍ¨Åä·û£¨* ?£©
-// path: Â·¾¶£¬×îºóÊÇ·ñÒÔ/½áÎ²£¬±íÊ¾ÎÄ¼þ£¬·ñÔòÎªÄ¿Â¼
-// parent_dir: ËùÔÚÄ¿Â¼
+// 展开通配符（* ?）
+// path: 路径，最后是否以/结尾，表示文件，否则为目录
+// parent_dir: 所在目录
 std::vector<std::string> FileHelper::ExpandWildcard(const std::string & path, const std::string & parent_dir)
 {
 	std::string p_dir;
