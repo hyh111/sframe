@@ -1,4 +1,4 @@
-
+﻿
 #include <sstream>
 #include "csv.h"
 #include "../util/StringHelper.h"

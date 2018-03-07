@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_OBJECT_FACTORY_H
 #define SFRAME_OBJECT_FACTORY_H
 

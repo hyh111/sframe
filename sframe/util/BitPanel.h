@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_PANEL_H
 #define SFRAME_PANEL_H
 

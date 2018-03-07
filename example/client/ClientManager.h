@@ -1,4 +1,4 @@
-
+﻿
 #pragma once
 #ifndef __CLIENT_MANAGER_H__
 #define __CLIENT_MANAGER_H__

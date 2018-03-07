@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_BLOCKING_QUEUE_H
 #define SFRAME_BLOCKING_QUEUE_H
 

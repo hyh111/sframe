@@ -1,4 +1,4 @@
-
+﻿
 #include "SSMsg.h"
 
 DEFINE_SERIALIZE_OUTER(GateMsg_SendToClient, session_id, client_data)

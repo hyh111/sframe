@@ -1,4 +1,4 @@
-
+﻿
 #include <assert.h>
 #include "util/TimeHelper.h"
 #include "util/Log.h"

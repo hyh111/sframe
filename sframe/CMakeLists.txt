@@ -8,6 +8,7 @@ set(LIB_INSTALL_DIR "/usr/local/sframe/lib")
 set(HEADER_INSTALL_DIR "/usr/local/sframe/include")
 
 set(ALL_DIRS
+	.
 	net
 	conf
 	util
@@ -27,13 +28,23 @@ endif()
 foreach(DIR ${ALL_DIRS})
 	file(GLOB CUR_SRCS ${DIR}/*.cpp)
 	set(SRCS ${SRCS} ${CUR_SRCS})
-
-	file(GLOB HEADERS ${DIR}/*.h)
-	file(GLOB HEADERS_HPP ${DIR}/*.hpp)
-	set(HEADERS ${HEADERS} ${HEADERS_HPP})
+	file(GLOB HEADERS ${DIR}/*.h ${DIR}/*.hpp)
+	set(ALL_HEADERS ${ALL_HEADERS} ${HEADERS})
 	install(FILES ${HEADERS} DESTINATION ${HEADER_INSTALL_DIR}/${DIR})
+
+	string(COMPARE EQUAL ${DIR} "." IS_CUR_DIR)
+
+	if (IS_CUR_DIR)
+		set(GROUP "\\")
+	else ()
+		string(REPLACE "/" "\\" GROUP ${DIR})
+	endif ()
+	
+	source_group(${GROUP} FILES ${HEADERS})
+	source_group(${GROUP} FILES ${CUR_SRCS})
+
 endforeach(DIR)
 
-add_library(sframe ${SRCS})
+add_library(sframe ${SRCS} ${ALL_HEADERS})
 
 install(TARGETS sframe ARCHIVE DESTINATION ${LIB_INSTALL_DIR})

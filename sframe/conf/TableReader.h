@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_TABLE_READER_H
 #define SFRAME_TABLE_READER_H
 

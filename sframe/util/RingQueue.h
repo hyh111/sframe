@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_RING_QUEUE_H
 #define SFRAME_RING_QUEUE_H
 

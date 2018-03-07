@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_MESSAGE_DECODER_H
 #define SFRAME_MESSAGE_DECODER_H
 

@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_HTTP_H
 #define SFRAME_HTTP_H
 

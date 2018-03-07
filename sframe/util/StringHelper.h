@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_STRING_HELPER_H
 #define SFRAME_STRING_HELPER_H
 

@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_TABLE_H
 #define SFRAME_TABLE_H
 

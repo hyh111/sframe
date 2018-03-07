@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_TIMER_H
 #define SFRAME_TIMER_H
 

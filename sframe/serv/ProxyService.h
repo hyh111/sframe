@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_PROXY_SERVICE_H
 #define SFRAME_PROXY_SERVICE_H
 

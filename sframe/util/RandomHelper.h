@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifndef SFRAME_RANDOM_HELPER_H
 #define SFRAME_RANDOM_HELPER_H

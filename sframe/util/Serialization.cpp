@@ -1,4 +1,4 @@
-
+﻿
 #include <algorithm>
 #include "Serialization.h"
 

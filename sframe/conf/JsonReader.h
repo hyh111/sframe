@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_JSON_READER_H
 #define SFRAME_JSON_READER_H
 

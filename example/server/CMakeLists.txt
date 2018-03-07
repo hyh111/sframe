@@ -10,24 +10,40 @@ else()
 	message(FATAL_ERROR "Not surported os.")
 endif()
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/../../bin/server)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
-
-add_subdirectory(../../sframe sframe-obj)
-
 include_directories(../../sframe)
 
-add_subdirectory(config)
-add_subdirectory(gateservice)
-add_subdirectory(httpservice)
-add_subdirectory(ssproto)
-add_subdirectory(workservice)
+set(ALL_DIRS
+	.
+	config
+	gateservice
+	httpservice
+	ssproto
+	workservice
+)
 
-aux_source_directory(. SRCS)
-add_executable(server ${SRCS})
-target_link_libraries(server config gateservice httpservice ssproto workservice sframe)
-add_dependencies(server sframe)
+foreach(DIR ${ALL_DIRS})
+	file(GLOB CUR_SRCS ${DIR}/*.cpp)
+	set(SRCS ${SRCS} ${CUR_SRCS})
+	file(GLOB HEADERS ${DIR}/*.h ${DIR}/*.hpp)
+	set(ALL_HEADERS ${ALL_HEADERS} ${HEADERS})
+
+	string(COMPARE EQUAL ${DIR} "." IS_CUR_DIR)
+
+	if (IS_CUR_DIR)
+		set(GROUP "\\")
+	else ()
+		string(REPLACE "/" "\\" GROUP ${DIR})
+	endif ()
+	
+	source_group(${GROUP} FILES ${HEADERS})
+	source_group(${GROUP} FILES ${CUR_SRCS})
+endforeach(DIR)
+
+add_executable(server ${SRCS} ${ALL_HEADERS})
+target_link_libraries(server sframe)
 
 if (WIN32)
 	target_link_libraries(server ws2_32.lib)
 endif()
+
+SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES FOLDER "example")

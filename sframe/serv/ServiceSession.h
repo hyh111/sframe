@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_SERVICE_SESSION_H
 #define SFRAME_SERVICE_SESSION_H
 

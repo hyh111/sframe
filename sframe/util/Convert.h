@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_CONVERT_H
 #define SFRAME_CONVERT_H
 

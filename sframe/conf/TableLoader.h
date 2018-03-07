@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_TABLE_LOADER_H
 #define SFRAME_TABLE_LOADER_H
 

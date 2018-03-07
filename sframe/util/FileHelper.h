@@ -1,4 +1,4 @@
-
+﻿
 #ifndef __FILE_HELPER_H__
 #define __FILE_HELPER_H__
 

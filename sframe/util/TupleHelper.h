@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_TUPLE_HELPER_H
 #define SFRAME_TUPLE_HELPER_H
 

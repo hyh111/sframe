@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_CSV_H
 #define SFRAME_CSV_H
 

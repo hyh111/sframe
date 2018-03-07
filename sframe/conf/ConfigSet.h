@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_CONFIG_SET_H
 #define SFRAME_CONFIG_SET_H
 

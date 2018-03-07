@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_WORD_FILTER_H
 #define SFRAME_WORD_FILTER_H
 

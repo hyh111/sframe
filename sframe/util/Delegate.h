@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_DELEGATE_H
 #define SFRAME_DELEGATE_H
 

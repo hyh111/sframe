@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_CONFIG_META_H
 #define SFRAME_CONFIG_META_H
 

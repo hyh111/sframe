@@ -1,4 +1,4 @@
-
+﻿
 #pragma once
 #ifndef __CONFIG_TYPE_H__
 #define __CONFIG_TYPE_H__

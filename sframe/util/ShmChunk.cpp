@@ -1,9 +1,9 @@
-
+﻿
 #include "ShmChunk.h"
 
 #ifndef __GNUC__
-
-bool ShmChunk::Open(bool & is_new)
+  
+bool ShmChunk::Open(bool & is_new) 
 {
 	is_new = false;
 	std::string shm_name = std::to_string(_shm_key);

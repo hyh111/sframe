@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME_SERIALIZATION_H
 #define SFRAME_SERIALIZATION_H
 

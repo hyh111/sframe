@@ -1,4 +1,4 @@
-
+﻿
 #pragma once
 #ifndef SFRAME_SHM_CHUNK_H
 #define SFRAME_SHM_CHUNK_H

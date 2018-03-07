@@ -1,4 +1,4 @@
-
+﻿
 #ifndef __GATE_SERVICE_H__
 #define __GATE_SERVICE_H__
 

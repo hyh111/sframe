@@ -1,4 +1,4 @@
-
+﻿
 #ifndef SFRAME__MD5_H
 #define SFRAME__MD5_H
 

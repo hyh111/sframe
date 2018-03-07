@@ -1,4 +1,4 @@
-
+﻿
 #include <algorithm>
 #include "Timer.h"
 #include "TimeHelper.h"

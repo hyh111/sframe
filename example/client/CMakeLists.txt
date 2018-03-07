@@ -10,11 +10,6 @@ else()
 	message(FATAL_ERROR "Not surported os.")
 endif()
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/../../bin/client)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
-
-add_subdirectory(../../sframe sframe-obj)
-
 include_directories(../../sframe)
 
 aux_source_directory(. SRCS)
@@ -24,3 +19,5 @@ target_link_libraries(client sframe)
 if (WIN32)
 	target_link_libraries(client ws2_32.lib)
 endif()
+
+SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES FOLDER "example")
