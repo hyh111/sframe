@@ -22,4 +22,4 @@ if (WIN32)
 	target_link_libraries(client ws2_32.lib)
 endif()
 
-SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES FOLDER "example")
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "example")
