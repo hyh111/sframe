@@ -1,2 +1,2 @@
 ulimit -c unlimited
-/home/programmer/share/sframe/example/bin/server/server /home/programmer/share/sframe/example/bin/server/work.json &
+./Debug/server ./work.json &

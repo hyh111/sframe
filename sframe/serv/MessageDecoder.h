@@ -21,7 +21,11 @@ public:
 	bool Decode(std::tuple<Args...> ** p_args_tuple, std::tuple<Args...> & args_tuple)
 	{
 		MessageType msg_type = _msg->GetType();
-		assert(msg_type == kMsgType_InsideServiceMessage);
+		if (msg_type != kMsgType_InsideServiceMessage)
+		{
+			assert(false);
+			return false;
+		}
 
 		InsideServiceMessage<Args...> * msg = dynamic_cast<InsideServiceMessage<Args...>*>(_msg);
 		if (msg == nullptr)

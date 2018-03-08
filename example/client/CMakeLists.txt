@@ -13,7 +13,9 @@ endif()
 include_directories(../../sframe)
 
 aux_source_directory(. SRCS)
-add_executable(client ${SRCS})
+file(GLOB HEADERS *.h *.hpp)
+
+add_executable(client ${SRCS} ${HEADERS})
 target_link_libraries(client sframe)
 
 if (WIN32)

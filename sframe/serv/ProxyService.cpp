@@ -339,7 +339,10 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 	{
 		// 封装消息并发送到目标本地服务
 		int32_t data_len = (int32_t)len - (int32_t)reader.GetReadedLength();
-		assert(data_len >= 0);
+		if (data_len < 0)
+		{
+			assert(false);
+		}
 		std::shared_ptr<NetServiceMessage> msg = std::make_shared<NetServiceMessage>();
 		msg->dest_sid = dest_sid;
 		msg->src_sid = src_sid;
