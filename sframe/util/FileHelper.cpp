@@ -21,7 +21,7 @@ using namespace sframe;
 // 读取文件所有内容
 bool FileHelper::ReadFile(const std::string & full_name, std::string & content)
 {
-	FILE * f = fopen(full_name.c_str(), "r");
+	FILE * f = fopen(full_name.c_str(), "rb");
 	if (!f)
 	{
 		return false;
@@ -64,7 +64,7 @@ bool FileHelper::ReadFile(const std::string & full_name, std::string & content)
 // 写入文件
 size_t FileHelper::WriteFile(const std::string & full_name, std::string & content)
 {
-	FILE * f = fopen(full_name.c_str(), "w");
+	FILE * f = fopen(full_name.c_str(), "wb");
 	if (!f)
 	{
 		return 0;
