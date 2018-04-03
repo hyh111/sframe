@@ -10,16 +10,19 @@ using namespace sframe;
 
 ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::string & remote_ip, uint16_t remote_port)
 	: _proxy_service(proxy_service), _session_id(id), _state(kSessionState_Initialize), _reconnect(true), 
-	_remote_ip(remote_ip), _remote_port(remote_port), _cur_msg_size(0), _cur_msg_readed_size(0)
+	_remote_ip(remote_ip), _remote_port(remote_port), _cur_msg_size(0), _cur_msg_readed_size(0), 
+	_last_recv_heartbeat_time(0), _open_heartbeat(true)
 {
 	assert(!remote_ip.empty() && proxy_service);
 }
 
 ServiceSession::ServiceSession(int32_t id, ProxyService * proxy_service, const std::shared_ptr<sframe::TcpSocket> & sock)
 	: _proxy_service(proxy_service), _socket(sock), _session_id(id), _state(kSessionState_Running),
-	_reconnect(false), _cur_msg_size(0), _cur_msg_readed_size(0)
+	_reconnect(false), _cur_msg_size(0), _cur_msg_readed_size(0), _open_heartbeat(true)
 {
 	assert(sock != nullptr && proxy_service);
+	int64_t now_steady_mili_secs = TimeHelper::GetSteadyMiliseconds();
+	_last_recv_heartbeat_time = now_steady_mili_secs;
 }
 
 
@@ -31,9 +34,12 @@ void ServiceSession::Init()
 	}
 	else
 	{
+		// 设置socket监听器
 		_socket->SetMonitor(this);
 		// 开始接收数据
 		_socket->StartRecv();
+		// 开启心跳检测定时器
+		SetCheckHeartbeatTimeoutTimer();
 	}
 }
 
@@ -63,6 +69,10 @@ void ServiceSession::Close()
 // 尝试释放
 bool ServiceSession::TryFree()
 {
+	// 删除心跳检测定时器与心跳发送定时器
+	GetTimerManager()->DeleteTimer(_check_heartbeat_timeout_timer);
+	GetTimerManager()->DeleteTimer(_send_heartbeat_timer);
+
 	if (!_reconnect)
 	{
 		return true;
@@ -94,6 +104,13 @@ void ServiceSession::DoConnectCompleted(bool success)
 	_state = ServiceSession::kSessionState_Running;
 	assert(_socket->IsOpen());
 
+	// 设置上次接收数据时间为当前
+	int64_t now_steady_mili_secs = TimeHelper::GetSteadyMiliseconds();
+	_last_recv_heartbeat_time = now_steady_mili_secs;
+	// 开启心跳检测定时器与心跳发送定时器
+	SetSendHeartbeatTimer();
+	SetCheckHeartbeatTimeoutTimer();
+
 	// 之前缓存的数据立即发送出去
 	for (auto & msg : _msg_cache)
 	{
@@ -108,6 +125,20 @@ void ServiceSession::DoConnectCompleted(bool success)
 		}
 	}
 	_msg_cache.clear();
+}
+
+// 收到心跳消息
+void ServiceSession::DoRecvHeartbeatMsg()
+{
+	// 设置上次接收数据时间为当前
+	int64_t now_steady_mili_secs = TimeHelper::GetSteadyMiliseconds();
+	_last_recv_heartbeat_time = now_steady_mili_secs;
+
+	if (!Timer::IsTimerAlive(_send_heartbeat_timer))
+	{
+		// 回一个心跳消息
+		SendHeartbeatMsg();
+	}
 }
 
 // 发送数据
@@ -169,7 +200,7 @@ int32_t ServiceSession::OnReceived(char * data, int32_t len)
 
 	while (surplus > 0)
 	{
-		if (_cur_msg_size > 0)
+		if (_cur_msg_size != 0)
 		{
 			assert(_cur_msg_data && _cur_msg_size > _cur_msg_readed_size);
 
@@ -204,12 +235,13 @@ int32_t ServiceSession::OnReceived(char * data, int32_t len)
 			p += msg_size_reader.GetReadedLength();
 			surplus -= msg_size_reader.GetReadedLength();
 
-			_cur_msg_data = std::make_shared<std::vector<char>>(_cur_msg_size);
-
-			if (_cur_msg_size == 0)
+			if (_cur_msg_size != 0)
+			{
+				_cur_msg_data = std::make_shared<std::vector<char>>(_cur_msg_size);
+			}
+			else
 			{
 				ServiceDispatcher::Instance().SendInsideServiceMsg(0, 0, 0, kProxyServiceMsgId_SessionRecvData, _session_id, _cur_msg_data);
-				_cur_msg_data.reset();
 			}
 		}
 	}
@@ -268,12 +300,64 @@ void ServiceSession::SetConnectTimer(int32_t after_ms)
 	_connect_timer = RegistTimer(after_ms, &ServiceSession::OnTimer_Connect);
 }
 
+// 开始发送心跳消息定时器
+void ServiceSession::SetSendHeartbeatTimer()
+{
+	if (!_open_heartbeat)
+	{
+		return;
+	}
+
+	_send_heartbeat_timer = RegistTimer(kSendHeartbeatInterval, &ServiceSession::OnTimer_SendHeartbeat);
+}
+
+// 开始检测心跳超时定时器
+void ServiceSession::SetCheckHeartbeatTimeoutTimer()
+{
+	if (!_open_heartbeat)
+	{
+		return;
+	}
+
+	_check_heartbeat_timeout_timer = RegistTimer(kHeartbeatTimeoutMiliSecs, &ServiceSession::OnTimer_CheckHeartbeatTimeout);
+}
+
 // 定时：连接
 int32_t ServiceSession::OnTimer_Connect()
 {
 	StartConnect();
 	// 只执行一次后停止
 	return -1;
+}
+
+// 定时：发送心跳包
+int32_t ServiceSession::OnTimer_SendHeartbeat()
+{
+	SendHeartbeatMsg();
+	return kSendHeartbeatInterval;
+}
+
+// 定时：检测心跳超时
+int32_t ServiceSession::OnTimer_CheckHeartbeatTimeout()
+{
+	if (_state != kSessionState_Running)
+	{
+		return -1;
+	}
+
+	assert(_socket);
+
+	int64_t max_allow_mili_secs = _last_recv_heartbeat_time + kHeartbeatTimeoutMiliSecs;
+	int64_t now_steady_mili_secs = TimeHelper::GetSteadyMiliseconds();
+	if (now_steady_mili_secs >= max_allow_mili_secs)
+	{
+		// 心跳超时，关闭连接
+		LOG_INFO << "Connection with " << SocketAddrText(_socket->GetRemoteAddress()).Text() << " timeout, will close it" << std::endl;
+		_socket->Close();
+		return -1;
+	}
+
+	return (int32_t)(max_allow_mili_secs - now_steady_mili_secs);
 }
 
 // 开始连接
@@ -286,6 +370,26 @@ void ServiceSession::StartConnect()
 	_socket->SetMonitor(this);
 	_socket->SetTcpNodelay(true);
 	_socket->Connect(sframe::SocketAddr(_remote_ip.c_str(), _remote_port));
+}
+
+// 发送心跳包
+void ServiceSession::SendHeartbeatMsg()
+{
+	if (_state != ServiceSession::kSessionState_Running || !_socket)
+	{
+		return;
+	}
+
+	char buf[16];
+	StreamWriter writer(buf, sizeof(buf));
+	
+	if (!writer.WriteSizeField(0))
+	{
+		LOG_ERROR << "Serialize heartbeat msg error" << std::endl;
+		return;
+	}
+
+	SendData(writer.GetStream(), writer.GetStreamLength());
 }
 
 

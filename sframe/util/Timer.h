@@ -351,7 +351,7 @@ class TimerManager
 public:
 	static const int32_t kMilliSecOneTick = 1;                  // 一个tick多少毫秒
 
-	TimerManager() : _exec_time(0), _cur_exec_timer(nullptr)
+	TimerManager() : _exec_time(0), _cur_exec_timer(nullptr), _del_cur_timer(false)
 	{
 		_add_timer_cache.reserve(128);
 	}
@@ -414,6 +414,7 @@ private:
 	int64_t _init_time;
 	std::vector<Timer*> _add_timer_cache;                // 添加定时器缓存
 	Timer * _cur_exec_timer;
+	bool _del_cur_timer;
 };
 
 

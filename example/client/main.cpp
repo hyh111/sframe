@@ -10,6 +10,7 @@
 #include "ConfigManager.h"
 #include "ClientManager.h"
 #include "util/Log.h"
+#include "util/FileHelper.h"
 
 bool g_running = true;
 
@@ -23,7 +24,8 @@ void Exec()
 
 int main()
 {
-	INITIALIZE_LOG("./client_log", "");
+	std::string log_path = "./client_log";
+	INITIALIZE_LOG(log_path, "");
 
 	if (!ConfigManager::InitializeConfig("./client_data"))
 	{
@@ -38,6 +40,14 @@ int main()
 	}
 
 #ifdef __GNUC__
+
+	std::string pid_file_name = log_path + "/client.pid";
+	sframe::Error err = sframe::FileHelper::WritePidFile(pid_file_name, true);
+	if (err)
+	{
+		std::cerr << "[ERROR] Write pid file error(" << err.Code() << ") : " << sframe::ErrorMessage(err).Message() << std::endl;
+		return -1;
+	}
 
 	sigset_t wai_sig_set;
 	sigemptyset(&wai_sig_set);

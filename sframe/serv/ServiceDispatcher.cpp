@@ -167,7 +167,7 @@ void ServiceDispatcher::SetAdminListenAddr(const std::string & ip, uint16_t port
 	RepareProxyServer();
 	std::shared_ptr<ServiceTcpConnHandler> conn_handler = std::make_shared<ServiceTcpConnHandler>();
 	conn_handler->SetHandleServices(std::set<int32_t>{0});
-	Listener * listener = new Listener(ip, port, "AdminAddr", conn_handler);
+	Listener * listener = new Listener(ip, port, ProxyService::kAdminAddrDescName, conn_handler);
 	assert(listener);
 	_listeners.push_back(listener);
 }

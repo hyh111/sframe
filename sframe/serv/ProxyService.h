@@ -18,6 +18,10 @@ class ProxyService : public Service
 {
 public:
 
+	static const std::string kAdminAddrDescName;
+
+
+
 	ProxyService();
 
 	virtual ~ProxyService();

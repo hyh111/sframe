@@ -3,7 +3,7 @@
 #define SFRAME_IO_SERVICE_H
 
 #include <memory>
-#include "Error.h"
+#include "../util/Error.h"
 
 namespace sframe{
 

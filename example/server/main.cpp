@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 #include <string>
 #include <map>
 #include <unordered_map>
@@ -145,13 +146,22 @@ int main(int argc, char * argv[])
 	}
 
 	std::string config_name = argv[1];
-	INITIALIZE_LOG("./" + FileHelper::RemoveExtension(FileHelper::GetFileName(config_name)) + "_log", "");
+	std::string log_path = "./" + FileHelper::RemoveExtension(FileHelper::GetFileName(config_name)) + "_log";
+	INITIALIZE_LOG(log_path, "");
 	if (!ServerConfig::Instance().Load(config_name))
 	{
 		return -1;
 	}
 
 #ifdef __GNUC__
+
+	std::string pid_file_name = log_path + "/server.pid";
+	sframe::Error err = FileHelper::WritePidFile(pid_file_name, true);
+	if (err)
+	{
+		std::cerr << "[ERROR] Write pid file error(" << err.Code() << ") : " << sframe::ErrorMessage(err).Message() << std::endl;
+		return -1;
+	}
 
 	sigset_t wai_sig_set;
 	sigemptyset(&wai_sig_set);

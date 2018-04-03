@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include "Error.h"
 
 namespace sframe {
 
@@ -54,6 +55,14 @@ public:
 	// path: 路径，最后是否以/结尾，表示文件，否则为目录
 	// parent_dir: 所在目录
 	static std::vector<std::string> ExpandWildcard(const std::string & path, const std::string & parent_dir = "");
+
+
+#ifdef __GNUC__
+
+	// 写PID文件
+	static Error WritePidFile(const std::string & file_name, bool wr_lock);
+
+#endif
 };
 
 }

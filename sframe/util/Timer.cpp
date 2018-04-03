@@ -60,6 +60,7 @@ void TimerManager::DeleteTimer(TimerHandle timer_handle)
 	// 不能删除当前正在执行的timer
 	if (timer == _cur_exec_timer)
 	{
+		_del_cur_timer = true;
 		return;
 	}
 
@@ -146,14 +147,15 @@ void TimerManager::Execute()
 			Timer * next_timer = _cur_exec_timer->GetNext();
 			cur_list.DeleteTimer(_cur_exec_timer);
 
-			if (after >= 0)
+			if (_del_cur_timer || after < 0)
 			{
-				_cur_exec_timer->SetExecTime(now + after);
-				_add_timer_cache.push_back(_cur_exec_timer);
+				_del_cur_timer = false;
+				delete _cur_exec_timer;
 			}
 			else
 			{
-				delete _cur_exec_timer;
+				_cur_exec_timer->SetExecTime(now + after);
+				_add_timer_cache.push_back(_cur_exec_timer);
 			}
 
 			_cur_exec_timer = next_timer;

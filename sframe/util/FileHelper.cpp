@@ -1,6 +1,7 @@
 ﻿
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include <utility>
 #include "FileHelper.h"
 #include "StringHelper.h"
@@ -11,9 +12,11 @@
 #pragma comment(lib, "shlwapi")
 #pragma warning(disable:4996)
 #else
+#include <unistd.h>
 #include <sys/types.h> 
 #include <sys/stat.h>
 #include <dirent.h>
+#include <fcntl.h>
 #endif
 
 using namespace sframe;
@@ -374,3 +377,53 @@ std::vector<std::string> FileHelper::ExpandWildcard(const std::string & path, co
 
 	return vec_real_file_name;
 }
+
+#ifdef __GNUC__
+
+// 写PID文件
+Error FileHelper::WritePidFile(const std::string & file_name, bool wr_lock)
+{
+	static int fd = -1;
+
+	if (fd > 0)
+	{
+		close(fd);
+		fd = -1;
+	}
+
+	fd = open(file_name.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+	if (fd < 0)
+	{
+		return Error(errno);
+	}
+
+	int pid = getpid();
+
+	flock fl;
+	fl.l_type = F_WRLCK;
+	fl.l_whence = SEEK_SET;
+	fl.l_pid = pid;
+	fl.l_start = 0;
+	fl.l_len = 0;
+	if (fcntl(fd, F_SETLK, &fl) < 0)
+	{
+		close(fd);
+		fd = -1;
+		return Error(errno);
+	}
+
+	char pid_text[32];
+	sprintf(pid_text, "%d", pid);
+
+	ssize_t write_size = write(fd, pid_text, strlen(pid_text));
+	if (write_size < 0)
+	{
+		close(fd);
+		fd = -1;
+		return Error(errno);
+	}
+
+	return ErrorSuccess;
+}
+
+#endif

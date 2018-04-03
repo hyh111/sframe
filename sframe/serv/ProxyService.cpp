@@ -7,6 +7,8 @@
 
 using namespace sframe;
 
+const std::string ProxyService::kAdminAddrDescName = "AdminAddr";
+
 
 ProxyService::ProxyService() : _have_no_session(true), _listening(false), _cur_max_session_id(0), _session_id_first_loop(true)
 {
@@ -50,6 +52,8 @@ bool ProxyService::IsDestroyCompleted() const
 	return _have_no_session;
 }
 
+#include <iostream>
+
 // 处理周期定时器
 void ProxyService::OnCycleTimer()
 {
@@ -59,8 +63,6 @@ void ProxyService::OnCycleTimer()
 // 新连接到来
 void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const std::shared_ptr<sframe::TcpSocket> & sock)
 {
-	static const std::string admin_addr_desc = "AdminAddr";
-
 	Error err = sock->SetTcpNodelay(true);
 	if (err)
 	{
@@ -75,7 +77,7 @@ void ProxyService::OnNewConnection(const ListenAddress & listen_addr_info, const
 		return;
 	}
 
-	if (listen_addr_info.desc_name == admin_addr_desc)
+	if (listen_addr_info.desc_name == kAdminAddrDescName)
 	{
 		AddServiceSession(session_id, new AdminSession(session_id, this, sock));
 	}
@@ -91,6 +93,7 @@ void ProxyService::OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessa
 	auto it = _sid_to_sessionid.find(msg->dest_sid);
 	if (it == _sid_to_sessionid.end())
 	{
+		LOG_WARN << "Send message to remote service " << msg->dest_sid << " error, can not find related service session" << std::endl;
 		return;
 	}
 
@@ -103,6 +106,7 @@ void ProxyService::OnProxyServiceMessage(const std::shared_ptr<ProxyServiceMessa
 	}
 	else
 	{
+		LOG_ERROR << "find service session error|" << sessionid << std::endl;
 		assert(false);
 	}
 }
@@ -304,8 +308,14 @@ void ProxyService::OnMsg_SessionRecvData(int32_t session_id, const std::shared_p
 		return;
 	}
 
+	if (!data)
+	{
+		session->DoRecvHeartbeatMsg();
+		return;
+	}
+
 	std::vector<char> & vec_data = *data;
-	char * p = &vec_data[0];
+	char * p = vec_data.data();
 	uint32_t len = (uint32_t)vec_data.size();
 	StreamReader reader(p, len);
 

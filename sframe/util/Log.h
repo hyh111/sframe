@@ -43,7 +43,7 @@ public:
 
 	struct LogDataChunk
 	{
-		static const int32_t kDefaultChunkSize = 1024 * 4;
+		static const int32_t kDefaultChunkSize = 256 * 16;
 
 		LogDataChunk() : cur_size(0), time(0) {}
 

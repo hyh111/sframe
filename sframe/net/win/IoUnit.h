@@ -5,7 +5,7 @@
 #include <inttypes.h>
 #include <memory>
 #include <WinSock2.h>
-#include "../Error.h"
+#include "../../util/Error.h"
 
 namespace sframe {
 
@@ -24,7 +24,7 @@ class IoUnit;
 struct IoEvent
 {
 	IoEvent(IoEventType t)
-		: evt_type(t), err(kErrorCode_Success)
+		: evt_type(t), err(Error::kErrorCode_Succ)
 	{
 		memset(&ol, 0, sizeof(ol));
 	}
