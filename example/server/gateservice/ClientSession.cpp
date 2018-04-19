@@ -17,10 +17,10 @@ int32_t ClientSession::OnReceived(char * data, int32_t len)
 
 	while (surplus > 0)
 	{
-		uint16_t msg_size = 0;
+		size_t msg_size = 0;
 		StreamReader msg_size_reader(p, surplus);
-		if (!AutoDecode(msg_size_reader, msg_size) ||
-			surplus - msg_size_reader.GetReadedLength() < msg_size)
+		if (!msg_size_reader.ReadSizeField(msg_size) ||
+			msg_size_reader.GetNotReadLength() < msg_size)
 		{
 			break;
 		}

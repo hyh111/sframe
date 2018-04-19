@@ -11,6 +11,7 @@
 #include "ClientManager.h"
 #include "util/Log.h"
 #include "util/FileHelper.h"
+#include "util/Serialization.h"
 
 bool g_running = true;
 

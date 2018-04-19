@@ -14,8 +14,14 @@ std::vector<std::string> sframe::SplitString(const std::string & str, const std:
 {
 	std::vector<std::string> result;
 
-	if (str.size() == 0)
+	if (str.empty())
 	{
+		return result;
+	}
+
+	if (sep.empty())
+	{
+		result.push_back(str);
 		return result;
 	}
 

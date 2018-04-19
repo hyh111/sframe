@@ -122,25 +122,27 @@ void Client::OnTimer_Working()
 	}
 
 	int64_t cur_time = sframe::TimeHelper::GetEpochMilliseconds();
-	uint16_t msg_size = 0;
-	char buf[1024];
-	sframe::StreamWriter stream_writer(buf + sizeof(msg_size), 1024 - sizeof(msg_size));
-	if (!sframe::AutoEncode(stream_writer, _id, _count, cur_time, config->text[_text_index]))
+	const std::string & send_text = config->text[_text_index];
+
+	size_t msg_size = sframe::AutoGetSize(_id, _count, cur_time, send_text);
+	size_t size_field_size = sframe::StreamWriter::GetSizeFieldSize(msg_size);
+	size_t buf_size = msg_size + size_field_size;
+	std::string buf(buf_size, 0);
+	sframe::StreamWriter stream_writer(&(buf)[0], buf.size());
+	if (!stream_writer.WriteSizeField(msg_size) || 
+		!sframe::AutoEncode(stream_writer, _id, _count, cur_time, send_text))
 	{
 		LOG_ERROR << "Encode msg error" << ENDL;
 		return;
 	}
 
-	msg_size = (uint16_t)stream_writer.GetStreamLength();
-	sframe::StreamWriter size_writer(buf, sizeof(msg_size));
-	if (!sframe::AutoEncode(size_writer, msg_size))
+	if (buf.size() != stream_writer.GetStreamLength())
 	{
-		LOG_ERROR << "Encode msg error" << ENDL;
-		return;
+		LOG_ERROR << "MsgSize error" << std::endl;
 	}
 
 	_count++;
 	_text_index++;
 
-	_sock->Send(buf, msg_size + sizeof(msg_size));
+	_sock->Send(buf.data(), buf.size());
 }

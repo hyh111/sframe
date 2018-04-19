@@ -6,17 +6,22 @@ using namespace sframe;
 
 size_t StreamWriter::GetSizeFieldSize(size_t s)
 {
+	return GetUnsignedNumberSize((uint64_t)s);
+}
+
+size_t StreamWriter::GetUnsignedNumberSize(uint64_t n)
+{
 	size_t ret = 0;
 
-	if (s <= (size_t)0xfc)
+	if (n <= (uint64_t)0xfc)
 	{
 		ret = sizeof(uint8_t);
 	}
-	else if (s <= (size_t)0xffff)
+	else if (n <= (uint64_t)0xffff)
 	{
 		ret = sizeof(uint8_t) + sizeof(uint16_t);
 	}
-	else if (s <= (size_t)0xffffffff)
+	else if (n <= (uint64_t)0xffffffff)
 	{
 		ret = sizeof(uint8_t) + sizeof(uint32_t);
 	}
@@ -43,12 +48,17 @@ bool StreamWriter::Write(const void * data, size_t len)
 
 bool StreamWriter::WriteSizeField(size_t s)
 {
-	if (s <= (size_t)0xfc)
+	return WriteUnsignedNumber(s);
+}
+
+bool StreamWriter::WriteUnsignedNumber(uint64_t n)
+{
+	if (n <= (uint64_t)0xfc)
 	{
-		uint8_t v = (uint8_t)s;
+		uint8_t v = (uint8_t)n;
 		return Write((const void *)&v, sizeof(v));
 	}
-	else if (s <= (size_t)0xffff)
+	else if (n <= (uint64_t)0xffff)
 	{
 		uint8_t v1 = 0xfd;
 		if (!Write((const void *)&v1, sizeof(v1)))
@@ -56,10 +66,10 @@ bool StreamWriter::WriteSizeField(size_t s)
 			return false;
 		}
 
-		uint16_t v2 = HTON_16(s);
+		uint16_t v2 = HTON_16(n);
 		return Write((const void *)&v2, sizeof(v2));
 	}
-	else if (s <= (size_t)0xffffffff)
+	else if (n <= (uint64_t)0xffffffff)
 	{
 		uint8_t v1 = 0xfe;
 		if (!Write((const void *)&v1, sizeof(v1)))
@@ -67,7 +77,7 @@ bool StreamWriter::WriteSizeField(size_t s)
 			return false;
 		}
 
-		uint32_t v2 = HTON_32(s);
+		uint32_t v2 = HTON_32(n);
 		return Write((const void *)&v2, sizeof(v2));
 	}
 
@@ -77,7 +87,7 @@ bool StreamWriter::WriteSizeField(size_t s)
 		return false;
 	}
 
-	uint64_t v2 = HTON_64(s);
+	uint64_t v2 = HTON_64(n);
 	return Write((const void *)&v2, sizeof(v2));
 }
 
@@ -110,6 +120,17 @@ bool StreamReader::Read(std::string & s, size_t len)
 
 bool StreamReader::ReadSizeField(size_t & s)
 {
+	uint64_t n = 0;
+	if (!ReadUnsignedNumber(n))
+	{
+		return false;
+	}
+	s = static_cast<size_t>(n);
+	return true;
+}
+
+bool StreamReader::ReadUnsignedNumber(uint64_t & n)
+{
 	uint8_t v1 = 0;
 	if (!Read((void*)&v1, sizeof(v1)))
 	{
@@ -118,7 +139,7 @@ bool StreamReader::ReadSizeField(size_t & s)
 
 	if (v1 <= 0xfc)
 	{
-		s = v1;
+		n = v1;
 	}
 	else if (v1 == 0xfd)
 	{
@@ -127,7 +148,7 @@ bool StreamReader::ReadSizeField(size_t & s)
 		{
 			return false;
 		}
-		s = (size_t)NTOH_16(v2);
+		n = (uint64_t)NTOH_16(v2);
 	}
 	else if (v1 == 0xfe)
 	{
@@ -136,7 +157,7 @@ bool StreamReader::ReadSizeField(size_t & s)
 		{
 			return false;
 		}
-		s = (size_t)NTOH_32(v2);
+		n = (uint64_t)NTOH_32(v2);
 	}
 	else
 	{
@@ -146,7 +167,7 @@ bool StreamReader::ReadSizeField(size_t & s)
 		{
 			return false;
 		}
-		s = (size_t)NTOH_64(v2);
+		n = (uint64_t)NTOH_64(v2);
 	}
 
 	return true;

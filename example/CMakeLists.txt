@@ -5,7 +5,7 @@ project(example)
 message(STATUS "CMAKE_BUILD_TYPE = " ${CMAKE_BUILD_TYPE})
 
 if(UNIX)
-	string(COMPARE EQUAL ${CMAKE_BUILD_TYPE} "Release" IS_RELEASE)
+	string(COMPARE EQUAL "${CMAKE_BUILD_TYPE}" "Release" IS_RELEASE)
 	if (IS_RELEASE)
 		set(OUT_DIR "/Release")
 	else()
