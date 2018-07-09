@@ -96,7 +96,7 @@ int32_t sframe::FindFirstSubstr(const char * str, int32_t len, const char * sub_
 }
 
 
-static const char kUpperLower = 'a' - 'Z';
+static const char kUpperLower = 'a' - 'A';
 
 // 将字符串转换为大写
 void sframe::UpperString(std::string & str)
