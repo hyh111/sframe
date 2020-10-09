@@ -726,7 +726,7 @@ size_t HttpDecoder::DecodeContent(const char * data, size_t len, std::string & e
 			}
 
 			// 长度是否读取完全
-			if (!(p[0] == '\r' && p[1] == '\n'))
+			if (surplus < 2 || !(p[0] == '\r' && p[1] == '\n'))
 			{
 				break;
 			}
